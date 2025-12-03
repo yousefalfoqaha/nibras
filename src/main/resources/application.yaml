@@ -1,3 +1,11 @@
 spring:
   application:
     name: gju-chatbot
+  ai:
+    chat:
+      client:
+        enabled: false
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        model: gpt-4.1-mini
