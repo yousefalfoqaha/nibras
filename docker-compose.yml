@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gju-chatbot
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/gju
+      SPRING_DATASOURCE_USERNAME: gju
+      SPRING_DATASOURCE_PASSWORD: gju
+    volumes:
+      - ./:/app
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    container_name: gju-chatbot-db
+    environment:
+      POSTGRES_DB: gju
+      POSTGRES_USER: gju
+      POSTGRES_PASSWORD: gju
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:
