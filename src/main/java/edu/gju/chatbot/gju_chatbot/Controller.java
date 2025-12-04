@@ -15,7 +15,7 @@ public class Controller {
   private final ChatClient chatClient;
 
   @GetMapping("/generate")
-  public String streamResponse(
+  public String generate(
       @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
     return chatClient.prompt(message)
         .call()
