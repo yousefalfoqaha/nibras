@@ -8,6 +8,9 @@ spring:
   sql:
     init:
       mode: always
+  servlet:
+    multipart:
+      max-file-size: -1
   ai:
     chat:
       client:
@@ -15,7 +18,7 @@ spring:
     openai:
       api-key: ${OPENAI_API_KEY}
       chat:
-        model: gpt-4.1-mini
+        model: gpt-5-mini
     vectorstore:
       pgvector:
         remove-existing-vector-store-table: true

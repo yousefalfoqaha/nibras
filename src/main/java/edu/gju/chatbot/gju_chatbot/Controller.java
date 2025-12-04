@@ -29,8 +29,7 @@ public class Controller {
   }
 
   @PostMapping("/ingest")
-  public ResponseEntity<Void> ingestFile(
-      @RequestParam("file") MultipartFile file) {
+  public ResponseEntity<Void> ingestFile(@RequestParam("file") MultipartFile file) {
     etlPipelineService.processFile(file);
 
     return ResponseEntity.ok().build();

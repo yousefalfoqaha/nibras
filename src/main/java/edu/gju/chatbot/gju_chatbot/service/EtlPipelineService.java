@@ -10,8 +10,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import edu.gju.chatbot.gju_chatbot.AppTokenTextSplitter;
-import edu.gju.chatbot.gju_chatbot.PdfDocumentReader;
+import edu.gju.chatbot.gju_chatbot.reader.PdfDocumentReader;
 import edu.gju.chatbot.gju_chatbot.exception.FileProcessingException;
 import edu.gju.chatbot.gju_chatbot.exception.UnsupportedFileTypeException;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Service
 public class EtlPipelineService {
-  private final AppTokenTextSplitter tokenTextSplitter;
+  private final TokenTextSplitterService tokenTextSplitterService;
   private final VectorStore vectorStore;
   private final PdfDocumentReader pdfDocumentReader;
 
@@ -40,7 +39,7 @@ public class EtlPipelineService {
     }
 
     List<Document> documents = pdfDocumentReader.apply(resource);
-    List<Document> splitDocuments = tokenTextSplitter.splitDocuments(documents);
+    List<Document> splitDocuments = tokenTextSplitterService.splitDocuments(documents);
 
     vectorStore.add(splitDocuments);
   }

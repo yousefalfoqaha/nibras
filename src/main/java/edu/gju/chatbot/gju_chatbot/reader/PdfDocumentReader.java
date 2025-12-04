@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot;
+package edu.gju.chatbot.gju_chatbot.reader;
 
 import java.util.List;
 import java.util.function.Function;

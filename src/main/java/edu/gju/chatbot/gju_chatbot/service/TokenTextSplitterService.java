@@ -1,13 +1,13 @@
-package edu.gju.chatbot.gju_chatbot;
+package edu.gju.chatbot.gju_chatbot.service;
 
 import java.util.List;
 
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.document.Document;
-import org.springframework.stereotype.Component;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.stereotype.Service;
 
-@Component
-public class AppTokenTextSplitter {
+@Service
+public class TokenTextSplitterService {
 
   public List<Document> splitDocuments(List<Document> documents) {
     TokenTextSplitter splitter = new TokenTextSplitter();
