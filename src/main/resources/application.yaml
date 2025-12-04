@@ -2,9 +2,12 @@ spring:
   application:
     name: gju-chatbot
   datasource:
-    url: jdbc:postgresql://localhost:5432/gju
+    url: jdbc:postgresql://db:5432/gju
     username: gju
     password: gju
+  sql:
+    init:
+      mode: always
   ai:
     chat:
       client:
@@ -15,6 +18,5 @@ spring:
         model: gpt-4.1-mini
     vectorstore:
       pgvector:
-        initialize-schema: true
         remove-existing-vector-store-table: true
         schema-validation: true
