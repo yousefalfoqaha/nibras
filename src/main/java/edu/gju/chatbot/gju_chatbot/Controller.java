@@ -2,6 +2,7 @@ package edu.gju.chatbot.gju_chatbot;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import edu.gju.chatbot.gju_chatbot.service.EtlPipelineService;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 
 @RequiredArgsConstructor
 @RestController
@@ -21,11 +23,12 @@ public class Controller {
   private final EtlPipelineService etlPipelineService;
 
   @GetMapping("/generate")
-  public String generate(
+  public Flux<ServerSentEvent<String>> generate(
       @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
     return chatClient.prompt(message)
-        .call()
-        .content();
+        .stream()
+        .content()
+        .map(token -> ServerSentEvent.builder(token).build());
   }
 
   @PostMapping("/ingest")
