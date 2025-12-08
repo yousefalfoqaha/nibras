@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: gju-chatbot
+  datasource:
+    url: jdbc:postgresql://db:5432/gju
+    username: gju
+    password: gju
+  sql:
+    init:
+      mode: always
+  servlet:
+    multipart:
+      max-file-size: -1
+  ai:
+    chat:
+      client:
+        enabled: false
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        model: gpt-5-mini
+    vectorstore:
+      pgvector:
+        remove-existing-vector-store-table: true
+        schema-validation: true
