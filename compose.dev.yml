@@ -1,35 +1,29 @@
 services:
   client:
-    build:
-      context: ../client
-      dockerfile: dev.Dockerfile
-    command: pnpm dev --host
+    image: node:24-alpine
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm dev --host"
+    container_name: gju-chatbot-client
     working_dir: /app
     volumes:
-      - ../client:/app
-      - ../client/node_modules:/app/node_modules
+      - ./client:/app
     ports:
       - 5173:5173
     environment:
       NODE_ENV: development
       VITE_PROXY_TARGET: http://api:8080
-    depends_on:
-      - api
 
   api:
-    build:
-      context: ../api
-      dockerfile: dev.Dockerfile
-    container_name: gju-chatbot
+    image: maven:3.9-eclipse-temurin-25-alpine
+    container_name: gju-chatbot-api
     ports:
       - 8080:8080
     environment:
       SPRING_PROFILES_ACTIVE: dev
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-    command: ./mvnw spring-boot:run
+    command: sh -c "mvn -q -DskipTests dependency:resolve && mvn spring-boot:run"
     working_dir: /app
     volumes:
-      - ../api/src:/app/src
+      - ./api:/app
     depends_on:
       - db
 
