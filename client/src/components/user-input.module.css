@@ -1,0 +1,10 @@
+.userInput {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--mantine-primary-color-contrast);
+  border-radius: var(--mantine-radius-lg);
+  padding: 0.4rem 0.4rem 0.4rem 0.9rem;
+  box-shadow: var(--mantine-shadow-sm);
+}

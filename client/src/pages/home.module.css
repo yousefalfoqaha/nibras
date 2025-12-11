@@ -1,4 +1,6 @@
 .main {
+  margin: auto;
+  height: 100%;
   display: flex;
   justify-content: center;
   padding: 8rem 6rem;
@@ -7,19 +9,18 @@
 .content {
   display: flex;
   flex-direction: column;
+  gap: 2rem;
   align-items: center;
-  gap: var(--space-4);
+  justify-content: center;
   width: 100%;
 }
 
 .header {
   font-size: 2rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .textField {
   width: 40rem;
-  padding: var(--space-1) var(--space-6);
-  background: var(--gray-3);
   border-radius: 1.5rem;
 }
