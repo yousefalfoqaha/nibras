@@ -5,7 +5,7 @@ import styles from './user-input.module.css';
 export function UserInput() {
   return (
     <div className={styles.userInput}>
-      <TextInput variant="unstyled" style={{ width: '35rem', }} placeholder="Ask about GJU..." />
+      <TextInput variant="unstyled" style={{ width: '40rem', }} placeholder="Ask about GJU..." />
 
       <SendButton />
     </div>
