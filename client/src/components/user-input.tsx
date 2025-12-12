@@ -13,8 +13,8 @@ export function UserInput() {
     const trimmedText = text.trim();
     if (trimmedText === '') return;
 
-    streamBotAnswer(trimmedText);
     setText('');
+    streamBotAnswer(trimmedText);
   }
 
   return (
@@ -23,6 +23,7 @@ export function UserInput() {
         <TextInput
           variant="unstyled"
           autoFocus
+          value={text}
           onChange={(e) => setText(e.target.value)}
           style={{ width: '100%', }}
           placeholder="Ask about GJU..."

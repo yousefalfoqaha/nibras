@@ -2,23 +2,30 @@ import { Image, Text } from '@mantine/core';
 import { UserInput } from '../components/user-input';
 import styles from './conversation.module.css';
 import { useChatHistory, type ChatMessage } from '../contexts/chat-history';
+import React from 'react';
 
 export function Conversation() {
   const { chatHistory } = useChatHistory();
+
+  React.useEffect(() => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }, [chatHistory]);
 
   return (
     <main className={styles.main}>
       <section className={styles.header}>
         <Image src="../../public/logo.png" w="auto" h={40} />
+
         <Text size="xs" c="dimmed" ta="center">
           Friday, Dec 12 • GJUBot
         </Text>
       </section>
-      <section className={styles.messages}>
+
+      <div className={styles.messages}>
         {chatHistory.map(m => (
           m.role === 'user' ? <UserMessageBubble message={m} /> : <BotMessageMarkdown message={m} />
         ))}
-      </section>
+      </div>
 
       <ChatInterface />
     </main>

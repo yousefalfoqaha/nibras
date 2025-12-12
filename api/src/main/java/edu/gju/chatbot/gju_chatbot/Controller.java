@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import edu.gju.chatbot.gju_chatbot.dto.TokenDto;
 import edu.gju.chatbot.gju_chatbot.service.EtlPipelineService;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -23,12 +24,12 @@ public class Controller {
   private final EtlPipelineService etlPipelineService;
 
   @GetMapping("/generate")
-  public Flux<ServerSentEvent<String>> generate(
+  public Flux<ServerSentEvent<TokenDto>> generate(
       @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
     return chatClient.prompt(message)
         .stream()
         .content()
-        .map(token -> ServerSentEvent.builder(token).build());
+        .map(token -> ServerSentEvent.builder(new TokenDto(token)).build());
   }
 
   @PostMapping("/ingest")

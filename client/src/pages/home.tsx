@@ -30,7 +30,7 @@ export function Home() {
 
   return (
     <main className={styles.main}>
-      <Stack gap="2.5rem" align="center" justify="center" mb="10rem">
+      <section className={styles.content}>
         <Stack gap="xs" align="center" justify="center">
           <Image h={70} w="auto" src="../../public/logo.png" />
 
@@ -50,10 +50,10 @@ export function Home() {
             {suggestedTopics.map(t => <TopicButton key={t.name} topic={t} />)}
           </Flex>
         </Stack>
-      </Stack>
+      </section>
 
 
-      <Text size="xs" c="dimmed" pos="absolute" bottom={0} my="sm">
+      <Text size="xs" c="dimmed" mt="auto" ta="center" my="sm">
         GJUBot can make mistakes, check with an academic advisor.
       </Text>
     </main>
