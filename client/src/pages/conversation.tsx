@@ -8,7 +8,11 @@ export function Conversation() {
   const { chatHistory } = useChatHistory();
 
   React.useEffect(() => {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    const atBottom = Math.abs(document.body.scrollHeight - document.body.clientHeight - document.body.scrollTop) <= 1;
+
+    if (!atBottom) {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
   }, [chatHistory]);
 
   return (

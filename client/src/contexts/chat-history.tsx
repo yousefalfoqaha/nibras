@@ -23,6 +23,8 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
   const [chatHistory, setChatHistory] = React.useState<ChatMessage[]>([]);
 
   const addUserMessage = (content: string) => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
     const id = crypto.randomUUID();
     setChatHistory((prev) => [...prev, { id, role: 'user', content, status: 'done' }]);
   }
