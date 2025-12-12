@@ -1,7 +1,8 @@
 import { createTheme, MantineProvider, type CSSVariablesResolver } from "@mantine/core";
 import { Home } from "./pages/home";
-import styles from './gjubot.module.css';
 import '@mantine/core/styles.css';
+import { ChatHistoryProvider, useChatHistory } from "./contexts/chat-history";
+import { Conversation } from "./pages/conversation";
 
 function App() {
   const theme = createTheme({
@@ -49,19 +50,17 @@ function App() {
 
   return (
     <MantineProvider theme={theme} cssVariablesResolver={resolver}>
-      <GJUBot />
+      <ChatHistoryProvider>
+        <GJUBot />
+      </ChatHistoryProvider>
     </MantineProvider>
   );
 }
 
 function GJUBot() {
-  return (
-    <main className={styles.main}>
-      <Home />
+  const { chatHistory } = useChatHistory();
 
-      <p className={styles.disclaimer}>GJUBot can make mistakes, check with an academic advisor.</p>
-    </main>
-  );
+  return chatHistory.length === 0 ? <Home /> : <Conversation />;
 }
 
 export default App;

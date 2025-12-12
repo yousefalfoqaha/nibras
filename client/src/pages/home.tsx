@@ -51,6 +51,11 @@ export function Home() {
           </Flex>
         </Stack>
       </Stack>
+
+
+      <Text size="xs" c="dimmed" pos="absolute" bottom={0} my="sm">
+        GJUBot can make mistakes, check with an academic advisor.
+      </Text>
     </main>
   );
 }
