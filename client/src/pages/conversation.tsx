@@ -54,6 +54,22 @@ type BotMessageMarkdownProps = {
 }
 
 function BotMessageMarkdown({ message }: BotMessageMarkdownProps) {
+  const { chatHistory } = useChatHistory();
+
+  const isPending = chatHistory.some(m => m.status === 'pending' && m.id === message.id);
+
+  if (isPending) {
+    return (
+      <svg width="15" height="15" viewBox="0 0 15 15" className={styles.botPending}>
+        <circle
+          cx="6"
+          cy="6"
+          r="6"
+          strokeWidth="2"
+        />
+      </svg>
+    );
+  }
 
   return (
     <div className={styles.botMessageMarkdown}>

@@ -10,6 +10,7 @@ export function UserInput() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     const trimmedText = text.trim();
     if (trimmedText === '') return;
 

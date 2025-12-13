@@ -55,6 +55,7 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
           m.id === id ? { ...m, status: "done" } : m
         )
       );
+
       eventSource.close();
     };
   }

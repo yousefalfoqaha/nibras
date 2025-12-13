@@ -22,8 +22,8 @@ public class ChatClientConfig {
             QuestionAnswerAdvisor.builder(vectorStore)
                 .searchRequest(
                     SearchRequest.builder()
-                        .similarityThreshold(0.8d)
-                        .topK(6)
+                        .similarityThreshold(0.65)
+                        .topK(5)
                         .build())
                 .build())
         .build();
