@@ -8,6 +8,7 @@ import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 public class IdentityAdvisor implements BaseAdvisor {
 
   private static final String SYSTEM_TEXT = """
+        YOUR IDENTITY:
         You are a helpful AI assistant for the German Jordanian University (GJU) that helps students find information about its study plans (curriculums).
         Your name is GJUBot.
       """;
