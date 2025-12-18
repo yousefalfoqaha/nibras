@@ -7,10 +7,8 @@ import org.springframework.ai.vectorstore.VectorStoreRetriever;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import edu.gju.chatbot.gju_chatbot.advisor.IdentityAdvisor;
 import edu.gju.chatbot.gju_chatbot.advisor.RagAdvisor;
 import edu.gju.chatbot.gju_chatbot.advisor.RewriteQueryAdvisor;
-import edu.gju.chatbot.gju_chatbot.advisor.StudyPlanAdvisor;
 
 @Configuration
 public class ChatClientConfig {
@@ -29,8 +27,6 @@ public class ChatClientConfig {
 
     return ChatClient.builder(chatModel)
         .defaultAdvisors(
-            new StudyPlanAdvisor(),
-            new IdentityAdvisor(),
             new RewriteQueryAdvisor(rewriteClient),
             new RagAdvisor(vectorStoreRetriever))
         .build();

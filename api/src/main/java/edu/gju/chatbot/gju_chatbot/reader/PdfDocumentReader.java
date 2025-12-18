@@ -8,13 +8,14 @@ import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
+@Component
 public class PdfDocumentReader implements Function<Resource, List<Document>> {
 
   @Override
   public List<Document> apply(Resource resource) {
+
     PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(resource,
         PdfDocumentReaderConfig.builder()
             .withPageTopMargin(0)
