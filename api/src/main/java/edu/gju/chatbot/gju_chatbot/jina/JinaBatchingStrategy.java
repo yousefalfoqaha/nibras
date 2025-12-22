@@ -13,7 +13,9 @@ import org.springframework.ai.tokenizer.TokenCountEstimator;
 public class JinaBatchingStrategy implements BatchingStrategy {
 
   private static final int JINA_MAX_INPUT_TOKEN_COUNT = 8192;
+
   private static final double TOKEN_COUNT_RESERVE_PERCENTAGE = 0.10;
+
   private static final String FILE_SUMMARY_KEY = "file_summary";
 
   private final TokenCountEstimator tokenCountEstimator = new JTokkitTokenCountEstimator();
@@ -23,7 +25,6 @@ public class JinaBatchingStrategy implements BatchingStrategy {
 
   @Override
   public List<List<Document>> batch(List<Document> documents) {
-
     if (documents == null || documents.isEmpty()) {
       return List.of();
     }
