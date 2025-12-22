@@ -37,5 +37,6 @@ public class EtlPipelineService {
     }
 
     List<Document> documents = pdfDocumentReader.apply(resource);
+
   }
 }
