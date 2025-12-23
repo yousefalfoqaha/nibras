@@ -19,6 +19,9 @@ spring:
       api-key: ${OPENAI_API_KEY}
       chat:
         model: gpt-5-mini
+    jina:
+      api-key: ${JINA_API_KEY}
+      embeddingModel: jina-embeddings-v3
     vectorstore:
       pgvector:
         remove-existing-vector-store-table: true

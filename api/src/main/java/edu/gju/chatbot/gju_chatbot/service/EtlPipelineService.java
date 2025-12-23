@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Service
 public class EtlPipelineService {
+
   private final PdfDocumentReader pdfDocumentReader;
+
+  private final VectorStore vectorStore;
 
   public void processFile(MultipartFile file) {
     String fileName = file.getOriginalFilename();
@@ -38,5 +42,8 @@ public class EtlPipelineService {
 
     List<Document> documents = pdfDocumentReader.apply(resource);
 
+    List<Document> chunks = new TokenTextSplitter().split(documents);
+
+    vectorStore.add(chunks);
   }
 }

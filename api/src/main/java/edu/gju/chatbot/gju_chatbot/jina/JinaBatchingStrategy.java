@@ -12,11 +12,19 @@ import org.springframework.ai.tokenizer.TokenCountEstimator;
 
 public class JinaBatchingStrategy implements BatchingStrategy {
 
+  protected enum ChunkType {
+    FILE_SUMMARY,
+    TARGET,
+    OVERLAP
+  }
+
   private static final int JINA_MAX_INPUT_TOKEN_COUNT = 8192;
 
   private static final double TOKEN_COUNT_RESERVE_PERCENTAGE = 0.10;
 
   private static final String FILE_SUMMARY_KEY = "file_summary";
+
+  private static final String CHUNK_TYPE_KEY = "chunk_type";
 
   private final TokenCountEstimator tokenCountEstimator = new JTokkitTokenCountEstimator();
 
@@ -25,85 +33,59 @@ public class JinaBatchingStrategy implements BatchingStrategy {
 
   @Override
   public List<List<Document>> batch(List<Document> documents) {
-    if (documents == null || documents.isEmpty()) {
+    if (documents.isEmpty())
       return List.of();
-    }
 
-    int fileSummaryTokenCount = 0;
-    Object summary = documents.get(0).getMetadata().get(FILE_SUMMARY_KEY);
+    String fileSummary = (String) documents.get(0).getMetadata().get(FILE_SUMMARY_KEY);
+    int summaryTokens = (fileSummary != null) ? tokenCountEstimator.estimate(fileSummary) : 0;
 
-    if (!(summary instanceof String s) || s.isBlank()) {
-    } else {
-      fileSummaryTokenCount = tokenCountEstimator.estimate(s);
-    }
-
-    if (fileSummaryTokenCount > safeMaxInputTokenCount) {
-      throw new IllegalArgumentException(
-          "file_summary exceeds maximum allowed token count");
-    }
-
-    Map<Document, Integer> documentTokens = new LinkedHashMap<>();
-
-    for (Document document : documents) {
-      int tokenCount = tokenCountEstimator
-          .estimate(document.getFormattedContent());
-
-      if (tokenCount > safeMaxInputTokenCount) {
-        throw new IllegalArgumentException(
-            "Single document exceeds maximum allowed token count");
-      }
-
-      documentTokens.put(document, tokenCount);
+    if (summaryTokens > safeMaxInputTokenCount) {
+      throw new IllegalArgumentException("File summary exceeds total allowed token limit.");
     }
 
     List<List<Document>> batches = new ArrayList<>();
     List<Document> currentBatch = new ArrayList<>();
-
-    int currentSize = fileSummaryTokenCount;
+    int currentBatchTokens = summaryTokens;
 
     for (int i = 0; i < documents.size(); i++) {
       Document doc = documents.get(i);
-      int docTokens = documentTokens.get(doc);
+      int docTokens = tokenCountEstimator.estimate(doc.getText());
 
-      if (currentSize + docTokens <= safeMaxInputTokenCount) {
-        currentBatch.add(doc);
-        currentSize += docTokens;
-        continue;
+      if (summaryTokens + docTokens > safeMaxInputTokenCount) {
+        throw new IllegalArgumentException(
+            "Document at index " + i + " is too large to fit in a batch even when empty.");
       }
 
-      if (!currentBatch.isEmpty()) {
-        batches.add(currentBatch);
+      if (currentBatchTokens + docTokens > safeMaxInputTokenCount) {
+        batches.add(new ArrayList<>(currentBatch));
+
+        currentBatch.clear();
+        currentBatchTokens = summaryTokens;
+
+        if (i > 0) {
+          Document overlap = documents.get(i - 1);
+          int overlapTokens = tokenCountEstimator.estimate(overlap.getText());
+
+          if (currentBatchTokens + overlapTokens + docTokens <= safeMaxInputTokenCount) {
+            currentBatch.add(copyAndLabel(overlap, ChunkType.OVERLAP));
+            currentBatchTokens += overlapTokens;
+          }
+        }
       }
 
-      currentBatch = new ArrayList<>();
-      currentSize = fileSummaryTokenCount;
-
-      if (i <= 0) {
-        currentBatch.add(doc);
-        currentSize += docTokens;
-        continue;
-      }
-
-      Document overlap = documents.get(i - 1);
-      int overlapTokens = documentTokens.get(overlap);
-
-      if (fileSummaryTokenCount + overlapTokens > safeMaxInputTokenCount) {
-        currentBatch.add(doc);
-        currentSize += docTokens;
-        continue;
-      }
-
-      currentBatch.add(overlap);
-      currentSize += overlapTokens;
-
-      currentBatch.add(doc);
-      currentSize += docTokens;
+      currentBatch.add(copyAndLabel(doc, ChunkType.TARGET));
+      currentBatchTokens += docTokens;
     }
 
-    if (!currentBatch.isEmpty()) {
+    if (!currentBatch.isEmpty())
       batches.add(currentBatch);
-    }
-
     return batches;
+  }
+
+  private Document copyAndLabel(Document doc, ChunkType type) {
+    Map<String, Object> metadata = new LinkedHashMap<>(doc.getMetadata());
+    metadata.put(CHUNK_TYPE_KEY, type.name());
+
+    return new Document(doc.getId(), doc.getText(), metadata);
   }
 }
