@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import edu.gju.chatbot.gju_chatbot.exception.FileProcessingException;
 import edu.gju.chatbot.gju_chatbot.exception.UnsupportedFileTypeException;
 import edu.gju.chatbot.gju_chatbot.reader.PdfDocumentReader;
+import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -21,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 public class EtlPipelineService {
 
   private final PdfDocumentReader pdfDocumentReader;
+
+  private final FileSummaryEnricher fileSummaryEnricher;
 
   private final VectorStore vectorStore;
 
@@ -44,6 +47,8 @@ public class EtlPipelineService {
 
     List<Document> chunks = new TokenTextSplitter().split(documents);
 
-    vectorStore.add(chunks);
+    List<Document> enrichedChunks = fileSummaryEnricher.transform(chunks);
+
+    vectorStore.add(enrichedChunks);
   }
 }

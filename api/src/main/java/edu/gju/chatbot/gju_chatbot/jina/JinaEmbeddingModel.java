@@ -3,63 +3,150 @@ package edu.gju.chatbot.gju_chatbot.jina;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.ai.chat.metadata.DefaultUsage;
+import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.BatchingStrategy;
+import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingOptions;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.ai.embedding.EmbeddingResponseMetadata;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestClient;
 
 public class JinaEmbeddingModel implements EmbeddingModel {
 
   private final RestClient restClient;
 
-  public JinaEmbeddingModel(RestClient restClient) {
+  private final RetryTemplate retryTemplate;
+
+  private final MetadataMode metadataMode;
+
+  private final JinaEmbeddingOptions defaultOptions;
+
+  public JinaEmbeddingModel(RestClient restClient, MetadataMode metadataMode, JinaEmbeddingOptions options,
+      RetryTemplate retryTemplate) {
+    Assert.notNull(metadataMode, "metadataMode must not be null");
+    Assert.notNull(options, "options must not be null");
+    Assert.notNull(retryTemplate, "retryTemplate must not be null");
+
     this.restClient = restClient;
+    this.metadataMode = metadataMode;
+    this.defaultOptions = options;
+    this.retryTemplate = retryTemplate;
   }
 
   public EmbeddingResponse call(EmbeddingRequest request) {
-    return new EmbeddingResponse(List.of());
+    JinaApiEmbeddingRequest apiRequest = buildApiRequest(request);
+    JinaApiEmbeddingResponse apiResponse = retryTemplate.execute(context -> callApi(apiRequest));
+
+    if (apiResponse == null || CollectionUtils.isEmpty(apiResponse.data())) {
+      return new EmbeddingResponse(List.of());
+    }
+
+    List<Embedding> embeddings = apiResponse.data()
+        .stream()
+        .sorted(java.util.Comparator.comparingInt(JinaEmbedding::index))
+        .map(entry -> new Embedding(entry.embedding(), entry.index()))
+        .toList();
+
+    JinaApiUsage usage = apiResponse.usage();
+    Usage embeddingResponseUsage = new DefaultUsage(
+        usage.promptTokens(),
+        usage.totalTokens(),
+        usage.totalTokens());
+    var metadata = new EmbeddingResponseMetadata(apiResponse.model(), embeddingResponseUsage);
+
+    return new EmbeddingResponse(embeddings, metadata);
   }
 
   public float[] embed(Document document) {
-    return [];
+    Assert.notNull(document, "Document must not be null");
+    return this.embed(document.getFormattedContent(this.metadataMode));
   }
 
   public List<float[]> embed(List<Document> documents, EmbeddingOptions options, BatchingStrategy batchingStrategy) {
     Assert.notNull(documents, "Documents must not be null");
 
-    List<float[]> embeddings = new ArrayList<>(documents.size());
+    List<float[]> finalTargetEmbeddings = new ArrayList<>();
     List<List<Document>> batches = batchingStrategy.batch(documents);
 
     for (List<Document> batch : batches) {
       List<String> texts = batch.stream().map(Document::getText).toList();
-      EmbeddingRequest request = new EmbeddingRequest(texts, options);
+      EmbeddingRequest request = new EmbeddingRequest(texts, this.defaultOptions);
 
       EmbeddingResponse response = this.call(request);
 
       for (int i = 0; i < batch.size(); i++) {
-        embeddings.add(response.getResults().get(i).getOutput());
+        Document doc = batch.get(i);
+        String type = (String) doc.getMetadata().get("chunk_type");
+
+        if ("TARGET".equals(type)) {
+          finalTargetEmbeddings.add(response.getResults().get(i).getOutput());
+        }
       }
     }
 
-    Assert.isTrue(embeddings.size() == documents.size(),
-        "Embeddings must have the same number as that of the documents");
+    Assert.isTrue(finalTargetEmbeddings.size() == documents.size(),
+        "Expected " + documents.size() + " target embeddings, but got " + finalTargetEmbeddings.size());
 
-    return embeddings;
+    return finalTargetEmbeddings;
   }
 
-  protected record JinaApiRequest(
+  private JinaApiEmbeddingRequest buildApiRequest(EmbeddingRequest embeddingRequest) {
+    JinaEmbeddingOptions options = (JinaEmbeddingOptions) embeddingRequest.getOptions();
+
+    return new JinaApiEmbeddingRequest(
+        options.getModel(),
+        options.getTask().getValue(),
+        options.getDimensions(),
+        options.isLateChunking(),
+        embeddingRequest.getInstructions());
+  }
+
+  private JinaApiEmbeddingResponse callApi(JinaApiEmbeddingRequest embeddingRequest) {
+    Assert.notNull(embeddingRequest, "The request body can not be null.");
+
+    // Input text to embed, encoded as a string or array of tokens. To embed
+    // multiple
+    // inputs in a single
+    // request, pass an array of strings or array of token arrays.
+    Assert.notNull(embeddingRequest.input(), "The input can not be null.");
+    Assert.isTrue(embeddingRequest.input() instanceof List,
+        "The input must be either a String, or a List of Strings or List of List of integers.");
+
+    // The input must not exceed the max input tokens for the model (8192 tokens).
+    // Cannot be an empty string, and any array must be 2048 dimensions or less.
+    if (embeddingRequest.input() instanceof List<?> list) {
+      Assert.isTrue(!CollectionUtils.isEmpty(list), "The input list can not be empty.");
+      Assert.isTrue(list.size() <= 2048, "The list must be 2048 dimensions or less");
+      Assert.isTrue(
+          list.get(0) instanceof String || list.get(0) instanceof Integer || list.get(0) instanceof List,
+          "The input must be either a String, or a List of Strings or list of list of integers.");
+    }
+
+    return this.restClient.post()
+        .body(embeddingRequest)
+        .retrieve()
+        .toEntity(JinaApiEmbeddingResponse.class)
+        .getBody();
+
+  }
+
+  protected record JinaApiEmbeddingRequest(
       String model,
       String task,
+      int dimensions,
       boolean lateChunking,
-      String[] input) {
+      List<String> input) {
   }
 
-  protected record JinaApiResponse(
+  protected record JinaApiEmbeddingResponse(
       String model,
       String list,
       JinaApiUsage usage,

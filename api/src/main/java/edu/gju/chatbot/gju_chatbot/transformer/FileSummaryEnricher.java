@@ -7,13 +7,12 @@ import java.util.stream.Collectors;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
-import org.springframework.stereotype.Service;
+import org.springframework.ai.document.DocumentTransformer;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-@Service
-public class FileSummaryEnricher {
+public class FileSummaryEnricher implements DocumentTransformer {
 
   private static final PromptTemplate PROMPT_TEMPLATE = new PromptTemplate(
       """
@@ -47,7 +46,8 @@ public class FileSummaryEnricher {
 
   private final ChatModel chatModel;
 
-  public List<Document> enrich(List<Document> documents) {
+  @Override
+  public List<Document> apply(List<Document> documents) {
     String fileContent = documents.stream()
         .map(Document::getText)
         .collect(Collectors.joining("\n"));
@@ -63,6 +63,5 @@ public class FileSummaryEnricher {
     }
 
     return documents;
-
   }
 }

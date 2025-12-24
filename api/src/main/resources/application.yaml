@@ -20,8 +20,15 @@ spring:
       chat:
         model: gpt-5-mini
     jina:
+      base-url: https://api.jina.ai
       api-key: ${JINA_API_KEY}
-      embeddingModel: jina-embeddings-v3
+      embedding:
+        embeddings-path: /v1/embeddings
+        metadata-mode: EMBED
+        options:
+          model: jina-embeddings-v3
+          dimensions: 1024
+
     vectorstore:
       pgvector:
         remove-existing-vector-store-table: true

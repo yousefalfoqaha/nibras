@@ -18,7 +18,7 @@ public class JinaBatchingStrategy implements BatchingStrategy {
     OVERLAP
   }
 
-  private static final int JINA_MAX_INPUT_TOKEN_COUNT = 8192;
+  private static final int DEFAULT_MAX_INPUT_TOKENS = 8191;
 
   private static final double TOKEN_COUNT_RESERVE_PERCENTAGE = 0.10;
 
@@ -28,8 +28,16 @@ public class JinaBatchingStrategy implements BatchingStrategy {
 
   private final TokenCountEstimator tokenCountEstimator = new JTokkitTokenCountEstimator();
 
-  private final int safeMaxInputTokenCount = (int) Math
-      .floor(JINA_MAX_INPUT_TOKEN_COUNT * (1 - TOKEN_COUNT_RESERVE_PERCENTAGE));
+  private int safeMaxInputTokenCount;
+
+  public JinaBatchingStrategy() {
+    this(DEFAULT_MAX_INPUT_TOKENS);
+  }
+
+  public JinaBatchingStrategy(int maxInputTokenCount) {
+    this.safeMaxInputTokenCount = (int) Math
+        .floor(maxInputTokenCount * (1 - TOKEN_COUNT_RESERVE_PERCENTAGE));
+  }
 
   @Override
   public List<List<Document>> batch(List<Document> documents) {
