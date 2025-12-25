@@ -75,11 +75,17 @@ public class JinaBatchingStrategy implements BatchingStrategy {
           currentBatchTokens += summaryTokens;
         }
 
-        Document overlap = documents.get(i - 1);
-        overlapTokens = tokenCountEstimator.estimate(overlap.getText());
+        if (summaryTokens + overlapTokens + docTokens > safeMaxInputTokenCount) {
+          throw new IllegalArgumentException("Document is too big for any batch.");
+        }
 
-        currentBatch.add(copyAndLabel(overlap, ChunkType.OVERLAP));
-        currentBatchTokens += overlapTokens;
+        if (i > 0) {
+          Document overlap = documents.get(i - 1);
+          overlapTokens = tokenCountEstimator.estimate(overlap.getText());
+
+          currentBatch.add(copyAndLabel(overlap, ChunkType.OVERLAP));
+          currentBatchTokens += overlapTokens;
+        }
       }
 
       if (summaryTokens + overlapTokens + docTokens > safeMaxInputTokenCount) {
