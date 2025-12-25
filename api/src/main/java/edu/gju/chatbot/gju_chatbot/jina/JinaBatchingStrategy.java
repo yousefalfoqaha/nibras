@@ -46,6 +46,7 @@ public class JinaBatchingStrategy implements BatchingStrategy {
 
     String fileSummary = (String) documents.get(0).getMetadata().get(FILE_SUMMARY_KEY);
     int summaryTokens = (fileSummary != null) ? tokenCountEstimator.estimate(fileSummary) : 0;
+    int overlapTokens = 0;
 
     if (summaryTokens > safeMaxInputTokenCount) {
       throw new IllegalArgumentException("File summary exceeds total allowed token limit.");
@@ -53,32 +54,39 @@ public class JinaBatchingStrategy implements BatchingStrategy {
 
     List<List<Document>> batches = new ArrayList<>();
     List<Document> currentBatch = new ArrayList<>();
-    int currentBatchTokens = summaryTokens;
+    int currentBatchTokens = 0;
+
+    if (fileSummary != null) {
+      currentBatch.add(copyAndLabel(new Document(fileSummary), ChunkType.FILE_SUMMARY));
+      currentBatchTokens += summaryTokens;
+    }
 
     for (int i = 0; i < documents.size(); i++) {
       Document doc = documents.get(i);
       int docTokens = tokenCountEstimator.estimate(doc.getText());
 
-      if (summaryTokens + docTokens > safeMaxInputTokenCount) {
-        throw new IllegalArgumentException(
-            "Document at index " + i + " is too large to fit in a batch even when empty.");
-      }
-
       if (currentBatchTokens + docTokens > safeMaxInputTokenCount) {
         batches.add(new ArrayList<>(currentBatch));
-
         currentBatch.clear();
-        currentBatchTokens = summaryTokens;
+        currentBatchTokens = 0;
 
-        if (i > 0) {
-          Document overlap = documents.get(i - 1);
-          int overlapTokens = tokenCountEstimator.estimate(overlap.getText());
-
-          if (currentBatchTokens + overlapTokens + docTokens <= safeMaxInputTokenCount) {
-            currentBatch.add(copyAndLabel(overlap, ChunkType.OVERLAP));
-            currentBatchTokens += overlapTokens;
-          }
+        if (fileSummary != null) {
+          currentBatch.add(copyAndLabel(new Document(fileSummary), ChunkType.FILE_SUMMARY));
+          currentBatchTokens += summaryTokens;
         }
+
+        Document overlap = documents.get(i - 1);
+        overlapTokens = tokenCountEstimator.estimate(overlap.getText());
+
+        currentBatch.add(copyAndLabel(overlap, ChunkType.OVERLAP));
+        currentBatchTokens += overlapTokens;
+      }
+
+      if (summaryTokens + overlapTokens + docTokens > safeMaxInputTokenCount) {
+        throw new IllegalArgumentException(String.format(
+            "Context Squeeze at index %d: Summary (%d) + Overlap (%d) + Doc (%d) = %d tokens, which exceeds the limit of %d",
+            i, summaryTokens, overlapTokens, docTokens, (summaryTokens + overlapTokens + docTokens),
+            safeMaxInputTokenCount));
       }
 
       currentBatch.add(copyAndLabel(doc, ChunkType.TARGET));
@@ -87,6 +95,7 @@ public class JinaBatchingStrategy implements BatchingStrategy {
 
     if (!currentBatch.isEmpty())
       batches.add(currentBatch);
+
     return batches;
   }
 
