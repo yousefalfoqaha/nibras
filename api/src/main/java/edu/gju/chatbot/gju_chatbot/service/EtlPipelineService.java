@@ -23,6 +23,8 @@ public class EtlPipelineService {
 
   private final PdfDocumentReader pdfDocumentReader;
 
+  private final TokenTextSplitter tokenTextSplitter;
+
   private final FileSummaryEnricher fileSummaryEnricher;
 
   private final VectorStore vectorStore;
@@ -45,7 +47,7 @@ public class EtlPipelineService {
 
     List<Document> documents = pdfDocumentReader.apply(resource);
 
-    List<Document> chunks = new TokenTextSplitter().split(documents);
+    List<Document> chunks = tokenTextSplitter.split(documents);
 
     List<Document> enrichedChunks = fileSummaryEnricher.transform(chunks);
 
