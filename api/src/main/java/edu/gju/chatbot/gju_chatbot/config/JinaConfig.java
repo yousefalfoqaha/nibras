@@ -24,7 +24,6 @@ public class JinaConfig {
   public JinaEmbeddingModel jinaEmbeddingModel(
       JinaConnectionProperties connectionProperties,
       JinaEmbeddingProperties embeddingProperties,
-      JinaBatchingStrategy batchingStrategy,
       RestClient.Builder restClientBuilder, RetryTemplate retryTemplate) {
     RestClient restClient = restClientBuilder
         .baseUrl(connectionProperties.getBaseUrl() + embeddingProperties.getEmbeddingsPath())

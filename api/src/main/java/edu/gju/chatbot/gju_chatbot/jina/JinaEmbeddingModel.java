@@ -58,7 +58,7 @@ public class JinaEmbeddingModel implements EmbeddingModel {
     JinaApiUsage usage = apiResponse.usage();
     Usage embeddingResponseUsage = new DefaultUsage(
         usage.promptTokens(),
-        usage.totalTokens(),
+        0,
         usage.totalTokens());
     var metadata = new EmbeddingResponseMetadata(apiResponse.model(), embeddingResponseUsage);
 

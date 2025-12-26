@@ -1,7 +1,6 @@
 package edu.gju.chatbot.gju_chatbot.config;
 
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +16,7 @@ public class TransformerConfig {
   }
 
   @Bean
-  public TextSplitter tokenTextSplitter() {
+  public TokenTextSplitter tokenTextSplitter() {
     return new TokenTextSplitter(512, 218, 10, 5000, true);
   }
 }

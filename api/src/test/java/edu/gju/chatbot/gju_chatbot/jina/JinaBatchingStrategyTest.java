@@ -13,7 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class JinaBatchingStrategyTest {
 
   private JinaBatchingStrategy strategy;
+
   private static final String FILE_SUMMARY_KEY = "file_summary";
+
   private static final String CHUNK_TYPE_KEY = "chunk_type";
 
   @BeforeEach
