@@ -31,15 +31,15 @@ public class JinaEmbeddingModel implements EmbeddingModel {
 
   private final JinaEmbeddingOptions defaultOptions;
 
-  public JinaEmbeddingModel(RestClient restClient, MetadataMode metadataMode, JinaEmbeddingOptions options,
+  public JinaEmbeddingModel(RestClient restClient, MetadataMode metadataMode, JinaEmbeddingOptions defaultOptions,
       RetryTemplate retryTemplate) {
     Assert.notNull(metadataMode, "metadataMode must not be null");
-    Assert.notNull(options, "options must not be null");
+    Assert.notNull(defaultOptions, "options must not be null");
     Assert.notNull(retryTemplate, "retryTemplate must not be null");
 
     this.restClient = restClient;
     this.metadataMode = metadataMode;
-    this.defaultOptions = options;
+    this.defaultOptions = defaultOptions;
     this.retryTemplate = retryTemplate;
   }
 
