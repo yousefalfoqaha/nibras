@@ -20,6 +20,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      JINA_API_KEY: ${JINA_API_KEY}
     command: sh -c "mvn -q -DskipTests dependency:resolve && mvn spring-boot:run"
     working_dir: /app
     volumes:

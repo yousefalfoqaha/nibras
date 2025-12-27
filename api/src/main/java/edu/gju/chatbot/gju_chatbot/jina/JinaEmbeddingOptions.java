@@ -41,4 +41,25 @@ public class JinaEmbeddingOptions implements EmbeddingOptions {
       return value;
     }
   }
+
+  public static JinaEmbeddingOptions mergeWithDefaults(EmbeddingOptions given, JinaEmbeddingOptions defaults) {
+    if (given == null)
+      return defaults;
+
+    if (given instanceof JinaEmbeddingOptions options) {
+      return JinaEmbeddingOptions.builder()
+          .model(options.getModel() != null ? options.getModel() : defaults.getModel())
+          .dimensions(options.getDimensions() != null ? options.getDimensions() : defaults.getDimensions())
+          .task(options.getTask() != null ? options.getTask() : defaults.getTask())
+          .lateChunking(options.isLateChunking() || defaults.isLateChunking())
+          .build();
+    } else {
+      return JinaEmbeddingOptions.builder()
+          .model(given.getModel() != null ? given.getModel() : defaults.getModel())
+          .dimensions(given.getDimensions() != null ? given.getDimensions() : defaults.getDimensions())
+          .task(defaults.getTask())
+          .lateChunking(defaults.isLateChunking())
+          .build();
+    }
+  }
 }

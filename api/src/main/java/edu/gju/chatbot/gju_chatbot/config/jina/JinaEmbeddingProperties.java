@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.jina;
+package edu.gju.chatbot.gju_chatbot.config.jina;
 
 import org.springframework.ai.document.MetadataMode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import edu.gju.chatbot.gju_chatbot.jina.JinaEmbeddingOptions;
 import lombok.Getter;
 import lombok.Setter;
 

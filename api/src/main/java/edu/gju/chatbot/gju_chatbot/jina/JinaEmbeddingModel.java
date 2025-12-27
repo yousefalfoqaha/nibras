@@ -19,6 +19,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class JinaEmbeddingModel implements EmbeddingModel {
 
   private final RestClient restClient;
@@ -65,11 +67,23 @@ public class JinaEmbeddingModel implements EmbeddingModel {
     return new EmbeddingResponse(embeddings, metadata);
   }
 
+  @Override
   public float[] embed(Document document) {
     Assert.notNull(document, "Document must not be null");
     return this.embed(document.getFormattedContent(this.metadataMode));
   }
 
+  @Override
+  public List<float[]> embed(List<String> texts) {
+    Assert.notNull(texts, "Texts must not be null");
+    return this.call(new EmbeddingRequest(texts, this.defaultOptions))
+        .getResults()
+        .stream()
+        .map(Embedding::getOutput)
+        .toList();
+  }
+
+  @Override
   public List<float[]> embed(List<Document> documents, EmbeddingOptions options, BatchingStrategy batchingStrategy) {
     Assert.notNull(documents, "Documents must not be null");
 
@@ -78,7 +92,7 @@ public class JinaEmbeddingModel implements EmbeddingModel {
 
     for (List<Document> batch : batches) {
       List<String> texts = batch.stream().map(Document::getText).toList();
-      EmbeddingRequest request = new EmbeddingRequest(texts, this.defaultOptions);
+      EmbeddingRequest request = new EmbeddingRequest(texts, options);
 
       EmbeddingResponse response = this.call(request);
 
@@ -99,13 +113,14 @@ public class JinaEmbeddingModel implements EmbeddingModel {
   }
 
   private JinaApiEmbeddingRequest buildApiRequest(EmbeddingRequest embeddingRequest) {
-    JinaEmbeddingOptions options = (JinaEmbeddingOptions) embeddingRequest.getOptions();
+    EmbeddingOptions options = embeddingRequest.getOptions();
+    JinaEmbeddingOptions merged = JinaEmbeddingOptions.mergeWithDefaults(options, this.defaultOptions);
 
     return new JinaApiEmbeddingRequest(
-        options.getModel(),
-        options.getTask().getValue(),
-        options.getDimensions(),
-        options.isLateChunking(),
+        merged.getModel(),
+        merged.getTask().getValue(),
+        merged.getDimensions(),
+        merged.isLateChunking(),
         embeddingRequest.getInstructions());
   }
 
@@ -139,11 +154,11 @@ public class JinaEmbeddingModel implements EmbeddingModel {
   }
 
   protected record JinaApiEmbeddingRequest(
-      String model,
-      String task,
-      int dimensions,
-      boolean lateChunking,
-      List<String> input) {
+      @JsonProperty("model") String model,
+      @JsonProperty("task") String task,
+      @JsonProperty("dimensions") int dimensions,
+      @JsonProperty("late_chunking") boolean lateChunking,
+      @JsonProperty("input") List<String> input) {
   }
 
   protected record JinaApiEmbeddingResponse(

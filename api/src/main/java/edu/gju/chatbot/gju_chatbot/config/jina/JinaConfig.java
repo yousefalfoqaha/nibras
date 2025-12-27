@@ -1,9 +1,8 @@
-package edu.gju.chatbot.gju_chatbot.config;
+package edu.gju.chatbot.gju_chatbot.config.jina;
 
 import org.springframework.ai.embedding.BatchingStrategy;
-import org.springframework.ai.retry.autoconfigure.SpringAiRetryAutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration;
+import org.springframework.ai.model.SpringAIModelProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,13 +10,11 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
 import edu.gju.chatbot.gju_chatbot.jina.JinaBatchingStrategy;
-import edu.gju.chatbot.gju_chatbot.jina.JinaConnectionProperties;
 import edu.gju.chatbot.gju_chatbot.jina.JinaEmbeddingModel;
-import edu.gju.chatbot.gju_chatbot.jina.JinaEmbeddingProperties;
 
-@AutoConfiguration(after = { RestClientAutoConfiguration.class, SpringAiRetryAutoConfiguration.class })
-@EnableConfigurationProperties({ JinaConnectionProperties.class, JinaEmbeddingProperties.class })
 @Configuration
+@ConditionalOnProperty(name = SpringAIModelProperties.EMBEDDING_MODEL, havingValue = "jina", matchIfMissing = true)
+@EnableConfigurationProperties({ JinaConnectionProperties.class, JinaEmbeddingProperties.class })
 public class JinaConfig {
 
   @Bean

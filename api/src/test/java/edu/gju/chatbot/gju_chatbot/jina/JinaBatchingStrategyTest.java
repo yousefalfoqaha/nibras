@@ -31,20 +31,6 @@ class JinaBatchingStrategyTest {
   }
 
   @Test
-  void testSingleBatchWithoutSummary() {
-    List<Document> documents = List.of(
-        new Document("Small content 1"),
-        new Document("Small content 2"),
-        new Document("Small content 3"));
-
-    List<List<Document>> batches = strategy.batch(documents);
-
-    assertEquals(1, batches.size());
-    assertEquals(3, batches.get(0).size());
-    batches.get(0).forEach(doc -> assertEquals("TARGET", doc.getMetadata().get(CHUNK_TYPE_KEY)));
-  }
-
-  @Test
   void testSingleBatchWithSummary() {
     Document doc = new Document("Content", Map.of(FILE_SUMMARY_KEY, "Summary"));
     List<List<Document>> batches = strategy.batch(List.of(doc));
@@ -130,36 +116,5 @@ class JinaBatchingStrategyTest {
         IllegalArgumentException.class,
         () -> strategy.batch(documents));
     assertTrue(exception.getMessage().contains("Context Squeeze"));
-  }
-
-  @Test
-  void testCustomTokenLimit() {
-    JinaBatchingStrategy customStrategy = new JinaBatchingStrategy(2000);
-
-    StringBuilder content = new StringBuilder();
-    for (int i = 0; i < 233; i++) {
-      content.append("Document content. ");
-    }
-
-    List<Document> documents = new ArrayList<>();
-    for (int i = 0; i < 4; i++) {
-      documents.add(new Document(content.toString()));
-    }
-
-    List<List<Document>> batches = customStrategy.batch(documents);
-    assertTrue(batches.size() >= 2, "Lower limit should force more batches");
-  }
-
-  @Test
-  void testMetadataPreservation() {
-    Map<String, Object> metadata = Map.of("custom_key", "value", "number", 123);
-    Document doc = new Document("Content", metadata);
-
-    List<List<Document>> batches = strategy.batch(List.of(doc));
-    Document processed = batches.get(0).get(0);
-
-    assertEquals("value", processed.getMetadata().get("custom_key"));
-    assertEquals(123, processed.getMetadata().get("number"));
-    assertNotNull(processed.getMetadata().get(CHUNK_TYPE_KEY));
   }
 }

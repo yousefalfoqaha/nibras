@@ -12,13 +12,17 @@ spring:
     multipart:
       max-file-size: -1
   ai:
+    model:
+      chat: openai
+      embedding: jina
     chat:
       client:
         enabled: false
     openai:
       api-key: ${OPENAI_API_KEY}
       chat:
-        model: gpt-5-mini
+        options:
+          model: gpt-5-mini
     jina:
       base-url: https://api.jina.ai
       api-key: ${JINA_API_KEY}

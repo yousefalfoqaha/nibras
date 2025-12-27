@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.jina;
+package edu.gju.chatbot.gju_chatbot.config.jina;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
