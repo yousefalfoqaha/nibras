@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
-import edu.gju.chatbot.gju_chatbot.jina.JinaBatchingStrategy;
+import edu.gju.chatbot.gju_chatbot.batchingstrategy.JinaBatchingStrategy;
 import edu.gju.chatbot.gju_chatbot.jina.JinaEmbeddingModel;
 
 @Configuration

@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.jina;
+package edu.gju.chatbot.gju_chatbot.batchingstrategy;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

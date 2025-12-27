@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
 
+import edu.gju.chatbot.gju_chatbot.batchingstrategy.JinaBatchingStrategy;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

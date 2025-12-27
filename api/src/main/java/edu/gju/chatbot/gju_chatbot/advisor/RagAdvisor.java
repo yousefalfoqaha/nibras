@@ -55,8 +55,8 @@ public class RagAdvisor implements BaseAdvisor {
     List<Document> documents = documentRetriever.similaritySearch(
         SearchRequest.builder()
             .query(query)
-            .similarityThreshold(0.65)
-            .topK(5)
+            .similarityThreshold(0.10)
+            .topK(2)
             .build());
 
     String context = documents.stream()
