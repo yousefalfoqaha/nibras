@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.ai.document.Document;
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -13,17 +12,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import edu.gju.chatbot.gju_chatbot.exception.FileProcessingException;
 import edu.gju.chatbot.gju_chatbot.exception.UnsupportedFileTypeException;
-import edu.gju.chatbot.gju_chatbot.reader.PdfDocumentReader;
+import edu.gju.chatbot.gju_chatbot.reader.MarkdownConverter;
 import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
+import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHeaderTextSplitter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
 public class EtlPipelineService {
 
-  private final PdfDocumentReader pdfDocumentReader;
+  private final MarkdownConverter markdownConverter;
 
-  private final TokenTextSplitter tokenTextSplitter;
+  private final MarkdownHeaderTextSplitter markdownHeaderTextSplitter;
 
   private final FileSummaryEnricher fileSummaryEnricher;
 
@@ -45,11 +45,11 @@ public class EtlPipelineService {
       throw new FileProcessingException("Something went wrong with processing the file.");
     }
 
-    List<Document> documents = pdfDocumentReader.apply(resource);
+    Document document = markdownConverter.convert(resource);
 
-    List<Document> chunks = tokenTextSplitter.split(documents);
+    List<Document> splitChunks = markdownHeaderTextSplitter.transform(List.of(document));
 
-    List<Document> enrichedChunks = fileSummaryEnricher.transform(chunks);
+    List<Document> enrichedChunks = fileSummaryEnricher.transform(splitChunks);
 
     vectorStore.add(enrichedChunks);
   }

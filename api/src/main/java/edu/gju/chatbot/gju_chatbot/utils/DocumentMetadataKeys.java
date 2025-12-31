@@ -8,6 +8,8 @@ public final class DocumentMetadataKeys {
 
   public static final String FILE_SIZE = "file_size";
 
+  public static final String FILE_SUMMARY = "file_summary";
+
   // prevent instantiation
   private DocumentMetadataKeys() {
   }
