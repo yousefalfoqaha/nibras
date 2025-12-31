@@ -19,6 +19,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JinaEmbeddingModel implements EmbeddingModel {
@@ -118,7 +119,7 @@ public class JinaEmbeddingModel implements EmbeddingModel {
 
     return new JinaApiEmbeddingRequest(
         merged.getModel(),
-        merged.getTask().getValue(),
+        merged.getTask() == JinaEmbeddingOptions.Task.NONE ? null : merged.getTask().getValue(),
         merged.getDimensions(),
         merged.isLateChunking(),
         embeddingRequest.getInstructions());
@@ -153,6 +154,7 @@ public class JinaEmbeddingModel implements EmbeddingModel {
 
   }
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   protected record JinaApiEmbeddingRequest(
       @JsonProperty("model") String model,
       @JsonProperty("task") String task,

@@ -25,7 +25,7 @@ public class JinaEmbeddingProperties {
 
   public static final int DEFAULT_EMBEDDING_DIMENSIONS = 1024;
 
-  public static final JinaEmbeddingOptions.Task DEFAULT_EMBEDDINGS_TASK = JinaEmbeddingOptions.Task.TEXT_MATCHING;
+  public static final JinaEmbeddingOptions.Task DEFAULT_EMBEDDINGS_TASK = JinaEmbeddingOptions.Task.RETRIEVAL_PASSAGE;
 
   public static final boolean DEFAULT_LATE_CHUNKING = true;
 

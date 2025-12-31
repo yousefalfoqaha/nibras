@@ -21,6 +21,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       JINA_API_KEY: ${JINA_API_KEY}
+      CHUNKER_BASE_URL: http://chunker:8000
     command: sh -c "mvn -q -DskipTests dependency:resolve && mvn spring-boot:run"
     working_dir: /app
     volumes:

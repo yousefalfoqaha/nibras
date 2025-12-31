@@ -31,10 +31,16 @@ spring:
         metadata-mode: EMBED
         options:
           model: jina-embeddings-v3
+          task: none
           dimensions: 1024
-          late-chunking: true
+          late-chunking: false
 
     vectorstore:
       pgvector:
         remove-existing-vector-store-table: true
         schema-validation: true
+
+services:
+  markdown-converter:
+    base-url: http://localhost:8000
+    converter-path: /convert
