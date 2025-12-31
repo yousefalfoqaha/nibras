@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import org.springframework.ai.document.Document;
 import org.springframework.core.io.Resource;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
@@ -17,8 +18,15 @@ public class MarkdownConverter implements Function<Resource, Document> {
 
   private final RestClient restClient;
 
-  public MarkdownConverter(RestClient restClient) {
+  private final RetryTemplate retryTemplate;
+
+  public MarkdownConverter(RestClient restClient, RetryTemplate retryTemplate) {
     this.restClient = restClient;
+    this.retryTemplate = retryTemplate;
+  }
+
+  public Document convert(Resource file) {
+    return this.apply(file);
   }
 
   @Override
@@ -26,10 +34,10 @@ public class MarkdownConverter implements Function<Resource, Document> {
     MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
     parts.add("file", file);
 
-    ConverterApiResponse apiResponse = restClient.post()
+    ConverterApiResponse apiResponse = retryTemplate.execute(context -> restClient.post()
         .body(parts)
         .retrieve()
-        .body(ConverterApiResponse.class);
+        .body(ConverterApiResponse.class));
 
     Document document = new Document(apiResponse.content);
 

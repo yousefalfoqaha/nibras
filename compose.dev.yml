@@ -21,13 +21,29 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       JINA_API_KEY: ${JINA_API_KEY}
-      CHUNKER_BASE_URL: http://chunker:8000
+      CONVERTER_BASE_URL: http://converter:8000
     command: sh -c "mvn -q -DskipTests dependency:resolve && mvn spring-boot:run"
     working_dir: /app
     volumes:
       - ./api:/app
     depends_on:
       - db
+
+  converter:
+    image: python:3.12-slim
+    container_name: gju-chatbot-converter
+    working_dir: /app
+    volumes:
+      - ./converter:/app
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "
+      apt-get update &&
+      apt-get install -y --no-install-recommends build-essential libxml2-dev libxslt1-dev libgl1 libglib2.0-0 &&
+      pip install --no-cache-dir -r requirements.txt &&
+      uvicorn main:app --host 0.0.0.0 --port 8000
+      "
 
   db:
     image: pgvector/pgvector:pg16-trixie

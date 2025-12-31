@@ -10,7 +10,7 @@ import lombok.Setter;
 @ConfigurationProperties(MarkdownConverterProperties.CONFIG_PREFIX)
 public class MarkdownConverterProperties {
 
-  public static final String CONFIG_PREFIX = "service.markdownConverter";
+  public static final String CONFIG_PREFIX = "service.markdown-converter";
 
   public static final String DEFAULT_BASE_URL = "http://localhost:8000";
 
