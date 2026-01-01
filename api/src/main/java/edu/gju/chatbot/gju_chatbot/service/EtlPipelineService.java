@@ -45,7 +45,9 @@ public class EtlPipelineService {
       throw new FileProcessingException("Something went wrong with processing the file.");
     }
 
-    Document document = markdownConverter.convert(resource);
+    Document ocrScan = markdownConverter.convert(resource);
+
+    Document document = 
 
     List<Document> splitChunks = markdownHeaderTextSplitter.transform(List.of(document));
 
