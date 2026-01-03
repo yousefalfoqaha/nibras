@@ -1,0 +1,6 @@
+services:
+  converter:
+    image: python:3.12-slim
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
