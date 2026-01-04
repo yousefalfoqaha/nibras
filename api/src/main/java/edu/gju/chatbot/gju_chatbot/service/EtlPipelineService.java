@@ -45,7 +45,7 @@ public class EtlPipelineService {
       throw new FileProcessingException("Something went wrong with processing the file.");
     }
 
-    Document ocrScan = markdownConverter.convert(resource);
+    List<Document> ocrScanPages = markdownConverter.convert(resource);
 
     Document document = 
 

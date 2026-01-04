@@ -8,17 +8,5 @@
   "features": {
     "ghcr.io/duduribeiro/devcontainer-features/neovim:1": {}
   },
-  "remoteUser": "vscode",
-  "mounts": [
-    {
-      "source": "$HOME/.config/nvim",
-      "target": "/home/vscode/.config/nvim",
-      "type": "bind"
-    },
-    {
-      "source": "$HOME/.local/share/nvim",
-      "target": "/home/vscode/.local/share/nvim",
-      "type": "bind"
-    }
-  ]
+  "remoteUser": "vscode"
 }

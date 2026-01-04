@@ -30,20 +30,22 @@ services:
       - db
 
   converter:
-    image: python:3.12-slim
+    build:
+      context: ./converter
+      dockerfile: Dockerfile
     container_name: gju-chatbot-converter
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     working_dir: /app
     volumes:
       - ./converter:/app
     ports:
       - "8000:8000"
-    command: >
-      sh -c "
-      apt-get update &&
-      apt-get install -y --no-install-recommends build-essential libxml2-dev libxslt1-dev libgl1 libglib2.0-0 &&
-      pip install --no-cache-dir -r requirements.txt &&
-      uvicorn main:app --host 0.0.0.0 --port 8000
-      "
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
 
   db:
     image: pgvector/pgvector:pg16-trixie

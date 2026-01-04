@@ -2,5 +2,6 @@ services:
   converter:
     image: python:3.12-slim
     volumes:
-      - ..:/workspace:cached
+      - ../converter:/workspace/converter:cached
+      - $HOME/.config/nvim:/home/vscode/.config/nvim
     command: sleep infinity
