@@ -46,11 +46,11 @@ async def convert_file(file: Annotated[UploadFile, File()]):
                 )
 
             markdown = document.export_to_markdown(page_no=page_no)
-            archive.writestr(f"page_{page_no}.md", markdown)
+            archive.writestr(f"{page_no}.md", markdown)
 
             image_buffer = BytesIO()
             page.image.pil_image.save(image_buffer, format="PNG")
-            archive.writestr(f"page_{page_no}.png", image_buffer.getvalue())
+            archive.writestr(f"{page_no}.png", image_buffer.getvalue())
 
     zip_buffer.seek(0)
 

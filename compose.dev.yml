@@ -13,19 +13,21 @@ services:
       VITE_PROXY_TARGET: http://api:8080
 
   api:
-    image: maven:3.9-eclipse-temurin-25-alpine
+    build:
+      context: ./api
+      dockerfile: Dockerfile
     container_name: gju-chatbot-api
     ports:
-      - 8080:8080
+      - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       JINA_API_KEY: ${JINA_API_KEY}
       CONVERTER_BASE_URL: http://converter:8000
-    command: sh -c "mvn -q -DskipTests dependency:resolve && mvn spring-boot:run"
-    working_dir: /app
     volumes:
       - ./api:/app
+    working_dir: /app
+    command: mvn spring-boot:run
     depends_on:
       - db
 

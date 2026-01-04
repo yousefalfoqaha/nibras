@@ -9,6 +9,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 
+import java.util.List;
+
 @SpringBootTest
 public class MarkdownConverterIT {
 
@@ -19,9 +21,16 @@ public class MarkdownConverterIT {
 
   @Test
   void convertFileToMarkdown() {
-    Document document = markdownConverter.convert(resource);
+    List<Document> pagesWithImages = markdownConverter.convert(resource);
 
-    assertTrue(document.getText().length() != 0, "Content is empty.");
-    assertTrue(document.getMetadata().get("file_name").equals("file_source.pdf"), "File name is not the same.");
+    assertTrue(pagesWithImages.size() == 6);
+
+    long textCount =  pagesWithImages.stream()
+        .filter(Document::isText)
+        .count();
+
+    assertTrue(textCount == 3);
+    assertTrue(pagesWithImages.get(0).isText() || pagesWithImages.get(1).isText());
+    assertTrue(pagesWithImages.get(0).getMetadata().get("file_name").equals("file_source.pdf"), "File name is not the same.");
   }
 }

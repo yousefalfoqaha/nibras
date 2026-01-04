@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
+import edu.gju.chatbot.gju_chatbot.transformer.VisualInspectionRefiner;
+import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHeaderTextSplitter;
 
 @Configuration
 public class TransformerConfig {
@@ -18,5 +20,15 @@ public class TransformerConfig {
   @Bean
   public TokenTextSplitter tokenTextSplitter() {
     return new TokenTextSplitter(512, 218, 10, 5000, true);
+  }
+
+  @Bean
+  public VisualInspectionRefiner visualInspectionRefiner() {
+    return new VisualInspectionRefiner();
+  }
+
+  @Bean
+  public MarkdownHeaderTextSplitter markdownHeaderTextSplitter() {
+    return new MarkdownHeaderTextSplitter();
   }
 }

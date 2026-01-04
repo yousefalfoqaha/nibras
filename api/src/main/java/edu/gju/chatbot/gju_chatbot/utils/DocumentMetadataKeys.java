@@ -10,6 +10,8 @@ public final class DocumentMetadataKeys {
 
   public static final String FILE_SUMMARY = "file_summary";
 
+  public static final String PAGE = "page";
+
   // prevent instantiation
   private DocumentMetadataKeys() {
   }

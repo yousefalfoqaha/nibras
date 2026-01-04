@@ -15,6 +15,7 @@ import edu.gju.chatbot.gju_chatbot.exception.UnsupportedFileTypeException;
 import edu.gju.chatbot.gju_chatbot.reader.MarkdownConverter;
 import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
 import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHeaderTextSplitter;
+import edu.gju.chatbot.gju_chatbot.transformer.VisualInspectionRefiner;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -22,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 public class EtlPipelineService {
 
   private final MarkdownConverter markdownConverter;
+
+  private final VisualInspectionRefiner visualInspectionRefiner;
 
   private final MarkdownHeaderTextSplitter markdownHeaderTextSplitter;
 
@@ -45,9 +48,9 @@ public class EtlPipelineService {
       throw new FileProcessingException("Something went wrong with processing the file.");
     }
 
-    List<Document> ocrScanPages = markdownConverter.convert(resource);
+    List<Document> pagesWithImages = markdownConverter.convert(resource);
 
-    Document document = 
+    Document document = visualInspectionRefiner.apply(pagesWithImages);
 
     List<Document> splitChunks = markdownHeaderTextSplitter.transform(List.of(document));
 
