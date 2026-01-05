@@ -49,7 +49,7 @@ async def convert_file(file: Annotated[UploadFile, File()]):
             archive.writestr(f"{page_no}.md", markdown)
 
             image_buffer = BytesIO()
-            page.image.pil_image.save(image_buffer, format="PNG")
+            page.image.pil_image.save(image_buffer, format="JPEG")
             archive.writestr(f"{page_no}.png", image_buffer.getvalue())
 
     zip_buffer.seek(0)

@@ -84,7 +84,7 @@ public class MarkdownConverter implements Function<Resource, List<Document>> {
                             .build();
                 } else if (type.equals("png")) {
                     doc = Document.builder()
-                            .media(new Media(MimeTypeUtils.IMAGE_PNG, new ByteArrayResource(bytes)))
+                            .media(new Media(MimeTypeUtils.IMAGE_JPEG, new ByteArrayResource(bytes)))
                             .metadata(metadata)
                             .build();
                 } else {

@@ -50,9 +50,9 @@ public class EtlPipelineService {
 
     List<Document> pagesWithImages = markdownConverter.convert(resource);
 
-    Document document = visualInspectionRefiner.apply(pagesWithImages);
+    List<Document> refinedPages = visualInspectionRefiner.apply(pagesWithImages);
 
-    List<Document> splitChunks = markdownHeaderTextSplitter.transform(List.of(document));
+    List<Document> splitChunks = markdownHeaderTextSplitter.transform(refinedPages);
 
     List<Document> enrichedChunks = fileSummaryEnricher.transform(splitChunks);
 
