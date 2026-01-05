@@ -9,10 +9,12 @@ import org.springframework.ai.document.DocumentTransformer;
 public class MarkdownHeaderTextSplitter implements DocumentTransformer {
 
   @Override
-  public List<Document> apply(List<Document> documents) {
-    String content = documents.stream()
+  public List<Document> apply(List<Document> pages) {
+    String content = pages.stream()
         .map(Document::getText)
-        .collect(Collectors.joining("\n"));
+        .collect(Collectors.joining("\n\n"));
+
+    String[] splitContent = content.split("\n");
 
     return List.of();
   }

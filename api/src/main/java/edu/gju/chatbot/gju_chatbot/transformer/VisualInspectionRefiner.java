@@ -1,7 +1,6 @@
 package edu.gju.chatbot.gju_chatbot.transformer;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.ArrayList;
 
@@ -14,7 +13,7 @@ import org.springframework.ai.document.Document;
 public class VisualInspectionRefiner implements Function<List<Document>, List<Document>> {
 
   private static final String SYSTEM_PROMPT = """
-      You are an OCR correction tool. Your task is to fix OCR-generated markdown 
+      You are an OCR correction tool. Your task is to fix OCR-generated markdown
       by comparing it with the original PDF page image.
 
       Fix any OCR errors, formatting issues, or missing content.
@@ -47,11 +46,9 @@ public class VisualInspectionRefiner implements Function<List<Document>, List<Do
           List.of(
               new SystemMessage(SYSTEM_PROMPT),
               UserMessage.builder()
-                .text(markdownDocument.getText())
-                .media(List.of(imageDocument.getMedia()))
-                .build()
-          )
-      );
+                  .text(markdownDocument.getText())
+                  .media(List.of(imageDocument.getMedia()))
+                  .build()));
 
       String correctedMarkdown = chatModel.call(prompt)
           .getResult()
@@ -60,8 +57,7 @@ public class VisualInspectionRefiner implements Function<List<Document>, List<Do
 
       Document refinedDocument = new Document(
           correctedMarkdown,
-          markdownDocument.getMetadata()
-      );
+          markdownDocument.getMetadata());
 
       refinedPages.add(refinedDocument);
     }
