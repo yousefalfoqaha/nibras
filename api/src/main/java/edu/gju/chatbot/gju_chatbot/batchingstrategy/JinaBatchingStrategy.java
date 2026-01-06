@@ -10,19 +10,20 @@ import org.springframework.ai.embedding.BatchingStrategy;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 
+import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+
 public class JinaBatchingStrategy implements BatchingStrategy {
 
   protected enum ChunkType {
     FILE_SUMMARY,
     TARGET,
-    OVERLAP
+    OVERLAP,
+    BREADCRUMBS
   }
 
   private static final int DEFAULT_MAX_INPUT_TOKENS = 8191;
 
   private static final double TOKEN_COUNT_RESERVE_PERCENTAGE = 0.10;
-
-  private static final String FILE_SUMMARY_KEY = "file_summary";
 
   private static final String CHUNK_TYPE_KEY = "chunk_type";
 
@@ -44,63 +45,85 @@ public class JinaBatchingStrategy implements BatchingStrategy {
     if (documents.isEmpty())
       return List.of();
 
-    String fileSummary = (String) documents.get(0).getMetadata().get(FILE_SUMMARY_KEY);
-    int summaryTokens = (fileSummary != null) ? tokenCountEstimator.estimate(fileSummary) : 0;
-    int overlapTokens = 0;
-
-    if (summaryTokens > safeMaxInputTokenCount) {
-      throw new IllegalArgumentException("File summary exceeds total allowed token limit.");
-    }
+    String fileSummary = (String) documents.get(0).getMetadata().get(DocumentMetadataKeys.FILE_SUMMARY);
 
     List<List<Document>> batches = new ArrayList<>();
-    List<Document> currentBatch = new ArrayList<>();
-    int currentBatchTokens = 0;
+    List<Document> batch = new ArrayList<>();
+    String batchBreadcrumbs = (String) documents.get(0).getMetadata().get(DocumentMetadataKeys.BREADCRUMBS);
 
-    if (fileSummary != null) {
-      currentBatch.add(copyAndLabel(new Document(fileSummary), ChunkType.FILE_SUMMARY));
-      currentBatchTokens += summaryTokens;
+    int summaryTokens = (fileSummary != null) ? tokenCountEstimator.estimate(fileSummary) : 0;
+    int batchTokens = 0;
+    int batchOverlapTokens = 0;
+    int batchBreadcrumbsTokens = tokenCountEstimator.estimate(batchBreadcrumbs);
+
+    if (summaryTokens + batchBreadcrumbsTokens > safeMaxInputTokenCount) {
+      throw new IllegalArgumentException("File summary and batch breadcrumbs exceeds total allowed token limit.");
     }
 
-    for (int i = 0; i < documents.size(); i++) {
-      Document doc = documents.get(i);
-      int docTokens = tokenCountEstimator.estimate(doc.getText());
+    if (fileSummary != null) {
+      batch.add(copyAndLabel(new Document(fileSummary), ChunkType.FILE_SUMMARY));
+      batchTokens += summaryTokens;
+    }
 
-      if (currentBatchTokens + docTokens > safeMaxInputTokenCount) {
-        batches.add(new ArrayList<>(currentBatch));
-        currentBatch.clear();
-        currentBatchTokens = 0;
+    batch.add(copyAndLabel(new Document(batchBreadcrumbs), ChunkType.BREADCRUMBS));
+    batchTokens += batchBreadcrumbsTokens;
+
+    for (int i = 0; i < documents.size(); i++) {
+      Document document = documents.get(i);
+      String documentBreadcrumbs = (String) document.getMetadata().get(DocumentMetadataKeys.BREADCRUMBS);
+      int documentTokens = tokenCountEstimator.estimate(document.getText());
+
+      boolean addingDocumentExceedsBatchLimit = batchTokens + documentTokens > safeMaxInputTokenCount;
+      boolean isNewSection = !documentBreadcrumbs.equals(batchBreadcrumbs);
+
+      if (addingDocumentExceedsBatchLimit || isNewSection) {
+        batches.add(new ArrayList<>(batch));
+        batch.clear();
+        batchTokens = 0;
+        batchBreadcrumbsTokens = 0;
+        batchOverlapTokens = 0;
 
         if (fileSummary != null) {
-          currentBatch.add(copyAndLabel(new Document(fileSummary), ChunkType.FILE_SUMMARY));
-          currentBatchTokens += summaryTokens;
+          batch.add(copyAndLabel(new Document(fileSummary), ChunkType.FILE_SUMMARY));
+          batchTokens += summaryTokens;
         }
 
-        if (summaryTokens + overlapTokens + docTokens > safeMaxInputTokenCount) {
+        if (isNewSection) {
+          int documentBreadcrumbsTokens = tokenCountEstimator.estimate(documentBreadcrumbs);
+
+          batchBreadcrumbs = documentBreadcrumbs;
+          batchBreadcrumbsTokens = documentBreadcrumbsTokens;
+        }
+
+        batch.add(copyAndLabel(new Document(batchBreadcrumbs), ChunkType.BREADCRUMBS));
+        batchTokens += batchBreadcrumbsTokens;
+
+        if (summaryTokens + batchBreadcrumbsTokens + batchOverlapTokens + documentTokens > safeMaxInputTokenCount) {
           throw new IllegalArgumentException("Document is too big for any batch.");
         }
 
-        if (i > 0) {
+        if (i > 0 && !isNewSection) {
           Document overlap = documents.get(i - 1);
-          overlapTokens = tokenCountEstimator.estimate(overlap.getText());
+          batchOverlapTokens = tokenCountEstimator.estimate(overlap.getText());
 
-          currentBatch.add(copyAndLabel(overlap, ChunkType.OVERLAP));
-          currentBatchTokens += overlapTokens;
+          batch.add(copyAndLabel(overlap, ChunkType.OVERLAP));
+          batchTokens += batchOverlapTokens;
         }
       }
 
-      if (summaryTokens + overlapTokens + docTokens > safeMaxInputTokenCount) {
+      if (summaryTokens + batchBreadcrumbsTokens + batchOverlapTokens + documentTokens > safeMaxInputTokenCount) {
         throw new IllegalArgumentException(String.format(
             "Context Squeeze at index %d: Summary (%d) + Overlap (%d) + Doc (%d) = %d tokens, which exceeds the limit of %d",
-            i, summaryTokens, overlapTokens, docTokens, (summaryTokens + overlapTokens + docTokens),
+            i, summaryTokens, batchOverlapTokens, documentTokens, (summaryTokens + batchOverlapTokens + documentTokens),
             safeMaxInputTokenCount));
       }
 
-      currentBatch.add(copyAndLabel(doc, ChunkType.TARGET));
-      currentBatchTokens += docTokens;
+      batch.add(copyAndLabel(document, ChunkType.TARGET));
+      batchTokens += documentTokens;
     }
 
-    if (!currentBatch.isEmpty())
-      batches.add(currentBatch);
+    if (!batch.isEmpty())
+      batches.add(batch);
 
     return batches;
   }

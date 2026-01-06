@@ -59,16 +59,21 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
 
   private void flushChunk(List<Document> chunks, StringBuilder content, String[] headers,
       Map<String, Object> baseMetadata) {
-    if (content.length() == 0) {
+    if (content.length() == 0)
       return;
-    }
 
     Map<String, Object> metadata = new HashMap<>(baseMetadata);
 
-    metadata.put(DocumentMetadataKeys.H1, headers[0]);
-    metadata.put(DocumentMetadataKeys.H2, headers[1]);
-    metadata.put(DocumentMetadataKeys.H3, headers[2]);
+    StringBuilder breadcrumb = new StringBuilder();
+    for (String h : headers) {
+      if (h != null && !h.isEmpty()) {
+        if (breadcrumb.length() > 0)
+          breadcrumb.append(" > ");
+        breadcrumb.append(h);
+      }
+    }
 
+    metadata.put(DocumentMetadataKeys.BREADCRUMBS, breadcrumb.toString());
     metadata.put(DocumentMetadataKeys.CHUNK_INDEX, chunks.size());
 
     chunks.add(new Document(content.toString().trim(), metadata));

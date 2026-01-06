@@ -45,21 +45,15 @@ public class MarkdownHeaderTextSplitterTest {
     var third = chunks.get(2);
     var fourth = chunks.get(3);
 
-    assertEquals("Introduction", first.getMetadata().get("h1"));
-    assertEquals("", first.getMetadata().get("h2"));
-    assertEquals("", first.getMetadata().get("h3"));
+    assertEquals("Introduction", first.getMetadata().get("breadcrumbs"));
+    assertEquals("Introduction > Background", second.getMetadata().get("breadcrumbs"));
+    assertEquals("Introduction > Background > Details", third.getMetadata().get("breadcrumbs"));
+    assertEquals("Introduction > Scope", fourth.getMetadata().get("breadcrumbs"));
 
-    assertEquals("Introduction", second.getMetadata().get("h1"));
-    assertEquals("Background", second.getMetadata().get("h2"));
-    assertEquals("", second.getMetadata().get("h3"));
-
-    assertEquals("Introduction", third.getMetadata().get("h1"));
-    assertEquals("Background", third.getMetadata().get("h2"));
-    assertEquals("Details", third.getMetadata().get("h3"));
-
-    assertEquals("Introduction", fourth.getMetadata().get("h1"));
-    assertEquals("Scope", fourth.getMetadata().get("h2"));
-    assertEquals("", fourth.getMetadata().get("h3"));
+    assertEquals("This is the intro text.", first.getText());
+    assertEquals("Some background info.", second.getText());
+    assertEquals("Fine-grained details.", third.getText());
+    assertEquals("Scope description.", fourth.getText());
 
     assertEquals(3, fourth.getMetadata().get("chunk_index"));
   }

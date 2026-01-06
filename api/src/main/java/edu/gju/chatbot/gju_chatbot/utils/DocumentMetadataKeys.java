@@ -12,11 +12,7 @@ public final class DocumentMetadataKeys {
 
   public static final String PAGE = "page";
 
-  public static final String H1 = "h1";
-
-  public static final String H2 = "h2";
-
-  public static final String H3 = "h3";
+  public static final String BREADCRUMBS = "breadcrumbs";
 
   public static final String CHUNK_INDEX = "chunk_index";
 
