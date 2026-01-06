@@ -43,7 +43,7 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
         currentHeaders[levelIndex] = header.text;
 
         for (int i = levelIndex + 1; i < MAX_DEPTH; i++) {
-          currentHeaders[i] = null;
+          currentHeaders[i] = "";
         }
 
         continue;
