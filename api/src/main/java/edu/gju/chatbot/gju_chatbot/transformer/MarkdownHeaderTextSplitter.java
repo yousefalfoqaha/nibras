@@ -12,7 +12,7 @@ import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
 public class MarkdownHeaderTextSplitter implements DocumentTransformer {
 
-  private static final int MAX_DEPTH = 3;
+  private static final int MAX_HEADER_DEPTH = 3;
 
   @Override
   public List<Document> apply(List<Document> pages) {
@@ -27,7 +27,7 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
 
     String[] lines = fullText.split("\n");
 
-    String[] currentHeaders = new String[MAX_DEPTH];
+    String[] currentHeaders = new String[MAX_HEADER_DEPTH];
     StringBuilder currentChunk = new StringBuilder();
     List<Document> chunks = new ArrayList<>();
 
@@ -42,7 +42,7 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
         int levelIndex = header.level - 1;
         currentHeaders[levelIndex] = header.text;
 
-        for (int i = levelIndex + 1; i < MAX_DEPTH; i++) {
+        for (int i = levelIndex + 1; i < MAX_HEADER_DEPTH; i++) {
           currentHeaders[i] = "";
         }
 
@@ -83,7 +83,7 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
       level++;
     }
 
-    if (level == 0 || level > MAX_DEPTH) {
+    if (level == 0 || level > MAX_HEADER_DEPTH) {
       return null;
     }
 
