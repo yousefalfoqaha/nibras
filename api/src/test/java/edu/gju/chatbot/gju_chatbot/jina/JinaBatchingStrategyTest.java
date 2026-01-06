@@ -18,13 +18,9 @@ class JinaBatchingStrategyTest {
 
   private List<Document> testDocuments;
 
-  private int caseOneBatchTokenLimit;
+  private int batchTokenLimit;
 
-  private int caseTwoBatchTokenLimit;
-
-  private JinaBatchingStrategy strategyCaseOne;
-
-  private JinaBatchingStrategy strategyCaseTwo;
+  private JinaBatchingStrategy batchingStrategy;
 
   private static final String FILE_SUMMARY_KEY = DocumentMetadataKeys.FILE_SUMMARY;
   private static final String BREADCRUMBS_KEY = DocumentMetadataKeys.BREADCRUMBS;
@@ -49,24 +45,19 @@ class JinaBatchingStrategyTest {
     int summaryTokens = tokenCountEstimator.estimate(summaryText);
     int documentTokens = tokenCountEstimator.estimate(documentText);
     int breadcrumbsTokens = tokenCountEstimator.estimate(breadcrumbsText);
-    int differentBreadcrumbsTokens = tokenCountEstimator.estimate(differentBreadcrumbsText);
 
-    this.caseOneBatchTokenLimit = (int) Math.floor((summaryTokens + breadcrumbsTokens + (documentTokens * 3)) * 1.15);
-    this.caseTwoBatchTokenLimit = (int) Math
-        .floor((summaryTokens + differentBreadcrumbsTokens + (documentTokens * 3)) * 1.15);
+    this.batchTokenLimit = (int) Math.floor((summaryTokens + breadcrumbsTokens + (documentTokens * 3)) * 1.15);
 
     this.testDocuments = documents;
 
-    int maxInputForCaseOne = (int) Math.ceil(this.caseOneBatchTokenLimit / 0.9);
-    int maxInputForCaseTwo = (int) Math.ceil(this.caseTwoBatchTokenLimit / 0.9);
+    int maxInputTokens = (int) Math.ceil(this.batchTokenLimit / 0.9);
 
-    this.strategyCaseOne = new JinaBatchingStrategy(maxInputForCaseOne);
-    this.strategyCaseTwo = new JinaBatchingStrategy(maxInputForCaseTwo);
+    this.batchingStrategy = new JinaBatchingStrategy(maxInputTokens);
   }
 
   @Test
-  void testTwoDocumentsWithDifferentBreadcrumbsProduceTwoBatches_caseOneStrategy() {
-    List<List<Document>> batches = strategyCaseOne.batch(testDocuments);
+  void testTwoDocumentsWithDifferentBreadcrumbsProduceTwoBatches() {
+    List<List<Document>> batches = batchingStrategy.batch(testDocuments);
 
     assertEquals(2, batches.size(), "Different breadcrumbs should start a new batch");
 
@@ -84,14 +75,14 @@ class JinaBatchingStrategyTest {
   }
 
   @Test
-  void testOverlapWithExistingStrategy() {
+  void testOverlapWithDocumentsFromSameSection() {
     List<Document> documents = List.of(
         testDocuments.get(0),
         testDocuments.get(0),
         testDocuments.get(0),
         testDocuments.get(0));
 
-    List<List<Document>> batches = strategyCaseOne.batch(documents);
+    List<List<Document>> batches = batchingStrategy.batch(documents);
 
     assertTrue(batches.size() > 1, "Second document should create a new batch and trigger overlap");
 
