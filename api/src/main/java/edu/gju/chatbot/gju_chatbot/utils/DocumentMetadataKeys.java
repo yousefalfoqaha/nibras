@@ -12,6 +12,12 @@ public final class DocumentMetadataKeys {
 
   public static final String PAGE = "page";
 
+  public static final String H1 = "h1";
+
+  public static final String H2 = "h2";
+
+  public static final String H3 = "h3";
+
   // prevent instantiation
   private DocumentMetadataKeys() {
   }
