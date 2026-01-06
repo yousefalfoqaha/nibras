@@ -28,77 +28,78 @@ import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
 public class MarkdownConverter implements Function<Resource, List<Document>> {
 
-    private final RestClient restClient;
-    private final RetryTemplate retryTemplate;
+  private final RestClient restClient;
 
-    public MarkdownConverter(RestClient restClient, RetryTemplate retryTemplate) {
-        this.restClient = restClient;
-        this.retryTemplate = retryTemplate;
-    }
+  private final RetryTemplate retryTemplate;
 
-    public List<Document> convert(Resource file) {
-        return this.apply(file);
-    }
+  public MarkdownConverter(RestClient restClient, RetryTemplate retryTemplate) {
+    this.restClient = restClient;
+    this.retryTemplate = retryTemplate;
+  }
 
-    @Override
-    public List<Document> apply(Resource file) {
-        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-        parts.add("file", file);
+  public List<Document> convert(Resource file) {
+    return this.apply(file);
+  }
 
-        byte[] zipBytes = retryTemplate.execute(context ->
-                restClient.post()
-                        .body(parts)
-                        .retrieve()
-                        .body(byte[].class)
-        );
+  @Override
+  public List<Document> apply(Resource file) {
+    MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+    parts.add("file", file);
 
-        List<Document> documents = new ArrayList<>();
-        UUID fileId = UUID.randomUUID();
-        String fileName = file.getFilename();
+    byte[] zipBytes = retryTemplate.execute(context -> restClient.post()
+        .body(parts)
+        .retrieve()
+        .body(byte[].class));
 
-        try (ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
-            ZipEntry entry;
-            while ((entry = zipStream.getNextEntry()) != null) {
-                if (entry.isDirectory()) continue;
+    List<Document> documents = new ArrayList<>();
+    UUID fileId = UUID.randomUUID();
+    String fileName = file.getFilename();
 
-                byte[] bytes = zipStream.readAllBytes();
-                zipStream.closeEntry();
+    try (ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+      ZipEntry entry;
+      while ((entry = zipStream.getNextEntry()) != null) {
+        if (entry.isDirectory())
+          continue;
 
-                String entryName = entry.getName();
-                int dotIndex = entryName.lastIndexOf('.');
-                if (dotIndex == -1) continue;
+        byte[] bytes = zipStream.readAllBytes();
+        zipStream.closeEntry();
 
-                int page = Integer.parseInt(entryName.substring(0, dotIndex));
-                String type = entryName.substring(dotIndex + 1);
+        String entryName = entry.getName();
+        int dotIndex = entryName.lastIndexOf('.');
+        if (dotIndex == -1)
+          continue;
 
-                Map<String, Object> metadata = new HashMap<>();
-                metadata.put(DocumentMetadataKeys.FILE_ID, fileId);
-                metadata.put(DocumentMetadataKeys.FILE_NAME, fileName);
-                metadata.put(DocumentMetadataKeys.PAGE, page);
+        int page = Integer.parseInt(entryName.substring(0, dotIndex));
+        String type = entryName.substring(dotIndex + 1);
 
-                Document doc;
-                if (type.equals("md")) {
-                    doc = Document.builder()
-                            .text(new String(bytes, StandardCharsets.UTF_8))
-                            .metadata(metadata)
-                            .build();
-                } else if (type.equals("png")) {
-                    doc = Document.builder()
-                            .media(new Media(MimeTypeUtils.IMAGE_JPEG, new ByteArrayResource(bytes)))
-                            .metadata(metadata)
-                            .build();
-                } else {
-                    continue;
-                }
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put(DocumentMetadataKeys.FILE_ID, fileId);
+        metadata.put(DocumentMetadataKeys.FILE_NAME, fileName);
+        metadata.put(DocumentMetadataKeys.PAGE, page);
 
-                documents.add(doc);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read ZIP file", e);
+        Document doc;
+        if (type.equals("md")) {
+          doc = Document.builder()
+              .text(new String(bytes, StandardCharsets.UTF_8))
+              .metadata(metadata)
+              .build();
+        } else if (type.equals("png")) {
+          doc = Document.builder()
+              .media(new Media(MimeTypeUtils.IMAGE_JPEG, new ByteArrayResource(bytes)))
+              .metadata(metadata)
+              .build();
+        } else {
+          continue;
         }
 
-        documents.sort(Comparator.comparingInt(d -> (Integer) d.getMetadata().get(DocumentMetadataKeys.PAGE)));
-
-        return documents;
+        documents.add(doc);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to read ZIP file", e);
     }
+
+    documents.sort(Comparator.comparingInt(d -> (Integer) d.getMetadata().get(DocumentMetadataKeys.PAGE)));
+
+    return documents;
+  }
 }
