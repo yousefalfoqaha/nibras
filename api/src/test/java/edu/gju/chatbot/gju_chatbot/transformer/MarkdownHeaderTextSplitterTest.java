@@ -60,5 +60,7 @@ public class MarkdownHeaderTextSplitterTest {
     assertEquals("Introduction", fourth.getMetadata().get("h1"));
     assertEquals("Scope", fourth.getMetadata().get("h2"));
     assertEquals("", fourth.getMetadata().get("h3"));
+
+    assertEquals(3, fourth.getMetadata().get("chunk_index"));
   }
 }

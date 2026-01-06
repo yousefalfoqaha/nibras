@@ -18,6 +18,8 @@ public final class DocumentMetadataKeys {
 
   public static final String H3 = "h3";
 
+  public static final String CHUNK_INDEX = "chunk_index";
+
   // prevent instantiation
   private DocumentMetadataKeys() {
   }

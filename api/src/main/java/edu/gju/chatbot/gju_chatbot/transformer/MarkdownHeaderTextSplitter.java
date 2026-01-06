@@ -69,6 +69,8 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
     metadata.put(DocumentMetadataKeys.H2, headers[1]);
     metadata.put(DocumentMetadataKeys.H3, headers[2]);
 
+    metadata.put(DocumentMetadataKeys.CHUNK_INDEX, chunks.size());
+
     chunks.add(new Document(content.toString().trim(), metadata));
     content.setLength(0);
   }
