@@ -21,25 +21,10 @@ public class FileSummaryEnricher implements DocumentTransformer {
 
   private static final PromptTemplate PROMPT_TEMPLATE = new PromptTemplate(
       """
-          You are given the full content of a single file.
-          Your task is to produce a concise but information-dense global summary of the file.
+          Your task is to produce a global 1-2 scentence summary of the document. If present, include academic years, programs, or any useful unique identifiers,
+          as if giving a comprehensive title of the text.
 
-          GOALS:
-          - Capture the overall purpose, scope, and structure of the file
-          - Identify the main topics, concepts, entities, and processes discussed
-          - Preserve important relationships, constraints, assumptions, and definitions
-          - Focus on information that would be useful for retrieval and downstream reasoning
-
-          CONSTRAINTS:
-          - Target length: approximately 500 tokens
-          - Be factual and neutral in tone
-          - Do NOT include examples unless they are essential to understanding the file
-          - Do NOT speculate or add information not present in the text
-          - Do NOT refer to this text as "the document" or "the file"
-          - Do NOT include headings, bullet points, or markdown
-          - Write in plain, continuous prose
-
-          The summary should represent the global context of the entire file, not individual sections.
+          Example: The 2023 bachelor of science Computer Science study plan for all tracks.
 
           FULL FILE CONTENT:
           <<<

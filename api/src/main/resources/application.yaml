@@ -39,6 +39,17 @@ spring:
       pgvector:
         remove-existing-vector-store-table: true
         schema-validation: true
+  output:
+    ansi:
+      enabled: DETECT
+
+logging:
+  level:
+    edu:
+      gju:
+        chatbot:
+          gju_chatbot:
+            batchingstrategy: DEBUG
 
 service:
   markdown-converter:

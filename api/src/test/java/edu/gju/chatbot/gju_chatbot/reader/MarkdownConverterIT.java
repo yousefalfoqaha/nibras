@@ -25,12 +25,13 @@ public class MarkdownConverterIT {
 
     assertTrue(pagesWithImages.size() == 6);
 
-    long textCount =  pagesWithImages.stream()
+    long textCount = pagesWithImages.stream()
         .filter(Document::isText)
         .count();
 
-    assertTrue(textCount == 3);
-    assertTrue(pagesWithImages.get(0).isText() || pagesWithImages.get(1).isText());
-    assertTrue(pagesWithImages.get(0).getMetadata().get("file_name").equals("file_source.pdf"), "File name is not the same.");
+    assertTrue(textCount == 3, "Text should be 3 parts");
+    assertTrue(pagesWithImages.get(0).isText() || pagesWithImages.get(1).isText(), "Either should be text");
+    assertTrue(pagesWithImages.get(0).getMetadata().get("file_name").equals("file_source.pdf"),
+        "File name is not the same.");
   }
 }

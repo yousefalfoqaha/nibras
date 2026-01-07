@@ -55,13 +55,13 @@ public class RagAdvisor implements BaseAdvisor {
     List<Document> documents = documentRetriever.similaritySearch(
         SearchRequest.builder()
             .query(query)
-            .similarityThreshold(0.65)
-            .topK(15)
+            .similarityThreshold(0.4)
+            .topK(5)
             .build());
 
     String context = documents.stream()
-        .map(Document::getText)
-        .collect(Collectors.joining(System.lineSeparator()));
+        .map(Document::getFormattedContent)
+        .collect(Collectors.joining("\n\n"));
 
     String augmentedQuery = USER_PROMPT_TEMPLATE
         .render(Map.of("query", query, "context", context));

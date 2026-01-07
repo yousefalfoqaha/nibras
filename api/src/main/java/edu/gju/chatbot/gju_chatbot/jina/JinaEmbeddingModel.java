@@ -24,13 +24,18 @@ import org.springframework.web.client.RestClient;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import edu.gju.chatbot.gju_chatbot.exception.FileProcessingException;
+
 public class JinaEmbeddingModel implements EmbeddingModel {
 
   private static final Logger log = LoggerFactory.getLogger(JinaEmbeddingModel.class);
 
   private final RestClient restClient;
+
   private final RetryTemplate retryTemplate;
+
   private final MetadataMode metadataMode;
+
   private final JinaEmbeddingOptions defaultOptions;
 
   public JinaEmbeddingModel(RestClient restClient, MetadataMode metadataMode,
@@ -48,13 +53,11 @@ public class JinaEmbeddingModel implements EmbeddingModel {
   }
 
   public EmbeddingResponse call(EmbeddingRequest request) {
-    log.info("EmbeddingRequest received: {} texts", request.getInstructions().size());
-
     JinaApiEmbeddingRequest apiRequest = buildApiRequest(request);
     log.debug("Built API request: {}", apiRequest);
 
     JinaApiEmbeddingResponse apiResponse = retryTemplate.execute(context -> {
-      log.info("Calling Jina API...");
+      log.info("Calling Jina AI to embed {} chunks...", request.getInstructions().size());
       return callApi(apiRequest);
     });
 
@@ -69,7 +72,7 @@ public class JinaEmbeddingModel implements EmbeddingModel {
         .map(entry -> new Embedding(entry.embedding(), entry.index()))
         .toList();
 
-    log.info("Received {} embeddings from API", embeddings.size());
+    log.info("Received {} chunk embeddings from Jina AI", embeddings.size());
 
     JinaApiUsage usage = apiResponse.usage();
     Usage embeddingResponseUsage = new DefaultUsage(
@@ -106,7 +109,7 @@ public class JinaEmbeddingModel implements EmbeddingModel {
     List<float[]> finalTargetEmbeddings = new ArrayList<>();
     List<List<Document>> batches = batchingStrategy.batch(documents);
 
-    log.info("Embedding {} documents in {} batches", documents.size(), batches.size());
+    log.info("Received {} chunks in {} batches", documents.size(), batches.size());
 
     for (List<Document> batch : batches) {
       List<String> texts = batch.stream().map(Document::getText).toList();
@@ -114,12 +117,19 @@ public class JinaEmbeddingModel implements EmbeddingModel {
 
       EmbeddingResponse response = this.call(request);
 
+      if (response.getResults().size() != batch.size()) {
+        throw new FileProcessingException("Embeddings returned do not match batch size");
+      }
+
       for (int i = 0; i < batch.size(); i++) {
         Document doc = batch.get(i);
         String type = (String) doc.getMetadata().get("chunk_type");
 
         if ("TARGET".equals(type)) {
           finalTargetEmbeddings.add(response.getResults().get(i).getOutput());
+          log.info("Target chunk found at index {} in batch", i);
+        } else {
+          log.info("{} chunk ignored", type);
         }
       }
     }

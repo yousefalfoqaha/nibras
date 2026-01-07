@@ -13,6 +13,8 @@ import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.content.Media;
 import org.springframework.ai.document.Document;
 import org.springframework.core.io.ByteArrayResource;
@@ -26,6 +28,8 @@ import org.springframework.web.client.RestClient;
 import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
 public class MarkdownConverter implements Function<Resource, List<Document>> {
+
+  private static final Logger log = LoggerFactory.getLogger(MarkdownConverter.class);
 
   private final RestClient restClient;
 
@@ -64,6 +68,9 @@ public class MarkdownConverter implements Function<Resource, List<Document>> {
         zipStream.closeEntry();
 
         String entryName = entry.getName();
+
+        log.info("Processing ZIP entry {}", entryName);
+
         int dotIndex = entryName.lastIndexOf('.');
         if (dotIndex == -1)
           continue;
@@ -83,11 +90,15 @@ public class MarkdownConverter implements Function<Resource, List<Document>> {
               .text(new String(bytes, StandardCharsets.UTF_8))
               .metadata(metadata)
               .build();
+
+          log.info("Detected markdown entry.");
         } else if (type.equals("jpeg")) {
           document = Document.builder()
               .media(new Media(MimeTypeUtils.IMAGE_JPEG, new ByteArrayResource(bytes)))
               .metadata(metadata)
               .build();
+
+          log.info("Detected image entry.");
         } else {
           continue;
         }

@@ -15,105 +15,116 @@ import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 public class MarkdownHeaderTextSplitter implements DocumentTransformer {
 
   private static final Logger log = LoggerFactory.getLogger(MarkdownHeaderTextSplitter.class);
-
   private static final int MAX_HEADER_DEPTH = 3;
 
   @Override
   public List<Document> apply(List<Document> pages) {
     if (pages == null || pages.isEmpty()) {
-      log.warn("Input document list is null or empty. Returning empty list.");
+      log.warn("MarkdownHeaderTextSplitter called with empty list.");
       return List.of();
     }
 
-    log.info("Starting markdown split process for {} input pages.", pages.size());
+    log.info("=== Starting Markdown Splitter ({} Input Pages) ===", pages.size());
 
     String fullText = pages.stream()
         .map(Document::getText)
         .reduce((a, b) -> a + "\n\n" + b)
         .orElse("");
 
-    String[] lines = fullText.split("\n");
+    log.debug("   > Merged Content Size: {} chars", fullText.length());
 
+    String[] lines = fullText.split("\n");
     String[] currentHeaders = new String[MAX_HEADER_DEPTH];
     StringBuilder currentChunk = new StringBuilder();
     List<Document> chunks = new ArrayList<>();
 
     Map<String, Object> baseMetadata = pages.get(0).getMetadata();
 
-    for (String line : lines) {
+    log.info("--- Processing Line-by-Line ({}) ---", lines.length);
+
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i];
       Header header = parseHeader(line);
 
       if (header != null) {
-        log.debug("Found header [Level {}]: '{}'", header.level, header.text);
+        String indent = "   ".repeat(header.level);
+        log.debug("{} [H{}] Header Found: \"{}\"", indent, header.level, header.text);
 
         flushChunk(chunks, currentChunk, currentHeaders, baseMetadata);
 
         int levelIndex = header.level - 1;
         currentHeaders[levelIndex] = header.text;
 
-        for (int i = levelIndex + 1; i < MAX_HEADER_DEPTH; i++) {
-          currentHeaders[i] = "";
+        for (int j = levelIndex + 1; j < MAX_HEADER_DEPTH; j++) {
+          currentHeaders[j] = "";
         }
 
+        log.debug("{}    -> Breadcrumbs Updated: {}", indent, formatBreadcrumbs(currentHeaders));
         continue;
       }
 
       currentChunk.append(line).append('\n');
     }
 
+    // Final flush for the last section
+    log.debug("   > End of text reached. Finalizing last chunk...");
     flushChunk(chunks, currentChunk, currentHeaders, baseMetadata);
 
-    log.info("Markdown split completed. Generated {} chunks.", chunks.size());
+    log.info("=== Markdown Split Complete. Generated {} Chunks. ===", chunks.size());
     return chunks;
   }
 
   private void flushChunk(List<Document> chunks, StringBuilder content, String[] headers,
       Map<String, Object> baseMetadata) {
-    if (content.length() == 0)
+
+    if (content.length() == 0) {
+      return;
+    }
+
+    String contentStr = content.toString().trim();
+    if (contentStr.isEmpty())
       return;
 
     Map<String, Object> metadata = new HashMap<>(baseMetadata);
+    String breadcrumbString = formatBreadcrumbs(headers);
 
-    StringBuilder breadcrumb = new StringBuilder();
-    for (String h : headers) {
-      if (h != null && !h.isEmpty()) {
-        if (breadcrumb.length() > 0)
-          breadcrumb.append(" > ");
-        breadcrumb.append(h);
-      }
-    }
-
-    String breadcrumbString = breadcrumb.toString();
     metadata.put(DocumentMetadataKeys.BREADCRUMBS, breadcrumbString);
     metadata.put(DocumentMetadataKeys.CHUNK_INDEX, chunks.size());
 
-    log.debug("Flushing chunk #{} ({} chars). Breadcrumbs: [{}]",
-        chunks.size(), content.length(), breadcrumbString);
+    chunks.add(new Document(contentStr, metadata));
 
-    chunks.add(new Document(content.toString().trim(), metadata));
+    log.debug("       + [CHUNK #{}] Created | Size: {} chars", chunks.size(), contentStr.length());
+    log.debug("         Context: [{}]", breadcrumbString);
+
     content.setLength(0);
+  }
+
+  private String formatBreadcrumbs(String[] headers) {
+    StringBuilder sb = new StringBuilder();
+    for (String h : headers) {
+      if (h != null && !h.isEmpty()) {
+        if (sb.length() > 0)
+          sb.append(" > ");
+        sb.append(h);
+      }
+    }
+    return sb.toString();
   }
 
   private Header parseHeader(String line) {
     int level = 0;
     int length = line.length();
-
     while (level < length && line.charAt(level) == '#') {
       level++;
     }
-
-    if (level == 0 || level > MAX_HEADER_DEPTH) {
+    if (level == 0 || level > MAX_HEADER_DEPTH)
       return null;
-    }
-
-    if (level < length && line.charAt(level) != ' ') {
+    if (level < length && line.charAt(level) != ' ')
       return null;
-    }
 
     String text = line.substring(level + 1).trim();
-    if (text.isEmpty()) {
+    if (text.isEmpty())
       return null;
-    }
 
     return new Header(level, text);
   }
