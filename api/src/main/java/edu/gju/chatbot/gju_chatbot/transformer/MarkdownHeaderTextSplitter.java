@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.document.DocumentTransformer;
 
@@ -12,13 +14,18 @@ import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
 public class MarkdownHeaderTextSplitter implements DocumentTransformer {
 
+  private static final Logger log = LoggerFactory.getLogger(MarkdownHeaderTextSplitter.class);
+
   private static final int MAX_HEADER_DEPTH = 3;
 
   @Override
   public List<Document> apply(List<Document> pages) {
     if (pages == null || pages.isEmpty()) {
+      log.warn("Input document list is null or empty. Returning empty list.");
       return List.of();
     }
+
+    log.info("Starting markdown split process for {} input pages.", pages.size());
 
     String fullText = pages.stream()
         .map(Document::getText)
@@ -37,6 +44,8 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
       Header header = parseHeader(line);
 
       if (header != null) {
+        log.debug("Found header [Level {}]: '{}'", header.level, header.text);
+
         flushChunk(chunks, currentChunk, currentHeaders, baseMetadata);
 
         int levelIndex = header.level - 1;
@@ -54,6 +63,7 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
 
     flushChunk(chunks, currentChunk, currentHeaders, baseMetadata);
 
+    log.info("Markdown split completed. Generated {} chunks.", chunks.size());
     return chunks;
   }
 
@@ -73,8 +83,12 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
       }
     }
 
-    metadata.put(DocumentMetadataKeys.BREADCRUMBS, breadcrumb.toString());
+    String breadcrumbString = breadcrumb.toString();
+    metadata.put(DocumentMetadataKeys.BREADCRUMBS, breadcrumbString);
     metadata.put(DocumentMetadataKeys.CHUNK_INDEX, chunks.size());
+
+    log.debug("Flushing chunk #{} ({} chars). Breadcrumbs: [{}]",
+        chunks.size(), content.length(), breadcrumbString);
 
     chunks.add(new Document(content.toString().trim(), metadata));
     content.setLength(0);

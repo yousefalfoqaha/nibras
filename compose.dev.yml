@@ -42,12 +42,12 @@ services:
       - ./converter:/app
     ports:
       - "8000:8000"
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
 
   db:
     image: pgvector/pgvector:pg16-trixie

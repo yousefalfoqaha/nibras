@@ -3,6 +3,8 @@ package edu.gju.chatbot.gju_chatbot.jina;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.metadata.DefaultUsage;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.document.Document;
@@ -24,16 +26,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JinaEmbeddingModel implements EmbeddingModel {
 
+  private static final Logger log = LoggerFactory.getLogger(JinaEmbeddingModel.class);
+
   private final RestClient restClient;
-
   private final RetryTemplate retryTemplate;
-
   private final MetadataMode metadataMode;
-
   private final JinaEmbeddingOptions defaultOptions;
 
-  public JinaEmbeddingModel(RestClient restClient, MetadataMode metadataMode, JinaEmbeddingOptions defaultOptions,
-      RetryTemplate retryTemplate) {
+  public JinaEmbeddingModel(RestClient restClient, MetadataMode metadataMode,
+      JinaEmbeddingOptions defaultOptions, RetryTemplate retryTemplate) {
     Assert.notNull(metadataMode, "metadataMode must not be null");
     Assert.notNull(defaultOptions, "options must not be null");
     Assert.notNull(retryTemplate, "retryTemplate must not be null");
@@ -42,13 +43,23 @@ public class JinaEmbeddingModel implements EmbeddingModel {
     this.metadataMode = metadataMode;
     this.defaultOptions = defaultOptions;
     this.retryTemplate = retryTemplate;
+
+    log.info("JinaEmbeddingModel initialized with model: {}", defaultOptions.getModel());
   }
 
   public EmbeddingResponse call(EmbeddingRequest request) {
+    log.info("EmbeddingRequest received: {} texts", request.getInstructions().size());
+
     JinaApiEmbeddingRequest apiRequest = buildApiRequest(request);
-    JinaApiEmbeddingResponse apiResponse = retryTemplate.execute(context -> callApi(apiRequest));
+    log.debug("Built API request: {}", apiRequest);
+
+    JinaApiEmbeddingResponse apiResponse = retryTemplate.execute(context -> {
+      log.info("Calling Jina API...");
+      return callApi(apiRequest);
+    });
 
     if (apiResponse == null || CollectionUtils.isEmpty(apiResponse.data())) {
+      log.warn("API response is empty or null");
       return new EmbeddingResponse(List.of());
     }
 
@@ -57,6 +68,8 @@ public class JinaEmbeddingModel implements EmbeddingModel {
         .sorted(java.util.Comparator.comparingInt(JinaEmbedding::index))
         .map(entry -> new Embedding(entry.embedding(), entry.index()))
         .toList();
+
+    log.info("Received {} embeddings from API", embeddings.size());
 
     JinaApiUsage usage = apiResponse.usage();
     Usage embeddingResponseUsage = new DefaultUsage(
@@ -70,12 +83,14 @@ public class JinaEmbeddingModel implements EmbeddingModel {
 
   @Override
   public float[] embed(Document document) {
+    log.debug("Embedding document with metadata: {}", document.getMetadata());
     Assert.notNull(document, "Document must not be null");
     return this.embed(document.getFormattedContent(this.metadataMode));
   }
 
   @Override
   public List<float[]> embed(List<String> texts) {
+    log.debug("Embedding {} texts", texts.size());
     Assert.notNull(texts, "Texts must not be null");
     return this.call(new EmbeddingRequest(texts, this.defaultOptions))
         .getResults()
@@ -90,6 +105,8 @@ public class JinaEmbeddingModel implements EmbeddingModel {
 
     List<float[]> finalTargetEmbeddings = new ArrayList<>();
     List<List<Document>> batches = batchingStrategy.batch(documents);
+
+    log.info("Embedding {} documents in {} batches", documents.size(), batches.size());
 
     for (List<Document> batch : batches) {
       List<String> texts = batch.stream().map(Document::getText).toList();
@@ -110,6 +127,8 @@ public class JinaEmbeddingModel implements EmbeddingModel {
     Assert.isTrue(finalTargetEmbeddings.size() == documents.size(),
         "Expected " + documents.size() + " target embeddings, but got " + finalTargetEmbeddings.size());
 
+    log.info("Finished embedding. Total target embeddings: {}", finalTargetEmbeddings.size());
+
     return finalTargetEmbeddings;
   }
 
@@ -126,32 +145,32 @@ public class JinaEmbeddingModel implements EmbeddingModel {
   }
 
   private JinaApiEmbeddingResponse callApi(JinaApiEmbeddingRequest embeddingRequest) {
-    Assert.notNull(embeddingRequest, "The request body can not be null.");
-
-    // Input text to embed, encoded as a string or array of tokens. To embed
-    // multiple
-    // inputs in a single
-    // request, pass an array of strings or array of token arrays.
-    Assert.notNull(embeddingRequest.input(), "The input can not be null.");
+    Assert.notNull(embeddingRequest, "The request body cannot be null.");
+    Assert.notNull(embeddingRequest.input(), "The input cannot be null.");
     Assert.isTrue(embeddingRequest.input() instanceof List,
         "The input must be either a String, or a List of Strings or List of List of integers.");
 
-    // The input must not exceed the max input tokens for the model (8192 tokens).
-    // Cannot be an empty string, and any array must be 2048 dimensions or less.
     if (embeddingRequest.input() instanceof List<?> list) {
-      Assert.isTrue(!CollectionUtils.isEmpty(list), "The input list can not be empty.");
-      Assert.isTrue(list.size() <= 2048, "The list must be 2048 dimensions or less");
+      Assert.isTrue(!CollectionUtils.isEmpty(list), "The input list cannot be empty.");
+      Assert.isTrue(list.size() <= 2048, "The list must be 2048 elements or less");
       Assert.isTrue(
           list.get(0) instanceof String || list.get(0) instanceof Integer || list.get(0) instanceof List,
           "The input must be either a String, or a List of Strings or list of list of integers.");
     }
 
-    return this.restClient.post()
+    log.debug("Sending API request with {} items", embeddingRequest.input().size());
+
+    JinaApiEmbeddingResponse response = this.restClient.post()
         .body(embeddingRequest)
         .retrieve()
         .toEntity(JinaApiEmbeddingResponse.class)
         .getBody();
 
+    log.debug("Received API response: model={}, data size={}",
+        response != null ? response.model() : "null",
+        response != null && response.data() != null ? response.data().size() : 0);
+
+    return response;
   }
 
   @JsonInclude(JsonInclude.Include.NON_NULL)

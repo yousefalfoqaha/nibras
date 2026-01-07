@@ -40,10 +40,10 @@ public class EtlPipelineService {
 
     List<Document> refinedPages = visualInspectionRefiner.apply(pagesWithImages);
 
-    List<Document> splitChunks = markdownHeaderTextSplitter.transform(refinedPages);
+    List<Document> enrichedPages = fileSummaryEnricher.transform(refinedPages);
 
-    List<Document> enrichedChunks = fileSummaryEnricher.transform(splitChunks);
+    List<Document> splitChunks = markdownHeaderTextSplitter.transform(enrichedPages);
 
-    vectorStore.add(enrichedChunks);
+    vectorStore.add(splitChunks);
   }
 }

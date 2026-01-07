@@ -31,9 +31,9 @@ spring:
         metadata-mode: EMBED
         options:
           model: jina-embeddings-v3
-          task: none
+          task: text-matching
           dimensions: 1024
-          late-chunking: false
+          late-chunking: true
 
     vectorstore:
       pgvector:
