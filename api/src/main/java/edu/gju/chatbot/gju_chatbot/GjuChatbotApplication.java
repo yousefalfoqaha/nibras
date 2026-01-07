@@ -38,7 +38,7 @@ public class GjuChatbotApplication {
 
   @PostMapping("/files/process")
   public ResponseEntity<Void> ingestFile(@RequestParam("file") MultipartFile file) {
-    etlPipelineService.processFile(file);
+    etlPipelineService.processFile(file.getResource());
 
     return ResponseEntity.ok().build();
   }

@@ -1,28 +1,27 @@
 package edu.gju.chatbot.gju_chatbot.reader;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Comparator;
+import java.util.zip.ZipInputStream;
 
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-
+import org.springframework.ai.content.Media;
 import org.springframework.ai.document.Document;
-import org.springframework.core.io.Resource;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-import org.springframework.ai.content.Media;
-import org.springframework.util.MimeTypeUtils;
 
 import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
@@ -76,15 +75,16 @@ public class MarkdownConverter implements Function<Resource, List<Document>> {
         metadata.put(DocumentMetadataKeys.FILE_ID, fileId);
         metadata.put(DocumentMetadataKeys.FILE_NAME, fileName);
         metadata.put(DocumentMetadataKeys.PAGE, page);
+        metadata.put(DocumentMetadataKeys.FILE_SIZE, file.contentLength());
 
-        Document doc;
+        Document document;
         if (type.equals("md")) {
-          doc = Document.builder()
+          document = Document.builder()
               .text(new String(bytes, StandardCharsets.UTF_8))
               .metadata(metadata)
               .build();
-        } else if (type.equals("png")) {
-          doc = Document.builder()
+        } else if (type.equals("jpeg")) {
+          document = Document.builder()
               .media(new Media(MimeTypeUtils.IMAGE_JPEG, new ByteArrayResource(bytes)))
               .metadata(metadata)
               .build();
@@ -92,7 +92,7 @@ public class MarkdownConverter implements Function<Resource, List<Document>> {
           continue;
         }
 
-        documents.add(doc);
+        documents.add(document);
       }
     } catch (IOException e) {
       throw new RuntimeException("Failed to read ZIP file", e);
