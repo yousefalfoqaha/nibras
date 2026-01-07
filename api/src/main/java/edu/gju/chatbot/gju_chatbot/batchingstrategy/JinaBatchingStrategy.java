@@ -26,7 +26,9 @@ public class JinaBatchingStrategy implements BatchingStrategy {
   }
 
   private static final int DEFAULT_MAX_INPUT_TOKENS = 8191;
+
   private static final double TOKEN_COUNT_RESERVE_PERCENTAGE = 0.10;
+
   private static final String CHUNK_TYPE_KEY = "chunk_type";
 
   private final TokenCountEstimator tokenCountEstimator = new JTokkitTokenCountEstimator();
