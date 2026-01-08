@@ -17,11 +17,8 @@ import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 public class JinaBatchingStrategy implements BatchingStrategy {
 
   private static final Logger log = LoggerFactory.getLogger(JinaBatchingStrategy.class);
-
   private static final int DEFAULT_MAX_INPUT_TOKENS = 8191;
-
   private static final double TOKEN_COUNT_RESERVE_PERCENTAGE = 0.10;
-
   private static final String CHUNK_TYPE_KEY = "chunk_type";
 
   protected enum ChunkType {
@@ -51,7 +48,7 @@ public class JinaBatchingStrategy implements BatchingStrategy {
       throw new IllegalArgumentException("FATAL: File Summary alone exceeds token limit.");
     }
 
-    log.info("Starting batching for {} documents. Safe Limit: {}", documents.size(), safeMaxInputTokenCount);
+    log.info("Starting batching for {} documents. Limit: {}", documents.size(), safeMaxInputTokenCount);
 
     return recursiveBatch(documents, summary, summaryTokens, 0);
   }
@@ -71,23 +68,22 @@ public class JinaBatchingStrategy implements BatchingStrategy {
     }
 
     Document headDoc = docs.get(0);
-    String headBreadcrumbs = (String) headDoc.getMetadata().get(DocumentMetadataKeys.BREADCRUMBS);
-    int headBreadcrumbTokens = tokenCountEstimator.estimate(headBreadcrumbs);
+    String currentBreadcrumbs = (String) headDoc.getMetadata().get(DocumentMetadataKeys.BREADCRUMBS);
+    int breadcrumbTokens = tokenCountEstimator.estimate(currentBreadcrumbs);
     int headDocTokens = tokenCountEstimator.estimate(headDoc.getText());
 
-    if (currentTokens + headBreadcrumbTokens + headDocTokens > safeMaxInputTokenCount) {
+    if (currentTokens + breadcrumbTokens + headDocTokens > safeMaxInputTokenCount) {
       throw new IllegalArgumentException("Single document (Head) exceeds limit. Cannot proceed.");
     }
 
-    currentBatch.add(copyAndLabel(new Document(headBreadcrumbs), ChunkType.BREADCRUMBS));
+    currentBatch.add(copyAndLabel(new Document(currentBreadcrumbs), ChunkType.BREADCRUMBS));
 
     ChunkType headType = (overlapCount > 0) ? ChunkType.OVERLAP : ChunkType.TARGET;
     currentBatch.add(copyAndLabel(headDoc, headType));
-
-    currentTokens += (headBreadcrumbTokens + headDocTokens);
+    currentTokens += (breadcrumbTokens + headDocTokens);
 
     int splitIndex = -1;
-    String currentBreadcrumbs = headBreadcrumbs;
+    boolean splitDueToSectionChange = false;
 
     for (int i = 1; i < docs.size(); i++) {
       Document nextDoc = docs.get(i);
@@ -95,35 +91,33 @@ public class JinaBatchingStrategy implements BatchingStrategy {
       int nextTokens = tokenCountEstimator.estimate(nextDoc.getText());
 
       boolean isNewSection = !nextBreadcrumbs.equals(currentBreadcrumbs);
-      int overhead = isNewSection ? tokenCountEstimator.estimate(nextBreadcrumbs) : 0;
+      boolean isFull = (currentTokens + nextTokens > safeMaxInputTokenCount);
 
-      if (currentTokens + nextTokens + overhead > safeMaxInputTokenCount) {
+      if (isNewSection || isFull) {
         splitIndex = i;
-        log.debug("Batch full at index {}. Size: {}/{}", i, currentTokens, safeMaxInputTokenCount);
+        splitDueToSectionChange = isNewSection;
+        log.debug("Flushing batch at index {}. Reason: {}", i, isNewSection ? "Section Change" : "Full");
         break;
-      }
-
-      if (isNewSection) {
-        currentBatch.add(copyAndLabel(new Document(nextBreadcrumbs), ChunkType.BREADCRUMBS));
-        currentTokens += overhead;
-        currentBreadcrumbs = nextBreadcrumbs;
       }
 
       ChunkType docType = (i < overlapCount) ? ChunkType.OVERLAP : ChunkType.TARGET;
       currentBatch.add(copyAndLabel(nextDoc, docType));
-
       currentTokens += nextTokens;
     }
 
     result.add(currentBatch);
 
     if (splitIndex != -1) {
-      int nextStartIndex = Math.max(1, splitIndex - 1);
+      int nextStartIndex;
+      int newOverlapAmount;
 
-      int newOverlapAmount = splitIndex - nextStartIndex;
-
-      log.debug("Recursing... Split at {}, Next Batch Starts at {} (Overlap Count: {})",
-          splitIndex, nextStartIndex, newOverlapAmount);
+      if (splitDueToSectionChange) {
+        nextStartIndex = splitIndex;
+        newOverlapAmount = 0;
+      } else {
+        nextStartIndex = Math.max(1, splitIndex - 1);
+        newOverlapAmount = splitIndex - nextStartIndex;
+      }
 
       result.addAll(recursiveBatch(
           docs.subList(nextStartIndex, docs.size()),
