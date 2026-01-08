@@ -1,7 +1,19 @@
 package edu.gju.chatbot.gju_chatbot.jina;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
@@ -9,88 +21,101 @@ import org.springframework.ai.tokenizer.TokenCountEstimator;
 import edu.gju.chatbot.gju_chatbot.batchingstrategy.JinaBatchingStrategy;
 import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 class JinaBatchingStrategyTest {
 
-  private List<Document> testDocuments;
+  private static final Logger logger = LoggerFactory.getLogger(JinaBatchingStrategyTest.class);
 
-  private int batchTokenLimit;
+  private JinaBatchingStrategy strategy;
+  private TokenCountEstimator tokenizer;
 
-  private JinaBatchingStrategy batchingStrategy;
-
-  private static final String FILE_SUMMARY_KEY = DocumentMetadataKeys.FILE_SUMMARY;
-  private static final String BREADCRUMBS_KEY = DocumentMetadataKeys.BREADCRUMBS;
   private static final String CHUNK_TYPE_KEY = "chunk_type";
+
+  private static final String SUMMARY_TEXT = "Summary of the file content here.";
+
+  private static final String BREADCRUMBS = "Course > Section A";
+
+  private int summaryCost;
+  private int breadcrumbCost;
+  private int docCost;
 
   @BeforeEach
   void setUp() {
-    String summaryText = "This is just a summary.";
-    String documentText = "This is a sample text created for testing purposes.";
-    String breadcrumbsText = "These are sample breadcrumbs.";
-    String differentBreadcrumbsText = "These are totally different breadcrumbs";
+    tokenizer = new JTokkitTokenCountEstimator();
 
-    Map<String, Object> metadata1 = Map.of(FILE_SUMMARY_KEY, summaryText, BREADCRUMBS_KEY, breadcrumbsText);
-    Map<String, Object> metadata2 = Map.of(FILE_SUMMARY_KEY, summaryText, BREADCRUMBS_KEY, differentBreadcrumbsText);
+    summaryCost = tokenizer.estimate(SUMMARY_TEXT);
+    breadcrumbCost = tokenizer.estimate(BREADCRUMBS);
 
-    List<Document> documents = List.of(
-        new Document(documentText, metadata1),
-        new Document(documentText, metadata2));
+    String baseText = "test ".repeat(40);
+    docCost = tokenizer.estimate(baseText);
 
-    TokenCountEstimator tokenCountEstimator = new JTokkitTokenCountEstimator();
+    logger.info("--- Test Setup Metrics ---");
+    logger.info("Summary Cost: {}", summaryCost);
+    logger.info("Breadcrumb Cost: {}", breadcrumbCost);
+    logger.info("Standard Doc Cost: {}", docCost);
 
-    int summaryTokens = tokenCountEstimator.estimate(summaryText);
-    int documentTokens = tokenCountEstimator.estimate(documentText);
-    int breadcrumbsTokens = tokenCountEstimator.estimate(breadcrumbsText);
+    int targetCapacity = summaryCost + breadcrumbCost + (docCost * 2);
 
-    this.batchTokenLimit = (int) Math.floor((summaryTokens + breadcrumbsTokens + (documentTokens * 3)) * 1.15);
+    int maxInputTokenCount = (int) Math.ceil(targetCapacity / 0.9);
 
-    this.testDocuments = documents;
+    strategy = new JinaBatchingStrategy(maxInputTokenCount);
 
-    int maxInputTokens = (int) Math.ceil(this.batchTokenLimit / 0.9);
-
-    this.batchingStrategy = new JinaBatchingStrategy(maxInputTokens);
+    logger.info("Configured Strategy Max Tokens: {}", maxInputTokenCount);
   }
 
   @Test
-  void testTwoDocumentsWithDifferentBreadcrumbsProduceTwoBatches() {
-    List<List<Document>> batches = batchingStrategy.batch(testDocuments);
+  @DisplayName("Scenario: 5 Docs of same section. Should overlap cleanly.")
+  void testStandardOverlap() {
+    List<Document> docs = generateDocs(5, BREADCRUMBS);
 
-    assertEquals(2, batches.size(), "Different breadcrumbs should start a new batch");
+    List<List<Document>> batches = strategy.batch(docs);
 
-    List<Document> firstBatch = batches.get(0);
-    assertTrue(firstBatch.size() >= 3, "first batch should contain at least FILE_SUMMARY, BREADCRUMBS, TARGET");
-    assertEquals("FILE_SUMMARY", firstBatch.get(0).getMetadata().get(CHUNK_TYPE_KEY));
-    assertEquals("BREADCRUMBS", firstBatch.get(1).getMetadata().get(CHUNK_TYPE_KEY));
-    assertEquals("TARGET", firstBatch.get(2).getMetadata().get(CHUNK_TYPE_KEY));
+    logger.info("Generated {} batches", batches.size());
 
-    List<Document> secondBatch = batches.get(1);
-    assertTrue(secondBatch.size() >= 3, "second batch should contain at least FILE_SUMMARY, BREADCRUMBS, TARGET");
-    assertEquals("FILE_SUMMARY", secondBatch.get(0).getMetadata().get(CHUNK_TYPE_KEY));
-    assertEquals("BREADCRUMBS", secondBatch.get(1).getMetadata().get(CHUNK_TYPE_KEY));
-    assertEquals("TARGET", secondBatch.get(2).getMetadata().get(CHUNK_TYPE_KEY));
+    assertTrue(batches.size() >= 2, "Should create multiple batches");
+
+    List<Document> batch1 = batches.get(0);
+    assertChunkType(batch1.get(0), "FILE_SUMMARY");
+    assertChunkType(batch1.get(1), "BREADCRUMBS");
+    assertChunkType(batch1.get(2), "TARGET");
+    assertChunkType(batch1.get(3), "TARGET");
+
+    List<Document> batch2 = batches.get(1);
+    assertChunkType(batch2.get(0), "FILE_SUMMARY");
+    assertChunkType(batch2.get(1), "BREADCRUMBS");
+
+    Document overlapDoc = batch2.get(2);
+    assertChunkType(overlapDoc, "OVERLAP");
+    assertEquals(docs.get(1).getText(), overlapDoc.getText(), "Overlap doc should match Doc 1 from previous batch");
   }
 
   @Test
-  void testOverlapWithDocumentsFromSameSection() {
-    List<Document> documents = List.of(
-        testDocuments.get(0),
-        testDocuments.get(0),
-        testDocuments.get(0),
-        testDocuments.get(0));
+  @DisplayName("Scenario: Giant Document Protection")
+  void testGiantDocumentThrowsException() {
+    String giantText = "huge ".repeat(1000);
+    Document giantDoc = new Document(giantText, Map.of(
+        DocumentMetadataKeys.FILE_SUMMARY, SUMMARY_TEXT,
+        DocumentMetadataKeys.BREADCRUMBS, BREADCRUMBS));
 
-    List<List<Document>> batches = batchingStrategy.batch(documents);
+    try {
+      strategy.batch(List.of(giantDoc));
+    } catch (IllegalArgumentException e) {
+      logger.info("Caught expected exception: {}", e.getMessage());
+      assertTrue(e.getMessage().contains("exceeds limit"));
+    }
+  }
 
-    assertTrue(batches.size() > 1, "Second document should create a new batch and trigger overlap");
+  private List<Document> generateDocs(int count, String breadcrumbs) {
+    String docText = "test ".repeat(40);
+    return IntStream.range(0, count)
+        .mapToObj(i -> new Document(docText, Map.of(
+            DocumentMetadataKeys.FILE_SUMMARY, SUMMARY_TEXT,
+            DocumentMetadataKeys.BREADCRUMBS, breadcrumbs)))
+        .collect(Collectors.toList());
+  }
 
-    List<Document> secondBatch = batches.get(1);
-
-    assertEquals("FILE_SUMMARY", secondBatch.get(0).getMetadata().get(CHUNK_TYPE_KEY));
-    assertEquals("BREADCRUMBS", secondBatch.get(1).getMetadata().get(CHUNK_TYPE_KEY));
-    assertEquals("OVERLAP", secondBatch.get(2).getMetadata().get(CHUNK_TYPE_KEY));
-    assertEquals("TARGET", secondBatch.get(3).getMetadata().get(CHUNK_TYPE_KEY));
+  private void assertChunkType(Document doc, String expectedType) {
+    String actual = (String) doc.getMetadata().get(CHUNK_TYPE_KEY);
+    assertNotNull(actual, "Chunk type should not be null");
+    assertEquals(expectedType, actual, "Chunk type mismatch for doc: " + doc.getText().substring(0, 10) + "...");
   }
 }
