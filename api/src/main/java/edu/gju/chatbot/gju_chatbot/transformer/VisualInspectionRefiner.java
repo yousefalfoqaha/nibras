@@ -69,8 +69,7 @@ public class VisualInspectionRefiner implements Function<List<Document>, List<Do
 
       log.info("Inspected page {} markdown", i);
 
-      log.debug(correctedMarkdown);
-
+      log.info(correctedMarkdown);
       refinedPages.add(refinedDocument);
     }
 

@@ -6,24 +6,31 @@ import zipfile
 
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat, DocumentStream
-from docling.datamodel.pipeline_options import PdfPipelineOptions, RapidOcrOptions
+from docling.datamodel.pipeline_options import PdfPipelineOptions, ThreadedPdfPipelineOptions
 from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
+from docling.pipeline.threaded_standard_pdf_pipeline import ThreadedStandardPdfPipeline
 
 app = FastAPI()
 
-pipeline_options = PdfPipelineOptions(
+pipeline_options = ThreadedPdfPipelineOptions(
     generate_page_images=True,
     images_scale=1.0,
-    do_ocr=True,
-    ocr_options=RapidOcrOptions(backend="torch"),
-    accelerator_options=AcceleratorOptions(device=AcceleratorDevice.CUDA),
+    do_ocr=False,
+    accelerator_options=AcceleratorOptions(
+        device=AcceleratorDevice.CUDA,
+    ),
     ocr_batch_size=4,
-    layout_batch_size=4,
+    layout_batch_size=64,
     table_batch_size=4,
 )
 
 converter = DocumentConverter(
-    format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
+    format_options={
+        InputFormat.PDF: PdfFormatOption(
+            pipeline_cls=ThreadedStandardPdfPipeline,
+            pipeline_options=pipeline_options,
+        )
+    }
 )
 
 

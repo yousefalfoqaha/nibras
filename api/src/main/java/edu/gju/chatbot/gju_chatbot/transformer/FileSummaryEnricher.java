@@ -21,15 +21,12 @@ public class FileSummaryEnricher implements DocumentTransformer {
 
   private static final PromptTemplate PROMPT_TEMPLATE = new PromptTemplate(
       """
-          Your task is to produce a global 1-2 scentence summary of the document. If present, include academic years, programs, or any useful unique identifiers,
-          as if giving a comprehensive title of the text.
+              Generate a concise, neutral file name based on the document.
 
-          Example: The 2023 bachelor of science Computer Science study plan for all tracks.
-
-          FULL FILE CONTENT:
-          <<<
-            {file_content}
-          >>>
+              DOCUMENT:
+              <<<
+              {file_content}
+              >>>
           """);
 
   private final ChatModel chatModel;
