@@ -2,6 +2,7 @@ package edu.gju.chatbot.gju_chatbot.transformer;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -15,42 +16,38 @@ import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class FileSummaryEnricher implements DocumentTransformer {
+public class FileSummaryEnricher implements Function<Document, Document> {
 
   private Logger log = LoggerFactory.getLogger(FileSummaryEnricher.class);
 
   private static final PromptTemplate PROMPT_TEMPLATE = new PromptTemplate(
       """
-              Generate a concise, neutral file name based on the document.
+                  Create a clear, descriptive headline for the provided text. It should serve as a label for the file.
 
-              DOCUMENT:
-              <<<
-              {file_content}
-              >>>
+                  DOCUMENT:
+                  <<<
+                  {file_content}
+                  >>>
           """);
 
   private final ChatModel chatModel;
 
+  public Document enrich(Document document) {
+    return apply(document);
+  }
+
   @Override
-  public List<Document> apply(List<Document> documents) {
-    log.info("Recieved {} documents", documents.size());
-
-    String fileContent = documents.stream()
-        .map(Document::getText)
-        .collect(Collectors.joining("\n"));
-
+  public Document apply(Document document) {
     String fileSummary = this.chatModel.call(
-        PROMPT_TEMPLATE.create(Map.of("file_content", fileContent)))
+        PROMPT_TEMPLATE.create(Map.of("file_content", document.getText())))
         .getResult()
         .getOutput()
         .getText();
 
     log.debug("Summary generated: {}", fileSummary);
 
-    for (Document document : documents) {
-      document.getMetadata().put(DocumentMetadataKeys.FILE_SUMMARY, fileSummary);
-    }
+    document.getMetadata().put(DocumentMetadataKeys.FILE_SUMMARY, fileSummary);
 
-    return documents;
+    return document;
   }
 }

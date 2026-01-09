@@ -50,9 +50,9 @@ class EtlPipelineServiceIT {
   void testRequestToFileSummaryEnricher() {
     Document document = new Document("Some text that needs summarizing or whatever.");
 
-    List<Document> enrichedDocuments = this.fileSummaryEnricher.transform(List.of(document));
+    Document enrichedDocument = this.fileSummaryEnricher.enrich(document);
 
-    var summary = enrichedDocuments.get(0).getMetadata().get("file_summary");
+    var summary = enrichedDocument.getMetadata().get("file_summary");
     assertTrue(summary instanceof String);
   }
 

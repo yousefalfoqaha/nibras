@@ -1,6 +1,7 @@
 from typing import Annotated
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import StreamingResponse
+
+from fastapi import FastAPI, File, UploadFile
+
 from io import BytesIO
 import zipfile
 
@@ -13,8 +14,6 @@ from docling.pipeline.threaded_standard_pdf_pipeline import ThreadedStandardPdfP
 app = FastAPI()
 
 pipeline_options = ThreadedPdfPipelineOptions(
-    generate_page_images=True,
-    images_scale=1.0,
     do_ocr=False,
     accelerator_options=AcceleratorOptions(
         device=AcceleratorDevice.CUDA,
@@ -41,28 +40,8 @@ async def convert_file(file: Annotated[UploadFile, File()]):
     source = DocumentStream(name=file_name, stream=BytesIO(file_bytes))
 
     document = converter.convert(source).document
+    markdown = document.export_to_markdown()
 
-    zip_buffer = BytesIO()
-
-    with zipfile.ZipFile(zip_buffer, mode="w") as archive:
-        for page_no, page in document.pages.items():
-            if page.image is None or page.image.pil_image is None:
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Image generation failed for page {page_no}",
-                )
-
-            markdown = document.export_to_markdown(page_no=page_no)
-            archive.writestr(f"{page_no}.md", markdown)
-
-            image_buffer = BytesIO()
-            page.image.pil_image.save(image_buffer, format="JPEG")
-            archive.writestr(f"{page_no}.jpeg", image_buffer.getvalue())
-
-    zip_buffer.seek(0)
-
-    return StreamingResponse(
-        zip_buffer,
-        media_type="application/zip",
-        headers={"Content-Disposition": "attachment; filename=result.zip"},
-    )
+    return {
+        "content": markdown
+    }

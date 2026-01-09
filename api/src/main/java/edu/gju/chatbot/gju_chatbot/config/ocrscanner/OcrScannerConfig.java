@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.config.MarkdownConverter;
+package edu.gju.chatbot.gju_chatbot.config.ocrscanner;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -6,19 +6,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
-import edu.gju.chatbot.gju_chatbot.reader.MarkdownConverter;
+import edu.gju.chatbot.gju_chatbot.reader.OcrScanner;
 
 @Configuration
-@EnableConfigurationProperties({ MarkdownConverterProperties.class })
-public class MarkdownConverterConfig {
+@EnableConfigurationProperties({ OcrScannerProperties.class })
+public class OcrScannerConfig {
 
   @Bean
-  public MarkdownConverter markdownConverter(MarkdownConverterProperties properties,
+  public OcrScanner ocrScanner(OcrScannerProperties properties,
       RestClient.Builder restClientBuilder, RetryTemplate retryTemplate) {
     RestClient restClient = restClientBuilder
         .baseUrl(properties.getBaseUrl() + properties.getConverterPath())
         .build();
 
-    return new MarkdownConverter(restClient, retryTemplate);
+    return new OcrScanner(restClient, retryTemplate);
   }
 }

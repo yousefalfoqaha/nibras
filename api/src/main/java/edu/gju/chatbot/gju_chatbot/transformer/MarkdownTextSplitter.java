@@ -4,41 +4,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.document.DocumentTransformer;
 
 import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
-public class MarkdownHeaderTextSplitter implements DocumentTransformer {
+public class MarkdownTextSplitter implements Function<Document, List<Document>> {
 
-  private static final Logger log = LoggerFactory.getLogger(MarkdownHeaderTextSplitter.class);
-  private static final int MAX_HEADER_DEPTH = 3;
+  private static final Logger log = LoggerFactory.getLogger(MarkdownTextSplitter.class);
+
+  private static final int MAX_HEADER_DEPTH = 6;
+
+  public List<Document> split(Document markdown) {
+    return apply(markdown);
+  }
 
   @Override
-  public List<Document> apply(List<Document> pages) {
-    if (pages == null || pages.isEmpty()) {
-      log.warn("MarkdownHeaderTextSplitter called with empty list.");
-      return List.of();
-    }
-
-    log.info("=== Starting Markdown Splitter ({} Input Pages) ===", pages.size());
-
-    String fullText = pages.stream()
-        .map(Document::getText)
-        .reduce((a, b) -> a + "\n\n" + b)
-        .orElse("");
-
-    log.debug("   > Merged Content Size: {} chars", fullText.length());
-
-    String[] lines = fullText.split("\n");
+  public List<Document> apply(Document document) {
+    String[] lines = document.getText().split("\n");
     String[] currentHeaders = new String[MAX_HEADER_DEPTH];
     StringBuilder currentChunk = new StringBuilder();
     List<Document> chunks = new ArrayList<>();
 
-    Map<String, Object> baseMetadata = pages.get(0).getMetadata();
+    Map<String, Object> baseMetadata = document.getMetadata();
 
     log.info("--- Processing Line-by-Line ({}) ---", lines.length);
 
@@ -66,7 +57,6 @@ public class MarkdownHeaderTextSplitter implements DocumentTransformer {
       currentChunk.append(line).append('\n');
     }
 
-    // Final flush for the last section
     log.debug("   > End of text reached. Finalizing last chunk...");
     flushChunk(chunks, currentChunk, currentHeaders, baseMetadata);
 

@@ -1,5 +1,6 @@
 package edu.gju.chatbot.gju_chatbot.config;
 
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -8,8 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
-import edu.gju.chatbot.gju_chatbot.transformer.VisualInspectionRefiner;
-import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHeaderTextSplitter;
+import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHierarchyEnricher;
+import edu.gju.chatbot.gju_chatbot.transformer.MarkdownTextSplitter;
 
 @Configuration
 public class TransformerConfig {
@@ -25,16 +26,16 @@ public class TransformerConfig {
   }
 
   @Bean
-  public VisualInspectionRefiner visualInspectionRefiner(OpenAiChatModel baseChatModel) {
-    OpenAiChatModel visualInspectionModel = baseChatModel.mutate()
+  public MarkdownHierarchyEnricher visualInspectionRefiner(OpenAiChatModel chatModel) {
+    ChatClient chatClient = ChatClient.builder(chatModel)
         .defaultOptions(OpenAiChatOptions.builder().model("gpt-4o-mini").temperature(0.0).build())
         .build();
 
-    return new VisualInspectionRefiner(visualInspectionModel);
+    return new MarkdownHierarchyEnricher(chatClient);
   }
 
   @Bean
-  public MarkdownHeaderTextSplitter markdownHeaderTextSplitter() {
-    return new MarkdownHeaderTextSplitter();
+  public MarkdownTextSplitter markdownHeaderTextSplitter() {
+    return new MarkdownTextSplitter();
   }
 }

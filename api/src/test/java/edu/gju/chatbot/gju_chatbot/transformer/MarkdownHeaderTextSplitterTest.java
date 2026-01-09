@@ -11,32 +11,31 @@ import org.springframework.ai.document.Document;
 
 public class MarkdownHeaderTextSplitterTest {
 
-  MarkdownHeaderTextSplitter textSplitter;
+  MarkdownTextSplitter textSplitter;
 
   @BeforeEach
   void setUp() {
-    textSplitter = new MarkdownHeaderTextSplitter();
+    textSplitter = new MarkdownTextSplitter();
   }
 
   @Test
   public void testExtractMarkdownHierarchy() {
-    List<Document> pages = List.of(
-        new Document("""
-            # Introduction
-            This is the intro text.
+    Document markdown = new Document("""
+        # Introduction
+        This is the intro text.
 
-            ## Background
-            Some background info.
+        ## Background
+        Some background info.
 
-            ### Details
-            Fine-grained details.
+        ### Details
+        Fine-grained details.
 
-            ## Scope
-            Scope description.
-            """,
-            Map.of("source", "page1.pdf")));
+        ## Scope
+        Scope description.
+        """,
+        Map.of("source", "page1.pdf"));
 
-    List<Document> chunks = textSplitter.transform(pages);
+    List<Document> chunks = textSplitter.split(markdown);
 
     assertEquals(4, chunks.size());
 

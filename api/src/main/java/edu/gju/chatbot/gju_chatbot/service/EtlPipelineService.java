@@ -8,21 +8,21 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import edu.gju.chatbot.gju_chatbot.exception.UnsupportedFileTypeException;
-import edu.gju.chatbot.gju_chatbot.reader.MarkdownConverter;
+import edu.gju.chatbot.gju_chatbot.reader.OcrScanner;
 import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
-import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHeaderTextSplitter;
-import edu.gju.chatbot.gju_chatbot.transformer.VisualInspectionRefiner;
+import edu.gju.chatbot.gju_chatbot.transformer.MarkdownTextSplitter;
+import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHierarchyEnricher;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
 public class EtlPipelineService {
 
-  private final MarkdownConverter markdownConverter;
+  private final OcrScanner ocrScanner;
 
-  private final VisualInspectionRefiner visualInspectionRefiner;
+  private final MarkdownHierarchyEnricher markdownHierarchyEnricher;
 
-  private final MarkdownHeaderTextSplitter markdownHeaderTextSplitter;
+  private final MarkdownTextSplitter markdownHeaderTextSplitter;
 
   private final FileSummaryEnricher fileSummaryEnricher;
 
@@ -36,13 +36,13 @@ public class EtlPipelineService {
       throw new UnsupportedFileTypeException("Only PDFs are supported.");
     }
 
-    List<Document> pagesWithImages = markdownConverter.convert(file);
+    Document ocrScan = ocrScanner.scan(file);
 
-    List<Document> refinedPages = visualInspectionRefiner.apply(pagesWithImages);
+    Document enrichedMarkdownHierarchy = markdownHierarchyEnricher.enrich(ocrScan);
 
-    List<Document> enrichedPages = fileSummaryEnricher.transform(refinedPages);
+    Document enrichedSummary = fileSummaryEnricher.enrich(enrichedMarkdownHierarchy);
 
-    List<Document> splitChunks = markdownHeaderTextSplitter.transform(enrichedPages);
+    List<Document> splitChunks = markdownHeaderTextSplitter.split(enrichedSummary);
 
     vectorStore.add(splitChunks);
   }

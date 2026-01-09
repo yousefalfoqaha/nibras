@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.config.MarkdownConverter;
+package edu.gju.chatbot.gju_chatbot.config.ocrscanner;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -7,8 +7,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@ConfigurationProperties(MarkdownConverterProperties.CONFIG_PREFIX)
-public class MarkdownConverterProperties {
+@ConfigurationProperties(OcrScannerProperties.CONFIG_PREFIX)
+public class OcrScannerProperties {
 
   public static final String CONFIG_PREFIX = "service.markdown-converter";
 

@@ -23,7 +23,8 @@ public class JinaConfig {
       JinaEmbeddingProperties embeddingProperties,
       RestClient.Builder restClientBuilder, RetryTemplate retryTemplate) {
     RestClient restClient = restClientBuilder
-        .baseUrl(connectionProperties.getBaseUrl() + embeddingProperties.getEmbeddingsPath())
+        .baseUrl(connectionProperties.getBaseUrl() +
+            embeddingProperties.getEmbeddingsPath())
         .defaultHeader("Authorization", "Bearer " + connectionProperties.getApiKey())
         .defaultHeader("Content-Type", "application/json")
         .build();
@@ -35,8 +36,8 @@ public class JinaConfig {
         retryTemplate);
   }
 
-  @Bean
-  public BatchingStrategy jinaBatchingStrategy() {
-    return new JinaBatchingStrategy();
-  }
+  // @Bean
+  // public BatchingStrategy jinaBatchingStrategy() {
+  // return new JinaBatchingStrategy();
+  // }
 }

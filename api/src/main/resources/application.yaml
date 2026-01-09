@@ -14,7 +14,7 @@ spring:
   ai:
     model:
       chat: openai
-      embedding: jina
+      embedding: openai
     chat:
       client:
         enabled: false
@@ -23,6 +23,10 @@ spring:
       chat:
         options:
           model: gpt-4o-mini
+      embedding:
+        options:
+          model: text-embedding-3-large
+          dimensions: 1536
     jina:
       base-url: https://api.jina.ai
       api-key: ${JINA_API_KEY}
