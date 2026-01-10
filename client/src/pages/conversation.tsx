@@ -3,6 +3,7 @@ import { UserInput } from '../components/user-input';
 import styles from './conversation.module.css';
 import { useChatHistory, type ChatMessage } from '../contexts/chat-history';
 import React from 'react';
+import Markdown from 'react-markdown';
 
 export function Conversation() {
   const { chatHistory } = useChatHistory();
@@ -73,7 +74,9 @@ function BotMessageMarkdown({ message }: BotMessageMarkdownProps) {
 
   return (
     <div className={styles.botMessageMarkdown}>
-      {message.content}
+      <Markdown>
+        {message.content}
+      </Markdown>
     </div>
   )
 }

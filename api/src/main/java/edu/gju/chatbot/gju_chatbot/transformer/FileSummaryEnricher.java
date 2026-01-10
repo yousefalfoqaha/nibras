@@ -1,16 +1,13 @@
 package edu.gju.chatbot.gju_chatbot.transformer;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.document.DocumentTransformer;
 
 import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +19,7 @@ public class FileSummaryEnricher implements Function<Document, Document> {
 
   private static final PromptTemplate PROMPT_TEMPLATE = new PromptTemplate(
       """
-                  Create a clear, descriptive headline for the provided text. It should serve as a label for the file.
+                  Create a clear, descriptive headline for the provided text. It should serve as a label for the file. Only output plain text.
 
                   DOCUMENT:
                   <<<

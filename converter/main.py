@@ -18,9 +18,9 @@ pipeline_options = ThreadedPdfPipelineOptions(
     accelerator_options=AcceleratorOptions(
         device=AcceleratorDevice.CUDA,
     ),
-    ocr_batch_size=4,
-    layout_batch_size=64,
-    table_batch_size=4,
+    ocr_batch_size=1,
+    layout_batch_size=8,
+    table_batch_size=1,
 )
 
 converter = DocumentConverter(

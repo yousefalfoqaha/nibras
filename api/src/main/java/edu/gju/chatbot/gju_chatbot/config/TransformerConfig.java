@@ -28,7 +28,7 @@ public class TransformerConfig {
   @Bean
   public MarkdownHierarchyEnricher visualInspectionRefiner(OpenAiChatModel chatModel) {
     ChatClient chatClient = ChatClient.builder(chatModel)
-        .defaultOptions(OpenAiChatOptions.builder().model("gpt-4o-mini").temperature(0.0).build())
+        .defaultOptions(OpenAiChatOptions.builder().model("gpt-5.2").build())
         .build();
 
     return new MarkdownHierarchyEnricher(chatClient);
