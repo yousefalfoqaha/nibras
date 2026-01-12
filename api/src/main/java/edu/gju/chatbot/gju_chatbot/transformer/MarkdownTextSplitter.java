@@ -3,12 +3,16 @@ package edu.gju.chatbot.gju_chatbot.transformer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 
 import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 public class MarkdownTextSplitter implements Function<Document, List<Document>> {
 
@@ -21,116 +25,119 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
   }
 
   public List<Document> split(Document markdown) {
-    return apply(markdown);
+    return this.apply(markdown);
   }
 
   @Override
   public List<Document> apply(Document document) {
     String[] lines = document.getText().split("\n");
-    String[] headers = new String[MAX_HEADER_DEPTH];
+    Breadcrumb[] breadcrumbs = new Breadcrumb[MAX_HEADER_DEPTH];
     Map<String, Object> baseMetadata = document.getMetadata();
     StringBuilder sectionContent = new StringBuilder();
     List<Document> chunks = new ArrayList<>();
     int sectionStartIndex = 0;
 
-    for (String l : lines) {
-      Header header = parseHeader(l);
+    for (String line : lines) {
+      Breadcrumb newBreadcrumb = parseBreadcrumb(line);
 
-      if (header != null) {
-        List<Document> sectionChunks = textSplitter.split(
-            new Document(sectionContent.toString(), baseMetadata));
+      if (newBreadcrumb != null) {
+        List<Document> sectionChunks = textSplitter.split(new Document(sectionContent.toString(), baseMetadata));
 
-        for (Document chunk : sectionChunks) {
-          flushChunk(chunks, chunk, headers);
-        }
+        updateBreadcrumbRanges(breadcrumbs, sectionStartIndex, sectionStartIndex + sectionChunks.size() - 1);
 
         for (Document chunk : sectionChunks) {
-          chunk.getMetadata().put(DocumentMetadataKeys.PARENT_RANGE, List.of(sectionStartIndex, chunks.size() - 1));
+          assignBreadcrumbsToChunk(chunk, breadcrumbs, chunks.size());
+          chunks.add(chunk);
         }
 
-        int headerIndex = header.level - 1;
-        headers[headerIndex] = header.text;
-
-        for (int i = headerIndex + 1; i < MAX_HEADER_DEPTH; i++) {
-          headers[i] = "";
-        }
+        clearLowerLevelBreadcrumbs(breadcrumbs, newBreadcrumb);
 
         sectionStartIndex = chunks.size();
         sectionContent.setLength(0);
-
         continue;
       }
 
-      sectionContent.append(l).append('\n');
+      sectionContent.append(line).append('\n');
     }
 
-    // flush last section
+    // Flush final section
     List<Document> sectionChunks = textSplitter.split(new Document(sectionContent.toString(), baseMetadata));
+    updateBreadcrumbRanges(breadcrumbs, sectionStartIndex, sectionStartIndex + sectionChunks.size() - 1);
 
     for (Document chunk : sectionChunks) {
-      flushChunk(chunks, chunk, headers);
+      assignBreadcrumbsToChunk(chunk, breadcrumbs, chunks.size());
+      chunks.add(chunk);
     }
 
     return chunks;
   }
 
-  private void flushChunk(List<Document> chunks, Document chunk, String[] headers) {
-    if (chunk.getText().isEmpty()) {
-      return;
-    }
-
-    String breadcrumbString = formatBreadcrumbs(headers);
-
-    chunk.getMetadata().put(DocumentMetadataKeys.BREADCRUMBS, breadcrumbString);
-    chunk.getMetadata().put(DocumentMetadataKeys.CHUNK_INDEX, chunks.size());
-
-    chunks.add(chunk);
-  }
-
-  private String formatBreadcrumbs(String[] headers) {
-    StringBuilder breadcrumbs = new StringBuilder();
-
-    for (String h : headers) {
-      if (h != null && !h.isEmpty()) {
-        if (breadcrumbs.length() > 0) {
-          breadcrumbs.append(" > ");
-        }
-
-        breadcrumbs.append(h);
+  private void assignBreadcrumbsToChunk(Document chunk, Breadcrumb[] breadcrumbs, int chunkIndex) {
+    Breadcrumb[] chunkBreadcrumbs = new Breadcrumb[MAX_HEADER_DEPTH];
+    for (int i = 0; i < MAX_HEADER_DEPTH; i++) {
+      if (breadcrumbs[i] != null) {
+        chunkBreadcrumbs[i] = breadcrumbs[i];
       }
     }
 
-    return breadcrumbs.toString();
+    chunk.getMetadata().put(DocumentMetadataKeys.BREADCRUMBS, chunkBreadcrumbs);
+    chunk.getMetadata().put(DocumentMetadataKeys.FORMATTED_BREADCRUMBS, formatBreadcrumbs(chunkBreadcrumbs));
+    chunk.getMetadata().put(DocumentMetadataKeys.CHUNK_INDEX, chunkIndex);
   }
 
-  private Header parseHeader(String line) {
-    int level = 0;
-
-    while (level < line.length() && line.charAt(level) == '#') {
-      level++;
+  private void updateBreadcrumbRanges(Breadcrumb[] breadcrumbs, int startIndex, int endIndex) {
+    for (int i = 0; i < MAX_HEADER_DEPTH; i++) {
+      if (breadcrumbs[i] != null) {
+        breadcrumbs[i].setChunkRange(new int[] { startIndex, endIndex });
+      }
     }
+  }
+
+  private void clearLowerLevelBreadcrumbs(Breadcrumb[] breadcrumbs, Breadcrumb newBreadcrumb) {
+    int index = newBreadcrumb.getLevel() - 1;
+    breadcrumbs[index] = newBreadcrumb;
+
+    for (int i = index + 1; i < MAX_HEADER_DEPTH; i++) {
+      breadcrumbs[i] = null;
+    }
+  }
+
+  private String formatBreadcrumbs(Breadcrumb[] breadcrumbs) {
+    StringBuilder sb = new StringBuilder();
+    for (Breadcrumb b : breadcrumbs) {
+      if (b != null && !b.getText().isEmpty()) {
+        if (sb.length() > 0)
+          sb.append(" > ");
+        sb.append(b.getText());
+      }
+    }
+    return sb.toString();
+  }
+
+  private Breadcrumb parseBreadcrumb(String line) {
+    int level = 0;
+    while (level < line.length() && line.charAt(level) == '#')
+      level++;
 
     if (level == 0 || level > MAX_HEADER_DEPTH)
       return null;
-
     if (line.length() <= level || line.charAt(level) != ' ')
       return null;
 
     String text = line.substring(level + 1).trim();
-
     if (text.isEmpty())
       return null;
 
-    return new Header(level, text);
+    return new Breadcrumb(UUID.randomUUID(), text, level, new int[2]);
   }
 
-  private static final class Header {
-    final int level;
+  @AllArgsConstructor
+  @Getter
+  @Setter
+  public static final class Breadcrumb {
+    final UUID id;
     final String text;
-
-    Header(int level, String text) {
-      this.level = level;
-      this.text = text;
-    }
+    final int level;
+    int[] chunkRange;
   }
 }

@@ -32,7 +32,7 @@ public class EmbeddingConfig {
                 DocumentMetadataKeys.PAGE,
                 DocumentMetadataKeys.FILE_NAME,
                 DocumentMetadataKeys.FILE_SUMMARY,
-                DocumentMetadataKeys.PARENT_RANGE,
+                DocumentMetadataKeys.BREADCRUMBS,
                 "parent_document_id"))
             .build(),
         MetadataMode.EMBED);
