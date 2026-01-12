@@ -16,6 +16,8 @@ public final class DocumentMetadataKeys {
 
   public static final String CHUNK_INDEX = "chunk_index";
 
+  public static final String PARENT_RANGE = "parent_range";
+
   // prevent instantiation
   private DocumentMetadataKeys() {
   }
