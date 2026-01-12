@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.batchingstrategy;
+package edu.gju.chatbot.gju_chatbot.embedding;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -14,9 +14,9 @@ import org.springframework.ai.tokenizer.TokenCountEstimator;
 
 import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
-public class JinaBatchingStrategy implements BatchingStrategy {
+public class OverlapBatchingStrategy implements BatchingStrategy {
 
-  private static final Logger log = LoggerFactory.getLogger(JinaBatchingStrategy.class);
+  private static final Logger log = LoggerFactory.getLogger(OverlapBatchingStrategy.class);
   private static final int DEFAULT_MAX_INPUT_TOKENS = 8191;
   private static final double TOKEN_COUNT_RESERVE_PERCENTAGE = 0.10;
   private static final String CHUNK_TYPE_KEY = "chunk_type";
@@ -28,11 +28,11 @@ public class JinaBatchingStrategy implements BatchingStrategy {
   private final TokenCountEstimator tokenCountEstimator = new JTokkitTokenCountEstimator();
   private final int safeMaxInputTokenCount;
 
-  public JinaBatchingStrategy() {
+  public OverlapBatchingStrategy() {
     this(DEFAULT_MAX_INPUT_TOKENS);
   }
 
-  public JinaBatchingStrategy(int maxInputTokenCount) {
+  public OverlapBatchingStrategy(int maxInputTokenCount) {
     this.safeMaxInputTokenCount = (int) Math.floor(maxInputTokenCount * (1 - TOKEN_COUNT_RESERVE_PERCENTAGE));
   }
 

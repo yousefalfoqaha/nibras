@@ -31,12 +31,12 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
     Map<String, Object> baseMetadata = document.getMetadata();
     StringBuilder sectionContent = new StringBuilder();
     List<Document> chunks = new ArrayList<>();
+    int sectionStartIndex = 0;
 
     for (String l : lines) {
       Header header = parseHeader(l);
-      boolean newSection = header != null;
 
-      if (newSection) {
+      if (header != null) {
         List<Document> sectionChunks = textSplitter.split(
             new Document(sectionContent.toString(), baseMetadata));
 
@@ -44,16 +44,31 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
           flushChunk(chunks, chunk, headers);
         }
 
-        headers[header.level - 1] = header.text;
+        for (Document chunk : sectionChunks) {
+          chunk.getMetadata().put(DocumentMetadataKeys.PARENT_RANGE, List.of(sectionStartIndex, chunks.size() - 1));
+        }
 
-        for (int i = header.level; i < MAX_HEADER_DEPTH; i++) {
+        int headerIndex = header.level - 1;
+        headers[headerIndex] = header.text;
+
+        for (int i = headerIndex + 1; i < MAX_HEADER_DEPTH; i++) {
           headers[i] = "";
         }
+
+        sectionStartIndex = chunks.size();
+        sectionContent.setLength(0);
 
         continue;
       }
 
       sectionContent.append(l).append('\n');
+    }
+
+    // flush last section
+    List<Document> sectionChunks = textSplitter.split(new Document(sectionContent.toString(), baseMetadata));
+
+    for (Document chunk : sectionChunks) {
+      flushChunk(chunks, chunk, headers);
     }
 
     return chunks;
@@ -90,25 +105,21 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
 
   private Header parseHeader(String line) {
     int level = 0;
-    int length = line.length();
 
-    while (level < length && line.charAt(level) == '#') {
+    while (level < line.length() && line.charAt(level) == '#') {
       level++;
     }
 
-    if (level == 0 || level > MAX_HEADER_DEPTH) {
+    if (level == 0 || level > MAX_HEADER_DEPTH)
       return null;
-    }
 
-    if (level < length && line.charAt(level) != ' ') {
+    if (line.length() <= level || line.charAt(level) != ' ')
       return null;
-    }
 
     String text = line.substring(level + 1).trim();
 
-    if (text.isEmpty()) {
+    if (text.isEmpty())
       return null;
-    }
 
     return new Header(level, text);
   }

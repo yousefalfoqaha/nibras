@@ -20,10 +20,10 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import edu.gju.chatbot.gju_chatbot.batchingstrategy.JinaBatchingStrategy;
-import edu.gju.chatbot.gju_chatbot.config.jina.JinaEmbeddingProperties;
-import edu.gju.chatbot.gju_chatbot.jina.JinaEmbeddingModel;
-import edu.gju.chatbot.gju_chatbot.jina.JinaEmbeddingOptions;
+import edu.gju.chatbot.gju_chatbot.embedding.OverlapBatchingStrategy;
+import edu.gju.chatbot.gju_chatbot.config.embedding.JinaEmbeddingProperties;
+import edu.gju.chatbot.gju_chatbot.embedding.JinaEmbeddingModel;
+import edu.gju.chatbot.gju_chatbot.embedding.JinaEmbeddingOptions;
 import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
 
 @SpringBootTest(properties = {
@@ -88,7 +88,7 @@ class EtlPipelineServiceIT {
     List<float[]> embeddings = embeddingModel.embed(
         documents,
         JinaEmbeddingOptions.builder().build(),
-        new JinaBatchingStrategy(batchTokenLimit));
+        new OverlapBatchingStrategy(batchTokenLimit));
 
     assertEquals(documents.size(), embeddings.size());
     assertEquals(1024, embeddings.get(0).length);

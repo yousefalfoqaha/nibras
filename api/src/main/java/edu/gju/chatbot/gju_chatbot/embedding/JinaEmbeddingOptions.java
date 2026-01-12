@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.jina;
+package edu.gju.chatbot.gju_chatbot.embedding;
 
 import org.springframework.ai.embedding.EmbeddingOptions;
 

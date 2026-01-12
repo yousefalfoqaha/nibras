@@ -1,6 +1,5 @@
-package edu.gju.chatbot.gju_chatbot.config.jina;
+package edu.gju.chatbot.gju_chatbot.config.embedding;
 
-import org.springframework.ai.embedding.BatchingStrategy;
 import org.springframework.ai.model.SpringAIModelProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -9,13 +8,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
-import edu.gju.chatbot.gju_chatbot.batchingstrategy.JinaBatchingStrategy;
-import edu.gju.chatbot.gju_chatbot.jina.JinaEmbeddingModel;
+import edu.gju.chatbot.gju_chatbot.embedding.JinaEmbeddingModel;
 
 @Configuration
 @ConditionalOnProperty(name = SpringAIModelProperties.EMBEDDING_MODEL, havingValue = "jina", matchIfMissing = true)
 @EnableConfigurationProperties({ JinaConnectionProperties.class, JinaEmbeddingProperties.class })
-public class JinaConfig {
+public class JinaEmbeddingModelConfig {
 
   @Bean
   public JinaEmbeddingModel jinaEmbeddingModel(
@@ -36,8 +34,4 @@ public class JinaConfig {
         retryTemplate);
   }
 
-  // @Bean
-  // public BatchingStrategy jinaBatchingStrategy() {
-  // return new JinaBatchingStrategy();
-  // }
 }

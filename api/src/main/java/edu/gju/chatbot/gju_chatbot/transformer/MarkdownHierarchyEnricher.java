@@ -6,15 +6,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.core.ParameterizedTypeReference;
 
 public class MarkdownHierarchyEnricher implements Function<Document, Document> {
-
-  private static final Logger log = LoggerFactory.getLogger(MarkdownHierarchyEnricher.class);
 
   private static final String SYSTEM_PROMPT = """
       You are refining an OCR-scanned document within a RAG ETL pipeline that has been converted to markdown.

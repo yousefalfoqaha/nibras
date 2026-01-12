@@ -5,7 +5,7 @@ services:
     container_name: gju-chatbot-client
     working_dir: /app
     volumes:
-      - ./client:/app
+      - ../client:/app
     ports:
       - 5173:5173
     environment:
@@ -14,7 +14,7 @@ services:
 
   api:
     build:
-      context: ./api
+      context: ../api
       dockerfile: Dockerfile
     container_name: gju-chatbot-api
     ports:
@@ -25,7 +25,7 @@ services:
       JINA_API_KEY: ${JINA_API_KEY}
       CONVERTER_BASE_URL: http://converter:8000
     volumes:
-      - ./api:/app
+      - ../api:/app
     working_dir: /app
     command: mvn spring-boot:run
     depends_on:
@@ -33,21 +33,21 @@ services:
 
   converter:
     build:
-      context: ./converter
+      context: ../converter
       dockerfile: Dockerfile
     container_name: gju-chatbot-converter
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     working_dir: /app
     volumes:
-      - ./converter:/app
+      - ../converter:/app
     ports:
       - "8000:8000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              capabilities: [gpu]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           capabilities: [gpu]
 
   db:
     image: pgvector/pgvector:pg16-trixie

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 
 public class MarkdownHeaderTextSplitterTest {
 
@@ -15,7 +16,12 @@ public class MarkdownHeaderTextSplitterTest {
 
   @BeforeEach
   void setUp() {
-    textSplitter = new MarkdownTextSplitter();
+    textSplitter = new MarkdownTextSplitter(new TokenTextSplitter(
+        128,
+        64,
+        10,
+        5000,
+        true));
   }
 
   @Test

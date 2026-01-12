@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.config.ocrscanner;
+package edu.gju.chatbot.gju_chatbot.config.reader;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

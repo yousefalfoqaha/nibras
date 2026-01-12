@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.jina;
+package edu.gju.chatbot.gju_chatbot.embedding;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,14 +18,13 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 
-import edu.gju.chatbot.gju_chatbot.batchingstrategy.JinaBatchingStrategy;
 import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
-class JinaBatchingStrategyTest {
+class OverlapBatchingStrategyTest {
 
-  private static final Logger logger = LoggerFactory.getLogger(JinaBatchingStrategyTest.class);
+  private static final Logger logger = LoggerFactory.getLogger(OverlapBatchingStrategyTest.class);
 
-  private JinaBatchingStrategy strategy;
+  private OverlapBatchingStrategy strategy;
   private TokenCountEstimator tokenizer;
 
   private static final String CHUNK_TYPE_KEY = "chunk_type";
@@ -57,7 +56,7 @@ class JinaBatchingStrategyTest {
 
     int maxInputTokenCount = (int) Math.ceil(targetCapacity / 0.9);
 
-    strategy = new JinaBatchingStrategy(maxInputTokenCount);
+    strategy = new OverlapBatchingStrategy(maxInputTokenCount);
 
     logger.info("Configured Strategy Max Tokens: {}", maxInputTokenCount);
   }
