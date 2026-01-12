@@ -14,7 +14,7 @@ public final class DocumentMetadataKeys {
 
   public static final String BREADCRUMBS = "breadcrumbs";
 
-  public static final String FORMATTED_BREADCRUMBS = "formatted_breadcrumbs";
+  public static final String PARENT_RANGE = "parent_range";
 
   public static final String CHUNK_INDEX = "chunk_index";
 
