@@ -23,7 +23,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       JINA_API_KEY: ${JINA_API_KEY}
-      CONVERTER_BASE_URL: http://converter:8000
+      OCR_BASE_URL: http://ocr:8000
     volumes:
       - ../api:/app
     working_dir: /app

@@ -3,11 +3,10 @@ from typing import Annotated
 from fastapi import FastAPI, File, UploadFile
 
 from io import BytesIO
-import zipfile
 
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat, DocumentStream
-from docling.datamodel.pipeline_options import PdfPipelineOptions, ThreadedPdfPipelineOptions
+from docling.datamodel.pipeline_options import ThreadedPdfPipelineOptions
 from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
 from docling.pipeline.threaded_standard_pdf_pipeline import ThreadedStandardPdfPipeline
 
@@ -33,7 +32,7 @@ converter = DocumentConverter(
 )
 
 
-@app.post("/convert/")
+@app.post("/scan/")
 async def convert_file(file: Annotated[UploadFile, File()]):
     file_name = file.filename or "uploaded_file.pdf"
     file_bytes = await file.read()
@@ -42,6 +41,4 @@ async def convert_file(file: Annotated[UploadFile, File()]):
     document = converter.convert(source).document
     markdown = document.export_to_markdown()
 
-    return {
-        "content": markdown
-    }
+    return {"content": markdown}

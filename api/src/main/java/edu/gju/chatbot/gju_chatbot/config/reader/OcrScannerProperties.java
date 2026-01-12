@@ -10,13 +10,13 @@ import lombok.Setter;
 @ConfigurationProperties(OcrScannerProperties.CONFIG_PREFIX)
 public class OcrScannerProperties {
 
-  public static final String CONFIG_PREFIX = "service.markdown-converter";
+  public static final String CONFIG_PREFIX = "service.ocr-scanner";
 
   public static final String DEFAULT_BASE_URL = "http://localhost:8000";
 
-  public static final String DEFAULT_CONVERTER_PATH = "/convert";
+  public static final String DEFAULT_SCANNER_PATH = "/scan";
 
   private String baseUrl = DEFAULT_BASE_URL;
 
-  private String converterPath = DEFAULT_CONVERTER_PATH;
+  private String scannerPath = DEFAULT_SCANNER_PATH;
 }

@@ -16,7 +16,7 @@ public class OcrScannerConfig {
   public OcrScanner ocrScanner(OcrScannerProperties properties,
       RestClient.Builder restClientBuilder, RetryTemplate retryTemplate) {
     RestClient restClient = restClientBuilder
-        .baseUrl(properties.getBaseUrl() + properties.getConverterPath())
+        .baseUrl(properties.getBaseUrl() + properties.getScannerPath())
         .build();
 
     return new OcrScanner(restClient, retryTemplate);

@@ -56,6 +56,6 @@ logging:
             batchingstrategy: DEBUG
 
 service:
-  markdown-converter:
-    base-url: ${CONVERTER_BASE_URL:http://localhost:8000}
-    converter-path: /convert
+  ocr-scanner:
+    base-url: ${OCR_BASE_URL:http://localhost:8000}
+    scanner-path: /scan
