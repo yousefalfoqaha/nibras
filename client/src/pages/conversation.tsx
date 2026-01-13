@@ -4,6 +4,7 @@ import styles from './conversation.module.css';
 import { useChatHistory, type ChatMessage } from '../contexts/chat-history';
 import React from 'react';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export function Conversation() {
   const { chatHistory } = useChatHistory();
@@ -74,7 +75,7 @@ function BotMessageMarkdown({ message }: BotMessageMarkdownProps) {
 
   return (
     <div className={styles.botMessageMarkdown}>
-      <Markdown>
+      <Markdown remarkPlugins={[remarkGfm]}>
         {message.content}
       </Markdown>
     </div>

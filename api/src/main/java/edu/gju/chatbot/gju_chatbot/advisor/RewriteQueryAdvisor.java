@@ -19,7 +19,7 @@ public class RewriteQueryAdvisor implements BaseAdvisor {
       Rewritten query:
       """);
 
-  private int order = 2;
+  private int order = 1;
 
   private final ChatClient chatClient;
 

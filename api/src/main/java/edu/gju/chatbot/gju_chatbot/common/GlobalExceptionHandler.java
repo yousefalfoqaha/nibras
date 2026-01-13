@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import edu.gju.chatbot.gju_chatbot.exception.FileProcessingException;
+import edu.gju.chatbot.gju_chatbot.exception.RagException;
 import edu.gju.chatbot.gju_chatbot.exception.UnsupportedFileTypeException;
 
 @RestControllerAdvice
@@ -33,5 +34,16 @@ public class GlobalExceptionHandler {
             exception.getMessage(),
             new Date()),
         HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+  }
+
+  @ExceptionHandler(RagException.class)
+  public ResponseEntity<ErrorObject> handleException(
+      RagException exception) {
+    return new ResponseEntity<ErrorObject>(
+        new ErrorObject(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            exception.getMessage(),
+            new Date()),
+        HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

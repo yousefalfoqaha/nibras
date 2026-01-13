@@ -1,6 +1,8 @@
 package edu.gju.chatbot.gju_chatbot;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import reactor.core.publisher.Flux;
 @SpringBootApplication
 public class GjuChatbotApplication {
 
+  @Qualifier("openAiChatClient")
   private final ChatClient chatClient;
 
   private final EtlPipelineService etlPipelineService;
@@ -31,6 +34,7 @@ public class GjuChatbotApplication {
   public Flux<ServerSentEvent<TokenDto>> generate(
       @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
     return chatClient.prompt(message)
+        .options(OpenAiChatOptions.builder().model("gpt-5.2").build())
         .stream()
         .content()
         .map(token -> ServerSentEvent.builder(new TokenDto(token)).build());
