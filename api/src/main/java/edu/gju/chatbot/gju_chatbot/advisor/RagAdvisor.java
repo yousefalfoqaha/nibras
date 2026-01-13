@@ -1,5 +1,6 @@
 package edu.gju.chatbot.gju_chatbot.advisor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -12,6 +13,9 @@ import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStoreRetriever;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
 
 public class RagAdvisor implements BaseAdvisor {
 
@@ -43,23 +47,49 @@ public class RagAdvisor implements BaseAdvisor {
 
   private final VectorStoreRetriever documentRetriever;
 
-  private int order = 3;
+  private final JdbcTemplate jdbcTemplate;
 
-  public RagAdvisor(VectorStoreRetriever documentRetriever) {
+  private int order = 2;
+
+  public RagAdvisor(VectorStoreRetriever documentRetriever, JdbcTemplate jdbcTemplate) {
     this.documentRetriever = documentRetriever;
+    this.jdbcTemplate = jdbcTemplate;
   }
 
   @Override
   public ChatClientRequest before(ChatClientRequest chatClientRequest, AdvisorChain advisorChain) {
     String query = chatClientRequest.prompt().getUserMessage().getText();
-    List<Document> documents = documentRetriever.similaritySearch(
+    List<Document> chunks = documentRetriever.similaritySearch(
         SearchRequest.builder()
             .query(query)
-            .similarityThreshold(0.3)
+            .similarityThreshold(0.4)
             .topK(20)
             .build());
 
-    String context = documents.stream()
+    List<String> sectionIds = chunks.stream()
+        .map(doc -> doc.getMetadata().get(DocumentMetadataKeys.SECTION_ID))
+        .filter(id -> id != null)
+        .map(Object::toString)
+        .distinct()
+        .toList();
+
+    String queryString = """
+          SELECT
+            content,
+            metadata,
+            metadata ->> 'section_id' AS section_id
+          FROM vector_store
+          GROUP BY section_id
+          ORDER BY (metadata ->> 'chunk_index')::int
+        """;
+
+    List<Document> sectionDocuments = this.jdbcTemplate.query(
+        queryString,
+        (resultSet, rowNum) -> {
+          Document document = new Document();
+        });
+
+    String context = chunks.stream()
         .map(Document::getFormattedContent)
         .collect(Collectors.joining("\n\n"));
 
