@@ -3,6 +3,7 @@ package edu.gju.chatbot.gju_chatbot.transformer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.springframework.ai.document.Document;
@@ -31,7 +32,7 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
     Map<String, Object> baseMetadata = document.getMetadata();
     StringBuilder sectionContent = new StringBuilder();
     List<Document> chunks = new ArrayList<>();
-    int sectionStartIndex = 0;
+    UUID currentSectionId = UUID.randomUUID();
 
     for (String line : lines) {
       Header header = parseHeader(line);
@@ -41,23 +42,32 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
             new Document(sectionContent.toString(), baseMetadata));
 
         for (Document chunk : sectionChunks) {
-          flushChunk(chunks, chunk, headers);
-        }
-
-        for (Document chunk : sectionChunks) {
-          chunk.getMetadata().put(DocumentMetadataKeys.PARENT_RANGE, List.of(sectionStartIndex, chunks.size() - 1));
+          flushChunk(chunks, chunk, headers, currentSectionId);
         }
 
         int headerIndex = header.level - 1;
+        int currentTopHeaderIndex = 0;
+
+        for (int i = 0; i < MAX_HEADER_DEPTH; i++) {
+          if (headers[i] == null || headers[i].isEmpty() || headers[i].isBlank()) {
+            continue;
+          }
+
+          currentTopHeaderIndex = i;
+          break;
+        }
+
         headers[headerIndex] = header.text;
 
         for (int i = headerIndex + 1; i < MAX_HEADER_DEPTH; i++) {
           headers[i] = "";
         }
 
-        sectionStartIndex = chunks.size();
-        sectionContent.setLength(0);
+        if (headerIndex <= currentTopHeaderIndex) {
+          currentSectionId = UUID.randomUUID();
+        }
 
+        sectionContent.setLength(0);
         continue;
       }
 
@@ -68,17 +78,13 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
     List<Document> sectionChunks = textSplitter.split(new Document(sectionContent.toString(), baseMetadata));
 
     for (Document chunk : sectionChunks) {
-      flushChunk(chunks, chunk, headers);
-    }
-
-    for (Document chunk : sectionChunks) {
-      chunk.getMetadata().put(DocumentMetadataKeys.PARENT_RANGE, List.of(sectionStartIndex, chunks.size() - 1));
+      flushChunk(chunks, chunk, headers, currentSectionId);
     }
 
     return chunks;
   }
 
-  private void flushChunk(List<Document> chunks, Document chunk, String[] headers) {
+  private void flushChunk(List<Document> chunks, Document chunk, String[] headers, UUID sectionId) {
     if (chunk.getText().isEmpty()) {
       return;
     }
@@ -87,6 +93,7 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
 
     chunk.getMetadata().put(DocumentMetadataKeys.BREADCRUMBS, breadcrumbString);
     chunk.getMetadata().put(DocumentMetadataKeys.CHUNK_INDEX, chunks.size());
+    chunk.getMetadata().put(DocumentMetadataKeys.SECTION_ID, sectionId);
 
     chunks.add(chunk);
   }

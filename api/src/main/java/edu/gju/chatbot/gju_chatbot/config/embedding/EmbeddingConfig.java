@@ -29,10 +29,9 @@ public class EmbeddingConfig {
                 DocumentMetadataKeys.CHUNK_INDEX,
                 DocumentMetadataKeys.FILE_ID,
                 DocumentMetadataKeys.FILE_SIZE,
-                DocumentMetadataKeys.PAGE,
                 DocumentMetadataKeys.FILE_NAME,
                 DocumentMetadataKeys.FILE_SUMMARY,
-                DocumentMetadataKeys.BREADCRUMBS,
+                DocumentMetadataKeys.SECTION_ID,
                 "parent_document_id"))
             .build(),
         MetadataMode.EMBED);
