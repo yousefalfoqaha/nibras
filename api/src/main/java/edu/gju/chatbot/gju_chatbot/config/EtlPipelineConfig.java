@@ -19,6 +19,9 @@ public class EtlPipelineConfig {
 
   @Bean
   public MarkdownHierarchyEnricher markdownHierarchyEnricher(OpenAiChatModel chatModel) {
+    System.out.println("Markdown hierarchy chat client");
+    System.out.println(chatModel.getDefaultOptions().toString());
+
     ChatClient chatClient = ChatClient.builder(chatModel)
         .defaultOptions(OpenAiChatOptions.builder().model("gpt-5.2").build())
         .build();

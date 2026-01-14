@@ -17,6 +17,10 @@ public class ChatClientConfig {
   @Bean
   public ChatClient openAiChatClient(OpenAiChatModel chatModel, VectorStoreRetriever vectorStoreRetriever,
       JdbcTemplate jdbcTemplate, ObjectMapper ObjectMapper) {
+
+    System.out.println("Overall chat client bean");
+    System.out.println(chatModel.getDefaultOptions().toString());
+
     return ChatClient.builder(chatModel)
         .defaultAdvisors(
             new RagAdvisor(
