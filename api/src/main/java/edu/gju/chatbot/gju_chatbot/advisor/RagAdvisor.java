@@ -83,7 +83,7 @@ public class RagAdvisor implements BaseAdvisor {
         SearchRequest.builder()
             .query(query)
             .similarityThreshold(0.4)
-            .topK(8)
+            .topK(5)
             .build());
 
     List<String> sectionIds = initialChunks.stream()
