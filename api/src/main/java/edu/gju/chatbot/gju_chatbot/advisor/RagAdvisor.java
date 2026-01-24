@@ -23,7 +23,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.gju.chatbot.gju_chatbot.exception.RagException;
-import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
 
 public class RagAdvisor implements BaseAdvisor {
 
@@ -87,7 +87,7 @@ public class RagAdvisor implements BaseAdvisor {
             .build());
 
     List<String> sectionIds = initialChunks.stream()
-        .map(doc -> doc.getMetadata().get(DocumentMetadataKeys.SECTION_ID))
+        .map(doc -> doc.getMetadata().get(MetadataKeys.SECTION_ID))
         .filter(Objects::nonNull)
         .map(Object::toString)
         .distinct()
@@ -124,7 +124,7 @@ public class RagAdvisor implements BaseAdvisor {
         });
 
     Map<String, List<Document>> sectionMap = expandedDocuments.stream()
-        .collect(Collectors.groupingBy(doc -> doc.getMetadata().get(DocumentMetadataKeys.SECTION_ID).toString()));
+        .collect(Collectors.groupingBy(doc -> doc.getMetadata().get(MetadataKeys.SECTION_ID).toString()));
 
     StringBuilder contextBuilder = new StringBuilder();
     String lastFileId = "";
@@ -137,13 +137,13 @@ public class RagAdvisor implements BaseAdvisor {
         continue;
 
       sectionChunks.sort(Comparator
-          .comparingInt(doc -> Integer.parseInt(doc.getMetadata().get(DocumentMetadataKeys.CHUNK_INDEX).toString())));
+          .comparingInt(doc -> Integer.parseInt(doc.getMetadata().get(MetadataKeys.CHUNK_INDEX).toString())));
 
       for (Document chunk : sectionChunks) {
         Map<String, Object> metadata = chunk.getMetadata();
-        String currentFileId = (String) metadata.get(DocumentMetadataKeys.FILE_ID);
-        String currentBreadcrumb = (String) metadata.get(DocumentMetadataKeys.BREADCRUMBS);
-        String fileSummary = (String) metadata.get(DocumentMetadataKeys.FILE_SUMMARY);
+        String currentFileId = (String) metadata.get(MetadataKeys.FILE_ID);
+        String currentBreadcrumb = (String) metadata.get(MetadataKeys.BREADCRUMBS);
+        String fileSummary = (String) metadata.get(MetadataKeys.FILE_SUMMARY);
 
         if (!Objects.equals(currentFileId, lastFileId)) {
           contextBuilder.append("\n\n=== FILE SUMMARY ===\n")

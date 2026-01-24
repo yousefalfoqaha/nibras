@@ -9,7 +9,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 
-import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -43,7 +43,7 @@ public class FileSummaryEnricher implements Function<Document, Document> {
 
     log.debug("Summary generated: {}", fileSummary);
 
-    document.getMetadata().put(DocumentMetadataKeys.FILE_SUMMARY, fileSummary);
+    document.getMetadata().put(MetadataKeys.FILE_SUMMARY, fileSummary);
 
     return document;
   }

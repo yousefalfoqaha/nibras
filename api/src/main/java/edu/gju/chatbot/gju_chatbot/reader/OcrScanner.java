@@ -16,7 +16,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import edu.gju.chatbot.gju_chatbot.exception.FileProcessingException;
-import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
 
 public class OcrScanner implements Function<Resource, Document> {
 
@@ -49,10 +49,10 @@ public class OcrScanner implements Function<Resource, Document> {
     String fileName = file.getFilename();
     Map<String, Object> metadata = new HashMap<>();
 
-    metadata.put(DocumentMetadataKeys.FILE_ID, fileId);
-    metadata.put(DocumentMetadataKeys.FILE_NAME, fileName);
+    metadata.put(MetadataKeys.FILE_ID, fileId);
+    metadata.put(MetadataKeys.FILE_NAME, fileName);
     try {
-      metadata.put(DocumentMetadataKeys.FILE_SIZE, file.contentLength());
+      metadata.put(MetadataKeys.FILE_SIZE, file.contentLength());
     } catch (IOException e) {
       throw new FileProcessingException("Failed to read file size.");
     }

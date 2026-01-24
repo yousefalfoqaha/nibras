@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import com.knuddels.jtokkit.api.EncodingType;
 
 import edu.gju.chatbot.gju_chatbot.embedding.OverlapBatchingStrategy;
-import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
 
 @Configuration
 public class EmbeddingConfig {
@@ -26,12 +26,12 @@ public class EmbeddingConfig {
         0.10,
         DefaultContentFormatter.builder()
             .withExcludedEmbedMetadataKeys(List.of(
-                DocumentMetadataKeys.CHUNK_INDEX,
-                DocumentMetadataKeys.FILE_ID,
-                DocumentMetadataKeys.FILE_SIZE,
-                DocumentMetadataKeys.FILE_NAME,
-                DocumentMetadataKeys.FILE_SUMMARY,
-                DocumentMetadataKeys.SECTION_ID,
+                MetadataKeys.CHUNK_INDEX,
+                MetadataKeys.FILE_ID,
+                MetadataKeys.FILE_SIZE,
+                MetadataKeys.FILE_NAME,
+                MetadataKeys.FILE_SUMMARY,
+                MetadataKeys.SECTION_ID,
                 "parent_document_id"))
             .build(),
         MetadataMode.EMBED);

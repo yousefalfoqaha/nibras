@@ -12,7 +12,7 @@ import org.springframework.ai.embedding.BatchingStrategy;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 
-import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
 
 public class OverlapBatchingStrategy implements BatchingStrategy {
 
@@ -41,7 +41,7 @@ public class OverlapBatchingStrategy implements BatchingStrategy {
     if (documents.isEmpty())
       return List.of();
 
-    String summary = (String) documents.get(0).getMetadata().get(DocumentMetadataKeys.FILE_SUMMARY);
+    String summary = (String) documents.get(0).getMetadata().get(MetadataKeys.FILE_SUMMARY);
     int summaryTokens = (summary != null) ? tokenCountEstimator.estimate(summary) : 0;
 
     if (summaryTokens > safeMaxInputTokenCount) {
@@ -68,7 +68,7 @@ public class OverlapBatchingStrategy implements BatchingStrategy {
     }
 
     Document headDoc = docs.get(0);
-    String currentBreadcrumbs = (String) headDoc.getMetadata().get(DocumentMetadataKeys.BREADCRUMBS);
+    String currentBreadcrumbs = (String) headDoc.getMetadata().get(MetadataKeys.BREADCRUMBS);
     int breadcrumbTokens = tokenCountEstimator.estimate(currentBreadcrumbs);
     int headDocTokens = tokenCountEstimator.estimate(headDoc.getText());
 
@@ -87,7 +87,7 @@ public class OverlapBatchingStrategy implements BatchingStrategy {
 
     for (int i = 1; i < docs.size(); i++) {
       Document nextDoc = docs.get(i);
-      String nextBreadcrumbs = (String) nextDoc.getMetadata().get(DocumentMetadataKeys.BREADCRUMBS);
+      String nextBreadcrumbs = (String) nextDoc.getMetadata().get(MetadataKeys.BREADCRUMBS);
       int nextTokens = tokenCountEstimator.estimate(nextDoc.getText());
 
       boolean isNewSection = !nextBreadcrumbs.equals(currentBreadcrumbs);

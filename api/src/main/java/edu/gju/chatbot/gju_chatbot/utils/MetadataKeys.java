@@ -1,6 +1,6 @@
 package edu.gju.chatbot.gju_chatbot.utils;
 
-public final class DocumentMetadataKeys {
+public final class MetadataKeys {
 
   public static final String FILE_ID = "file_id";
 
@@ -16,7 +16,9 @@ public final class DocumentMetadataKeys {
 
   public static final String CHUNK_INDEX = "chunk_index";
 
+  public static final String FILTERS = "filters";
+
   // prevent instantiation
-  private DocumentMetadataKeys() {
+  private MetadataKeys() {
   }
 }

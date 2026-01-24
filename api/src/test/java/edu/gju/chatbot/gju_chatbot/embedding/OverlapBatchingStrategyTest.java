@@ -18,7 +18,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 
-import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
 
 class OverlapBatchingStrategyTest {
 
@@ -92,8 +92,8 @@ class OverlapBatchingStrategyTest {
   void testGiantDocumentThrowsException() {
     String giantText = "huge ".repeat(1000);
     Document giantDoc = new Document(giantText, Map.of(
-        DocumentMetadataKeys.FILE_SUMMARY, SUMMARY_TEXT,
-        DocumentMetadataKeys.BREADCRUMBS, BREADCRUMBS));
+        MetadataKeys.FILE_SUMMARY, SUMMARY_TEXT,
+        MetadataKeys.BREADCRUMBS, BREADCRUMBS));
 
     try {
       strategy.batch(List.of(giantDoc));
@@ -107,8 +107,8 @@ class OverlapBatchingStrategyTest {
     String docText = "test ".repeat(40);
     return IntStream.range(0, count)
         .mapToObj(i -> new Document(docText, Map.of(
-            DocumentMetadataKeys.FILE_SUMMARY, SUMMARY_TEXT,
-            DocumentMetadataKeys.BREADCRUMBS, breadcrumbs)))
+            MetadataKeys.FILE_SUMMARY, SUMMARY_TEXT,
+            MetadataKeys.BREADCRUMBS, breadcrumbs)))
         .collect(Collectors.toList());
   }
 

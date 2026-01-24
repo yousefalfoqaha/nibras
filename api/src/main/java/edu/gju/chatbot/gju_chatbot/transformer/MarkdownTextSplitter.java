@@ -9,7 +9,7 @@ import java.util.function.Function;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 
-import edu.gju.chatbot.gju_chatbot.utils.DocumentMetadataKeys;
+import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
 
 public class MarkdownTextSplitter implements Function<Document, List<Document>> {
 
@@ -91,9 +91,9 @@ public class MarkdownTextSplitter implements Function<Document, List<Document>> 
 
     String breadcrumbString = formatBreadcrumbs(headers);
 
-    chunk.getMetadata().put(DocumentMetadataKeys.BREADCRUMBS, breadcrumbString);
-    chunk.getMetadata().put(DocumentMetadataKeys.CHUNK_INDEX, chunks.size());
-    chunk.getMetadata().put(DocumentMetadataKeys.SECTION_ID, sectionId);
+    chunk.getMetadata().put(MetadataKeys.BREADCRUMBS, breadcrumbString);
+    chunk.getMetadata().put(MetadataKeys.CHUNK_INDEX, chunks.size());
+    chunk.getMetadata().put(MetadataKeys.SECTION_ID, sectionId);
 
     chunks.add(chunk);
   }
