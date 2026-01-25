@@ -16,7 +16,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import edu.gju.chatbot.gju_chatbot.exception.FileProcessingException;
-import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
+import edu.gju.chatbot.gju_chatbot.metadata.MetadataKeys;
 
 public class OcrScanner implements Function<Resource, Document> {
 

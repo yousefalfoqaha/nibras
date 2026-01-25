@@ -12,13 +12,16 @@ import org.springframework.ai.embedding.BatchingStrategy;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 
-import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
+import edu.gju.chatbot.gju_chatbot.metadata.MetadataKeys;
 
 public class OverlapBatchingStrategy implements BatchingStrategy {
 
   private static final Logger log = LoggerFactory.getLogger(OverlapBatchingStrategy.class);
+
   private static final int DEFAULT_MAX_INPUT_TOKENS = 8191;
+
   private static final double TOKEN_COUNT_RESERVE_PERCENTAGE = 0.10;
+
   private static final String CHUNK_TYPE_KEY = "chunk_type";
 
   protected enum ChunkType {

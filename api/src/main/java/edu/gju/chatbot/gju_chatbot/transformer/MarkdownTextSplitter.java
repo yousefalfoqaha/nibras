@@ -9,7 +9,7 @@ import java.util.function.Function;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 
-import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
+import edu.gju.chatbot.gju_chatbot.metadata.MetadataKeys;
 
 public class MarkdownTextSplitter implements Function<Document, List<Document>> {
 

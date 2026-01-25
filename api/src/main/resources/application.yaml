@@ -60,3 +60,6 @@ service:
   ocr-scanner:
     base-url: ${OCR_BASE_URL:http://localhost:8000}
     scanner-path: /scan
+
+metadata-filters:
+  path: metadata-filters.yml

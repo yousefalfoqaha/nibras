@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.utils;
+package edu.gju.chatbot.gju_chatbot.metadata;
 
 public final class MetadataKeys {
 

@@ -9,7 +9,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 
-import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
+import edu.gju.chatbot.gju_chatbot.metadata.MetadataKeys;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

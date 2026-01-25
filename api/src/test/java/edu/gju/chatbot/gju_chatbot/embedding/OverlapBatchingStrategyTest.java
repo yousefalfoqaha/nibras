@@ -18,7 +18,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 
-import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
+import edu.gju.chatbot.gju_chatbot.metadata.MetadataKeys;
 
 class OverlapBatchingStrategyTest {
 

@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 
-import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
-
 public class MarkdownHeaderTextSplitterTest {
 
   MarkdownTextSplitter textSplitter;

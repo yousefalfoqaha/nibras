@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import com.knuddels.jtokkit.api.EncodingType;
 
 import edu.gju.chatbot.gju_chatbot.embedding.OverlapBatchingStrategy;
-import edu.gju.chatbot.gju_chatbot.utils.MetadataKeys;
+import edu.gju.chatbot.gju_chatbot.metadata.MetadataKeys;
 
 @Configuration
 public class EmbeddingConfig {
