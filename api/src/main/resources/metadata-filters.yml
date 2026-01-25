@@ -1,7 +1,32 @@
 filters:
   - name: category
-    allowed-values:
-      - value: study_plan
-        description: a study plan is a study plan
+    allowed:
+      - value: study plan
+        description: |
+          This includes admission requirements, placement tests, remedial courses,
+          learning outcomes, program objectives, and department information.
+
+          Study plan courses are organized with different tracks and prerequisites.
+          Courses are categorized by level (university, school, program) and type
+          (compulsory, elective).
       - value: fees
-        description: the fees for the university of all levels
+      - value: academic_calendar
+        description: events for academic semesters (first, second, summer)
+
+  - name: academic level
+    allowed:
+      - value: bachelor
+      - value: masters
+      - value: phd
+      - value: higher diploma
+      - value: pre hosted
+
+  - name: department
+    allowed:
+      - value: computer science
+      - value: mechanical engineering
+
+  - name: program
+    allowed:
+      - value: computer science
+      - value: mechanical engineering

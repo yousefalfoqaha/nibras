@@ -14,11 +14,7 @@ import lombok.Setter;
 @Setter
 public class MetadataFilter {
 
-  private Long id;
-
   private String name;
 
-  private String description;
-
-  private List<MetadataFilterValue> allowedValues = new ArrayList<>();
+  private List<MetadataFilterValue> allowed = new ArrayList<>();
 }

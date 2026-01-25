@@ -4,14 +4,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.web.reactive.resource.NoResourceFoundException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import edu.gju.chatbot.gju_chatbot.exception.RagException;
+
 public class MetadataFilterRepository {
 
-  @Qualifier("yamlMapper")
   private ObjectMapper yamlMapper;
 
   private ResourceLoader resourceLoader;
@@ -24,9 +25,16 @@ public class MetadataFilterRepository {
     this.yamlPath = yamlPath;
   }
 
-  public List<MetadataFilter> fetchMetadataFilters() throws IOException {
-    File yamlFile = resourceLoader.getResource(yamlPath).getFile();
-    MetadataFilterList metadataFilterList = yamlMapper.readValue(yamlFile, MetadataFilterList.class);
+  public List<MetadataFilter> fetchMetadataFilters() {
+    MetadataFilterList metadataFilterList;
+    try {
+      File yamlFile = resourceLoader.getResource("classpath:" + yamlPath).getFile();
+      metadataFilterList = yamlMapper.readValue(yamlFile, MetadataFilterList.class);
+    } catch (IOException e) {
+      throw new RagException("A rag exception.");
+    } catch (NoResourceFoundException e) {
+      throw new RagException("Resource not found.");
+    }
 
     return metadataFilterList.filters;
   }

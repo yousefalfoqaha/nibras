@@ -11,8 +11,6 @@ import lombok.Setter;
 @Setter
 public class MetadataFilterValue {
 
-  private Long id;
-
   private String value;
 
   private String description;
