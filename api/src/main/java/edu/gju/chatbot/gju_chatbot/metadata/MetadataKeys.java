@@ -1,5 +1,7 @@
 package edu.gju.chatbot.gju_chatbot.metadata;
 
+import java.util.Set;
+
 public final class MetadataKeys {
 
   public static final String FILE_ID = "file_id";
@@ -8,7 +10,7 @@ public final class MetadataKeys {
 
   public static final String FILE_SIZE = "file_size";
 
-  public static final String FILE_SUMMARY = "file_summary";
+  public static final String TITLE = "title";
 
   public static final String BREADCRUMBS = "breadcrumbs";
 
@@ -16,9 +18,21 @@ public final class MetadataKeys {
 
   public static final String CHUNK_INDEX = "chunk_index";
 
-  public static final String FILTERS = "filters";
+  public static final String CATEGORY = "category";
+
+  public static final String ACADEMIC_LEVEL = "academic_level";
+
+  public static final String DEPARTMENT = "department";
+
+  public static final String PROGRAM = "program";
+
+  public static final String YEAR = "year";
 
   // prevent instantiation
   private MetadataKeys() {
   }
+
+  public static final Set<String> ALL_KEYS = Set.of(
+      FILE_ID, FILE_NAME, FILE_SIZE, TITLE, BREADCRUMBS,
+      SECTION_ID, CHUNK_INDEX, CATEGORY, ACADEMIC_LEVEL, DEPARTMENT, PROGRAM, YEAR);
 }

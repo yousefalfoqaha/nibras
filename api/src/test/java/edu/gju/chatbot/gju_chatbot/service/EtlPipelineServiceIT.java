@@ -24,7 +24,7 @@ import edu.gju.chatbot.gju_chatbot.embedding.OverlapBatchingStrategy;
 import edu.gju.chatbot.gju_chatbot.config.embedding.JinaEmbeddingProperties;
 import edu.gju.chatbot.gju_chatbot.embedding.JinaEmbeddingModel;
 import edu.gju.chatbot.gju_chatbot.embedding.JinaEmbeddingOptions;
-import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
+import edu.gju.chatbot.gju_chatbot.transformer.FileMetadataEnricher;
 
 @SpringBootTest(properties = {
     "spring.ai.jina.embedding.options.late-chunking=false",
@@ -41,7 +41,7 @@ class EtlPipelineServiceIT {
   JinaEmbeddingProperties properties;
 
   @Autowired
-  FileSummaryEnricher fileSummaryEnricher;
+  FileMetadataEnricher fileSummaryEnricher;
 
   @Autowired
   VectorStore vectorStore;

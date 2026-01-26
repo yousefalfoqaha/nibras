@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import edu.gju.chatbot.gju_chatbot.exception.UnsupportedFileTypeException;
 import edu.gju.chatbot.gju_chatbot.reader.OcrScanner;
-import edu.gju.chatbot.gju_chatbot.transformer.FileSummaryEnricher;
+import edu.gju.chatbot.gju_chatbot.transformer.FileMetadataEnricher;
 import edu.gju.chatbot.gju_chatbot.transformer.MarkdownTextSplitter;
 import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHierarchyEnricher;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class EtlPipelineService {
 
   private final MarkdownTextSplitter markdownHeaderTextSplitter;
 
-  private final FileSummaryEnricher fileSummaryEnricher;
+  private final FileMetadataEnricher fileSummaryEnricher;
 
   private final VectorStore vectorStore;
 

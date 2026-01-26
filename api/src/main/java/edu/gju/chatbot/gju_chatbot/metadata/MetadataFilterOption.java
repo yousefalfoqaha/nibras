@@ -9,7 +9,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class MetadataFilterValue {
+public class MetadataFilterOption {
 
   private String value;
 

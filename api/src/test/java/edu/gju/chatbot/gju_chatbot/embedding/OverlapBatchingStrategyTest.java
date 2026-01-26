@@ -29,7 +29,7 @@ class OverlapBatchingStrategyTest {
 
   private static final String CHUNK_TYPE_KEY = "chunk_type";
 
-  private static final String SUMMARY_TEXT = "Summary of the file content here.";
+  private static final String TITLE = "Summary of the file content here.";
 
   private static final String BREADCRUMBS = "Course > Section A";
 
@@ -41,7 +41,7 @@ class OverlapBatchingStrategyTest {
   void setUp() {
     tokenizer = new JTokkitTokenCountEstimator();
 
-    summaryCost = tokenizer.estimate(SUMMARY_TEXT);
+    summaryCost = tokenizer.estimate(TITLE);
     breadcrumbCost = tokenizer.estimate(BREADCRUMBS);
 
     String baseText = "test ".repeat(40);
@@ -92,7 +92,7 @@ class OverlapBatchingStrategyTest {
   void testGiantDocumentThrowsException() {
     String giantText = "huge ".repeat(1000);
     Document giantDoc = new Document(giantText, Map.of(
-        MetadataKeys.FILE_SUMMARY, SUMMARY_TEXT,
+        MetadataKeys.TITLE, TITLE,
         MetadataKeys.BREADCRUMBS, BREADCRUMBS));
 
     try {
@@ -107,7 +107,7 @@ class OverlapBatchingStrategyTest {
     String docText = "test ".repeat(40);
     return IntStream.range(0, count)
         .mapToObj(i -> new Document(docText, Map.of(
-            MetadataKeys.FILE_SUMMARY, SUMMARY_TEXT,
+            MetadataKeys.TITLE, TITLE,
             MetadataKeys.BREADCRUMBS, breadcrumbs)))
         .collect(Collectors.toList());
   }

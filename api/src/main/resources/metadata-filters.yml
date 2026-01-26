@@ -1,32 +1,36 @@
 filters:
   - name: category
-    allowed:
-      - value: study plan
-        description: |
-          This includes admission requirements, placement tests, remedial courses,
-          learning outcomes, program objectives, and department information.
-
-          Study plan courses are organized with different tracks and prerequisites.
-          Courses are categorized by level (university, school, program) and type
-          (compulsory, elective).
+    description: "Type of academic document"
+    options:
+      - value: study_plan
+        description: "Program curriculum including admission requirements, placement tests, remedial courses, learning outcomes, program objectives, and department information"
       - value: fees
+        description: "Tuition, registration, and other mandatory payments"
       - value: academic_calendar
-        description: events for academic semesters (first, second, summer)
+        description: "Events for all semesters (first, second, summer)"
 
-  - name: academic level
-    allowed:
+  - name: academic_level
+    description: "Student's academic level"
+    options:
       - value: bachelor
       - value: masters
       - value: phd
-      - value: higher diploma
-      - value: pre hosted
+      - value: higher_diploma
+        description: "Preparatory program before bachelor's degree"
+      - value: pre_hosted
 
   - name: department
-    allowed:
-      - value: computer science
-      - value: mechanical engineering
+    description: "Academic department"
+    options:
+      - value: computer_science
+      - value: mechanical_engineering
+      - value: management_sciences
 
   - name: program
-    allowed:
-      - value: computer science
-      - value: mechanical engineering
+    description: "Academic program"
+    options:
+      - value: computer_science
+      - value: mechanical_engineering
+
+  - name: year
+    description: "Academic year (2023, 2024, 2025, etc.)"

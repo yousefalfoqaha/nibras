@@ -143,11 +143,11 @@ public class RagAdvisor implements BaseAdvisor {
         Map<String, Object> metadata = chunk.getMetadata();
         String currentFileId = (String) metadata.get(MetadataKeys.FILE_ID);
         String currentBreadcrumb = (String) metadata.get(MetadataKeys.BREADCRUMBS);
-        String fileSummary = (String) metadata.get(MetadataKeys.FILE_SUMMARY);
+        String title = (String) metadata.get(MetadataKeys.TITLE);
 
         if (!Objects.equals(currentFileId, lastFileId)) {
-          contextBuilder.append("\n\n=== FILE SUMMARY ===\n")
-              .append(fileSummary)
+          contextBuilder.append("\n\n=== TITLE ===\n")
+              .append(title)
               .append("\n====================\n");
           lastFileId = currentFileId;
           lastBreadcrumb = "";

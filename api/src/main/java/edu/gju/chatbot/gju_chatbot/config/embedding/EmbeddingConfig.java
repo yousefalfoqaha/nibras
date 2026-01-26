@@ -30,7 +30,7 @@ public class EmbeddingConfig {
                 MetadataKeys.FILE_ID,
                 MetadataKeys.FILE_SIZE,
                 MetadataKeys.FILE_NAME,
-                MetadataKeys.FILE_SUMMARY,
+                MetadataKeys.TITLE,
                 MetadataKeys.SECTION_ID,
                 "parent_document_id"))
             .build(),

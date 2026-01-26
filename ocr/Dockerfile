@@ -1,7 +1,8 @@
-FROM pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime
+FROM pytorch/pytorch:2.10.0-cuda13.0-cudnn9-runtime
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
+  python3.12-venv \
   build-essential \
   libxml2-dev \
   libxslt1-dev \
@@ -12,4 +13,9 @@ RUN apt-get update && \
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+
+RUN python3 -m venv /opt/venv \
+  && /opt/venv/bin/pip install --upgrade pip \
+  && /opt/venv/bin/pip install --no-cache-dir --prefer-binary -r requirements.txt
+
+ENV PATH="/opt/venv/bin:$PATH"

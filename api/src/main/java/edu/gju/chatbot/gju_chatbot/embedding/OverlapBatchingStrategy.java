@@ -44,7 +44,7 @@ public class OverlapBatchingStrategy implements BatchingStrategy {
     if (documents.isEmpty())
       return List.of();
 
-    String summary = (String) documents.get(0).getMetadata().get(MetadataKeys.FILE_SUMMARY);
+    String summary = (String) documents.get(0).getMetadata().get(MetadataKeys.TITLE);
     int summaryTokens = (summary != null) ? tokenCountEstimator.estimate(summary) : 0;
 
     if (summaryTokens > safeMaxInputTokenCount) {
