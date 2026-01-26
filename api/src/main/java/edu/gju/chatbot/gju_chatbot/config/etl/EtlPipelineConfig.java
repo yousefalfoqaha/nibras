@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.config;
+package edu.gju.chatbot.gju_chatbot.config.etl;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -9,10 +9,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import edu.gju.chatbot.gju_chatbot.etl.FileMetadataEnricher;
+import edu.gju.chatbot.gju_chatbot.etl.MarkdownHierarchyEnricher;
+import edu.gju.chatbot.gju_chatbot.etl.MarkdownTextSplitter;
 import edu.gju.chatbot.gju_chatbot.metadata.MetadataFilterRepository;
-import edu.gju.chatbot.gju_chatbot.transformer.FileMetadataEnricher;
-import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHierarchyEnricher;
-import edu.gju.chatbot.gju_chatbot.transformer.MarkdownTextSplitter;
 
 @Configuration
 public class EtlPipelineConfig {

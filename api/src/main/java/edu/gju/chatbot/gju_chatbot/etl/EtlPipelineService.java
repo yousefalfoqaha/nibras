@@ -8,10 +8,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import edu.gju.chatbot.gju_chatbot.exception.UnsupportedFileTypeException;
-import edu.gju.chatbot.gju_chatbot.reader.OcrScanner;
-import edu.gju.chatbot.gju_chatbot.transformer.FileMetadataEnricher;
-import edu.gju.chatbot.gju_chatbot.transformer.MarkdownTextSplitter;
-import edu.gju.chatbot.gju_chatbot.transformer.MarkdownHierarchyEnricher;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

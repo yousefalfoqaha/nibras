@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.transformer;
+package edu.gju.chatbot.gju_chatbot.etl;
 
 import java.util.List;
 import java.util.Map;

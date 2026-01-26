@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.reader;
+package edu.gju.chatbot.gju_chatbot.etl;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.config.reader;
+package edu.gju.chatbot.gju_chatbot.config.etl;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

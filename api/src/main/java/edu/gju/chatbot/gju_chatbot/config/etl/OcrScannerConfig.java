@@ -1,4 +1,4 @@
-package edu.gju.chatbot.gju_chatbot.config.reader;
+package edu.gju.chatbot.gju_chatbot.config.etl;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
-import edu.gju.chatbot.gju_chatbot.reader.OcrScanner;
+import edu.gju.chatbot.gju_chatbot.etl.OcrScanner;
 
 @Configuration
 @EnableConfigurationProperties({ OcrScannerProperties.class })
