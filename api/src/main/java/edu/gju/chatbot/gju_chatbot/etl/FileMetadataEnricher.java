@@ -1,85 +1,124 @@
 package edu.gju.chatbot.gju_chatbot.etl;
 
+import edu.gju.chatbot.gju_chatbot.metadata.DocumentAttribute;
+import edu.gju.chatbot.gju_chatbot.metadata.DocumentMetadataRegistry;
+import edu.gju.chatbot.gju_chatbot.metadata.DocumentType;
+import edu.gju.chatbot.gju_chatbot.metadata.MetadataKeys;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 
-import edu.gju.chatbot.gju_chatbot.metadata.MetadataFilter;
-import edu.gju.chatbot.gju_chatbot.metadata.MetadataFilterRepository;
-import edu.gju.chatbot.gju_chatbot.metadata.MetadataKeys;
-import lombok.RequiredArgsConstructor;
-
 @RequiredArgsConstructor
 public class FileMetadataEnricher implements Function<Document, Document> {
 
-  private static Logger log = LoggerFactory.getLogger(FileMetadataEnricher.class);
+    private static Logger log = LoggerFactory.getLogger(
+        FileMetadataEnricher.class
+    );
 
-  private static final PromptTemplate SYSTEM_PROMPT_TEMPLATE = new PromptTemplate(
-      """
-                  You are extracting useful metadata from a document for retrieval in a knowledge base.
+    private static final PromptTemplate SYSTEM_PROMPT_TEMPLATE =
+        new PromptTemplate(
+            """
+                    You are extracting useful metadata from a document for retrieval in a knowledge base.
 
-                  Create a clear, descriptive title for the provided text. It should serve as a label for the file, this title is the value for the "title" key in the structured output.
+                    Create a clear, descriptive title for the provided text. It should serve as a label for the file, this title is the value for the "title" key in the structured output.
 
-                  Extract metadata filters ONLY from the list below, and place them as key (filter name) and value pairs:
+                    Extract the document type ONLY from the list below, and place them as key (document_type) and value pair.
 
-                  METADATA_FILTERS:
-                  <<<
-                  {metadata_filters}
-                  >>>
-          """);
+                    Extract the document attributes from the selected document type, required attributes are a must, while optional are good if they can be found. Place the attributes as key (attribute name) and value pair.
 
-  private final ChatClient chatClient;
+                    DOCUMENT TYPES:
+                    <<<
+                    {document_types}
+                    >>>
 
-  private final MetadataFilterRepository metadataFilterRepository;
+                    DOCUMENT ATTRIBUTES:
+                    <<<
+                    {document_attributes}
+                    >>>
+            """
+        );
 
-  public Document enrich(Document document) {
-    return apply(document);
-  }
+    private final ChatClient chatClient;
 
-  @Override
-  public Document apply(Document document) {
-    List<MetadataFilter> metadataFilters = metadataFilterRepository.fetchMetadataFilters();
-    String formattedMetadataFilters = metadataFilters
-        .stream()
-        .map(MetadataFilter::getFormattedFilter)
-        .collect(Collectors.joining("\n\n"));
+    private final DocumentMetadataRegistry documentMetadataRegistry;
 
-    EnrichedMetadata enrichedMetadata = this.chatClient.prompt()
-        .user(u -> u.text(document.getText()))
-        .system(s -> s.text(SYSTEM_PROMPT_TEMPLATE.render(Map.of("metadata_filters", formattedMetadataFilters))))
-        .call()
-        .entity(EnrichedMetadata.class);
-
-    log.debug("Summary generated: {}", enrichedMetadata);
-
-    document.getMetadata().put(MetadataKeys.TITLE, enrichedMetadata.title());
-
-    Map<String, MetadataFilter> allowedFilters = metadataFilters.stream()
-        .collect(Collectors.toMap(MetadataFilter::getName, f -> f));
-
-    for (Map.Entry<String, String> entry : enrichedMetadata.filters().entrySet()) {
-      String key = entry.getKey();
-      String value = entry.getValue();
-
-      if (allowedFilters.containsKey(key)) {
-        document.getMetadata().put(key, value);
-      } else {
-        log.warn("AI returned unknown metadata key: {}", key);
-      }
+    public Document enrich(Document document) {
+        return apply(document);
     }
 
-    return document;
-  }
+    @Override
+    public Document apply(Document document) {
+        List<DocumentType> documentTypes =
+            documentMetadataRegistry.getDocumentTypes();
+        String formattedDocumentTypes = documentTypes
+            .stream()
+            .map(DocumentType::toString)
+            .collect(Collectors.joining("\n\n"));
 
-  private record EnrichedMetadata(
-      String title,
-      Map<String, String> filters) {
-  };
+        List<DocumentAttribute> documentAttributes =
+            documentMetadataRegistry.getDocumentAttributes();
+        String formattedDocumentAttributes = documentAttributes
+            .stream()
+            .map(DocumentAttribute::toString)
+            .collect(Collectors.joining("\n\n"));
+
+        EnrichedMetadata enrichedMetadata = this.chatClient.prompt()
+            .user(u -> u.text(document.getText()))
+            .system(s ->
+                s.text(
+                    SYSTEM_PROMPT_TEMPLATE.render(
+                        Map.of(
+                            "document_types",
+                            formattedDocumentTypes,
+                            "document_attributes",
+                            formattedDocumentAttributes
+                        )
+                    )
+                )
+            )
+            .call()
+            .entity(EnrichedMetadata.class);
+
+        log.debug("Metadata inferred: {}", enrichedMetadata);
+
+        document
+            .getMetadata()
+            .put(MetadataKeys.TITLE, enrichedMetadata.title());
+
+        document
+            .getMetadata()
+            .put(MetadataKeys.DOCUMENT_TYPE, enrichedMetadata.documentType());
+
+        Map<String, DocumentAttribute> allowedAttributes = documentAttributes
+            .stream()
+            .collect(Collectors.toMap(DocumentAttribute::getName, a -> a));
+
+        for (Map.Entry<String, String> entry : enrichedMetadata
+            .attributes()
+            .entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            if (allowedAttributes.containsKey(key)) {
+                document.getMetadata().put(key, value);
+            } else {
+                log.warn("AI returned unknown metadata key: {}", key);
+            }
+        }
+
+        return document;
+    }
+
+    private record EnrichedMetadata(
+        String title,
+        String documentType,
+        Map<String, String> attributes
+    ) {}
 }

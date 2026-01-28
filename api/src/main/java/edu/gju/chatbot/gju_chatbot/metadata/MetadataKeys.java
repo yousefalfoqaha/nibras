@@ -18,7 +18,7 @@ public final class MetadataKeys {
 
   public static final String CHUNK_INDEX = "chunk_index";
 
-  public static final String CATEGORY = "category";
+  public static final String DOCUMENT_TYPE = "document_type";
 
   public static final String ACADEMIC_LEVEL = "academic_level";
 
@@ -34,5 +34,5 @@ public final class MetadataKeys {
 
   public static final Set<String> ALL_KEYS = Set.of(
       FILE_ID, FILE_NAME, FILE_SIZE, TITLE, BREADCRUMBS,
-      SECTION_ID, CHUNK_INDEX, CATEGORY, ACADEMIC_LEVEL, DEPARTMENT, PROGRAM, YEAR);
+      SECTION_ID, CHUNK_INDEX, DOCUMENT_TYPE, ACADEMIC_LEVEL, DEPARTMENT, PROGRAM, YEAR);
 }

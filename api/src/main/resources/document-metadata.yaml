@@ -13,8 +13,8 @@ document_types:
   fees:
     description: "Tuition, registration, and other mandatory payments"
     attributes:
-      required: [year, academic_level]
-      optional: [program]
+      required: [academic_level]
+      optional: [year]
 
 attributes:
   year:

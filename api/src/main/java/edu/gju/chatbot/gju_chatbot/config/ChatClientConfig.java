@@ -5,16 +5,15 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import edu.gju.chatbot.gju_chatbot.tool.KnowledgeBaseTools;
+import edu.gju.chatbot.gju_chatbot.tool.SearchDocumentsTool;
 
 @Configuration
 public class ChatClientConfig {
 
   @Bean
   public ChatClient openAiChatClient(OpenAiChatModel chatModel) {
-
     return ChatClient.builder(chatModel)
-        .defaultTools(new KnowledgeBaseTools())
+        .defaultToolCallbacks(new SearchDocumentsTool())
         .build();
   }
 }
