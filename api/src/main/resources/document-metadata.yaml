@@ -2,8 +2,8 @@ document_types:
   study_plan:
     description: "Program curriculum including admission requirements, placement tests, remedial courses, learning outcomes, program objectives, and department information"
     attributes:
-      required: [year, program]
-      optional: [department, academic_level]
+      required: [academic_level, year, program]
+      optional: [department]
 
   academic_calendar:
     description: "Events for all semesters (first, second, summer)"
@@ -14,7 +14,6 @@ document_types:
     description: "Tuition, registration, and other mandatory payments"
     attributes:
       required: [academic_level]
-      optional: [year]
 
 attributes:
   year:

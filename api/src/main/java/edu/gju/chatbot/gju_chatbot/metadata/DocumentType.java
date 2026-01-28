@@ -20,4 +20,23 @@ public class DocumentType {
     private List<String> requiredAttributes = new ArrayList<>();
 
     private List<String> optionalAttributes = new ArrayList<>();
+
+    public String toFormattedString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("- ").append(name).append(": ").append(description);
+
+        if (!requiredAttributes.isEmpty()) {
+            sb
+                .append("\n  Required attributes: ")
+                .append(String.join(", ", requiredAttributes));
+        }
+
+        if (!optionalAttributes.isEmpty()) {
+            sb
+                .append("\n  Optional attributes: ")
+                .append(String.join(", ", optionalAttributes));
+        }
+
+        return sb.toString();
+    }
 }

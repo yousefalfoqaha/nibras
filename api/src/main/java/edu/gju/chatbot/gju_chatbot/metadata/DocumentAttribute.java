@@ -25,4 +25,21 @@ public class DocumentAttribute {
         INTEGER,
         STRING,
     }
+
+    public String toFormattedString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("- ").append(name);
+
+        if (description != null && !description.isEmpty()) {
+            sb.append(": ").append(description);
+        }
+
+        sb.append(" (").append(type.toString().toLowerCase()).append(")");
+
+        if (!values.isEmpty()) {
+            sb.append("\n  Allowed values: ").append(String.join(", ", values));
+        }
+
+        return sb.toString();
+    }
 }

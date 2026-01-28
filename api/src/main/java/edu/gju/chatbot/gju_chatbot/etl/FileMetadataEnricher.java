@@ -59,14 +59,14 @@ public class FileMetadataEnricher implements Function<Document, Document> {
             documentMetadataRegistry.getDocumentTypes();
         String formattedDocumentTypes = documentTypes
             .stream()
-            .map(DocumentType::toString)
+            .map(DocumentType::toFormattedString)
             .collect(Collectors.joining("\n\n"));
 
         List<DocumentAttribute> documentAttributes =
             documentMetadataRegistry.getDocumentAttributes();
         String formattedDocumentAttributes = documentAttributes
             .stream()
-            .map(DocumentAttribute::toString)
+            .map(DocumentAttribute::toFormattedString)
             .collect(Collectors.joining("\n\n"));
 
         EnrichedMetadata enrichedMetadata = this.chatClient.prompt()

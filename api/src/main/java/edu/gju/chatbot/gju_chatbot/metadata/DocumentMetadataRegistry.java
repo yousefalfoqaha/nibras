@@ -33,10 +33,7 @@ public class DocumentMetadataRegistry {
         this.yamlPath = yamlPath;
         this.objectMapper = objectMapper;
 
-        readYaml();
-
-        System.out.println(this.documentTypes.toString());
-        System.out.println(this.documentAttributes.toString());
+        loadRegistry();
     }
 
     public List<DocumentType> getDocumentTypes() {
@@ -47,7 +44,7 @@ public class DocumentMetadataRegistry {
         return this.documentAttributes;
     }
 
-    private void readYaml() {
+    private void loadRegistry() {
         try {
             JsonNode root = this.objectMapper.readTree(
                 resourceLoader
