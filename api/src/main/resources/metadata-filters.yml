@@ -1,36 +1,41 @@
-filters:
-  - name: category
-    description: "Type of academic document"
-    options:
-      - value: study_plan
-        description: "Program curriculum including admission requirements, placement tests, remedial courses, learning outcomes, program objectives, and department information"
-      - value: fees
-        description: "Tuition, registration, and other mandatory payments"
-      - value: academic_calendar
-        description: "Events for all semesters (first, second, summer)"
+document_types:
+  study_plan:
+    description: "Program curriculum including admission requirements, placement tests, remedial courses, learning outcomes, program objectives, and department information"
+    attributes:
+      required: [year, program]
+      optional: [department, academic_level]
 
-  - name: academic_level
-    description: "Student's academic level"
-    options:
-      - value: bachelor
-      - value: masters
-      - value: phd
-      - value: higher_diploma
-        description: "Preparatory program before bachelor's degree"
-      - value: pre_hosted
+  academic_calendar:
+    description: "Events for all semesters (first, second, summer)"
+    attributes:
+      required: [year]
 
-  - name: department
-    description: "Academic department"
-    options:
-      - value: computer_science
-      - value: mechanical_engineering
-      - value: management_sciences
+  fees:
+    description: "Tuition, registration, and other mandatory payments"
+    attributes:
+      required: [year, academic_level]
+      optional: [program]
 
-  - name: program
-    description: "Academic program"
-    options:
-      - value: computer_science
-      - value: mechanical_engineering
+attributes:
+  year:
+    description: "Academic years (2023, 2024, 2025, etc.)"
+    type: integer
 
-  - name: year
-    description: "Academic year (2023, 2024, 2025, etc.)"
+  program:
+    values:
+      - computer science
+      - mechanical engineering
+      - business intelligence and data analytics
+
+  academic_level:
+    values:
+      - bachelor
+      - masters
+      - phd
+      - higher diploma
+
+  department:
+    values:
+      - computer science
+      - mechanical engineering
+      - management sciences
