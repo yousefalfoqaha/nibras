@@ -1,6 +1,6 @@
 document_types:
   study_plan:
-    description: "Program curriculum including admission requirements, placement tests, remedial courses, learning outcomes, program objectives, and department information"
+    description: "Program curriculum including admission requirements, placement tests, remedial courses, learning outcomes, program objectives. The year of a study plan means the year it began being offered to students."
     attributes:
       required: [academic_level, year, program]
       optional: [department]

@@ -50,11 +50,9 @@ spring:
 
 logging:
   level:
-    edu:
-      gju:
-        chatbot:
-          gju_chatbot:
-            batchingstrategy: DEBUG
+    org:
+      springframework:
+        ai: DEBUG
 
 service:
   ocr-scanner:

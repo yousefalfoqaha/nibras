@@ -76,7 +76,7 @@ public class DocumentSearchTool implements ToolCallback {
 
         Once a document type has been selected, only include attributes found for that document type.
 
-        If a required attribute is missing, stop the tool call and ask a clarifying question.
+        IMPORTANT RULE: if a required attribute for the selected document type was not mentioned by the user, DO NOT call the tool, instead ask a clarifying question.
 
         Available document types:
         %s

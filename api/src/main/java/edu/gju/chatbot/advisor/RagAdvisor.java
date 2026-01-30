@@ -20,8 +20,7 @@ public class RagAdvisor implements BaseAdvisor {
 
         RULES:
         1. NEVER mention the context, the documents, your knowledge limitations, or the user's message/query.
-        2. If the answer is explicitly found in the context, provide the answer completely and accurately.
-        3. If the context does not contain the answer, state that you cannot provide the specific information requested, and instead suggest logical next steps or related topics.
+        3. If the tools called do not contain the answer, state that you cannot provide the specific information requested, and instead suggest logical next steps or related topics.
         4. If the question is about you personally, refer to the YOUR IDENTITY section.
         5. Do NOT summarize or compress information unless the context itself is summarized.
 

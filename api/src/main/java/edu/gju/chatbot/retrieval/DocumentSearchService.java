@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.metadata.MetadataKeys;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +34,7 @@ public class DocumentSearchService {
                 .topK(5)
                 .build()
         );
+
         return expandChunks(similarChunks);
     }
 
@@ -94,19 +94,15 @@ public class DocumentSearchService {
                 )
             );
 
-        return sectionIds
+        return sectionMap
+            .entrySet()
             .stream()
-            .map(sectionId ->
-                reconstructSection(sectionId, sectionMap.get(sectionId))
-            )
+            .map(entry -> reconstructSection(entry.getValue()))
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
 
-    private Document reconstructSection(
-        String sectionId,
-        List<Document> sectionChunks
-    ) {
+    private Document reconstructSection(List<Document> sectionChunks) {
         if (sectionChunks == null || sectionChunks.isEmpty()) {
             return null;
         }
@@ -126,7 +122,6 @@ public class DocumentSearchService {
             .get(0)
             .getMetadata();
         String title = (String) firstChunkMetadata.get(MetadataKeys.TITLE);
-        String fileId = (String) firstChunkMetadata.get(MetadataKeys.FILE_ID);
 
         sectionContent
             .append("=== TITLE ===\n")
@@ -149,11 +144,9 @@ public class DocumentSearchService {
             sectionContent.append(chunk.getText()).append("\n");
         }
 
-        Map<String, Object> sectionMetadata = new HashMap<>();
-        sectionMetadata.put(MetadataKeys.SECTION_ID, sectionId);
-        sectionMetadata.put(MetadataKeys.FILE_ID, fileId);
-        sectionMetadata.put(MetadataKeys.TITLE, title);
-
-        return new Document(sectionContent.toString().trim(), sectionMetadata);
+        return new Document(
+            sectionContent.toString().trim(),
+            firstChunkMetadata
+        );
     }
 }
