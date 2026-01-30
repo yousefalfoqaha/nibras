@@ -1,6 +1,7 @@
 package edu.gju.chatbot.retrieval;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.metadata.DocumentAttribute;
 import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
 import edu.gju.chatbot.metadata.DocumentType;
@@ -40,17 +41,21 @@ public class DocumentSearchTool implements ToolCallback {
 
     @Override
     public String call(String toolInput) {
-        DocumentSearchQuery query = this.objectMapper.convertValue(
-            toolInput,
-            DocumentSearchQuery.class
-        );
+        try {
+            DocumentSearchQuery query = this.objectMapper.readValue(
+                toolInput,
+                DocumentSearchQuery.class
+            );
 
-        List<Document> documents = documentSearchService.search(query);
+            List<Document> documents = documentSearchService.search(query);
 
-        return documents
-            .stream()
-            .map(Document::getText)
-            .collect(Collectors.joining("\n\n"));
+            return documents
+                .stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n"));
+        } catch (Exception e) {
+            throw new RagException("Failed to parse tool input: " + toolInput);
+        }
     }
 
     private String buildToolDescription() {

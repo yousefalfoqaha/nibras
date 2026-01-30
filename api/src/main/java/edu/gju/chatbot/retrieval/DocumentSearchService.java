@@ -56,7 +56,7 @@ public class DocumentSearchService {
             .map(s -> "'" + s + "'")
             .collect(Collectors.joining(","));
 
-        String queryString = String.format(
+        String sql = String.format(
             """
             SELECT
                 content,
@@ -71,7 +71,7 @@ public class DocumentSearchService {
         );
 
         List<Document> expandedChunks = this.jdbcTemplate.query(
-            queryString,
+            sql,
             (resultSet, rowNum) -> {
                 Map<String, Object> metadata;
                 try {
