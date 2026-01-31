@@ -18,8 +18,8 @@ public class DocumentMetadataRegistryConfig {
         DocumentMetadataRegistryProperties properties
     ) {
         return new DocumentMetadataRegistry(
-            new ObjectMapper(new YAMLFactory()),
             resourceLoader,
+            new ObjectMapper(new YAMLFactory()),
             properties.getPath()
         );
     }

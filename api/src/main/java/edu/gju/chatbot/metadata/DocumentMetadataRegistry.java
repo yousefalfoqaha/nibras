@@ -1,157 +1,216 @@
 package edu.gju.chatbot.metadata;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.gju.chatbot.exception.RagException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.springframework.core.io.ResourceLoader;
 
 public class DocumentMetadataRegistry {
 
-    private final List<DocumentType> documentTypes = new ArrayList<>();
+    private final List<DocumentType> documentTypes;
 
-    private final List<DocumentAttribute> documentAttributes =
-        new ArrayList<>();
+    private final List<DocumentAttribute> documentAttributes;
 
-    private ObjectMapper objectMapper;
+    private final ResourceLoader resourceLoader;
 
-    private ResourceLoader resourceLoader;
+    private final ObjectMapper objectMapper;
 
-    private String yamlPath;
+    private final String yamlPath;
 
     public DocumentMetadataRegistry(
-        ObjectMapper objectMapper,
         ResourceLoader resourceLoader,
+        ObjectMapper objectMapper,
         String yamlPath
     ) {
         this.resourceLoader = resourceLoader;
-        this.yamlPath = yamlPath;
         this.objectMapper = objectMapper;
+        this.yamlPath = yamlPath;
 
-        loadRegistry();
+        MetadataConfig config = loadConfig();
+        RegistryData data = buildRegistry(config);
+
+        this.documentTypes = data.documentTypes();
+        this.documentAttributes = data.documentAttributes();
     }
 
     public List<DocumentType> getDocumentTypes() {
-        return this.documentTypes;
+        return documentTypes;
     }
 
     public List<DocumentAttribute> getDocumentAttributes() {
-        return this.documentAttributes;
+        return documentAttributes;
     }
 
-    private void loadRegistry() {
-        try {
-            JsonNode root = this.objectMapper.readTree(
-                resourceLoader
-                    .getResource("classpath:" + this.yamlPath)
-                    .getInputStream()
-            );
-
-            Map<String, DocumentAttribute> attributeMap = new HashMap<>();
-
-            JsonNode attributesNode = root.path("attributes");
-            Iterator<String> attributeNames = attributesNode.fieldNames();
-
-            if (attributesNode.isObject()) {
-                while (attributeNames.hasNext()) {
-                    String attributeName = attributeNames.next();
-                    JsonNode attributeData = attributesNode.path(attributeName);
-
-                    String description = attributeData
-                        .path("description")
-                        .asText();
-
-                    DocumentAttribute.AttributeType type =
-                        DocumentAttribute.AttributeType.STRING;
-
-                    if (
-                        attributeData
-                            .path("type")
-                            .asText()
-                            .equalsIgnoreCase("integer")
-                    ) {
-                        type = DocumentAttribute.AttributeType.INTEGER;
-                    }
-
-                    List<String> values = new ArrayList<>();
-                    for (JsonNode v : attributeData.path("values")) {
-                        values.add(v.asText());
-                    }
-
-                    DocumentAttribute attribute = new DocumentAttribute(
-                        attributeName,
-                        description,
-                        type,
-                        values
-                    );
-
-                    attributeMap.put(attributeName, attribute);
-                    this.documentAttributes.add(attribute);
-                }
-            }
-
-            JsonNode documentTypesNode = root.path("document_types");
-            Iterator<String> documentTypeNames = documentTypesNode.fieldNames();
-
-            if (documentTypesNode.isObject()) {
-                while (documentTypeNames.hasNext()) {
-                    String documentTypeName = documentTypeNames.next();
-                    JsonNode documentTypeData = documentTypesNode.path(
-                        documentTypeName
-                    );
-
-                    String description = documentTypeData
-                        .path("description")
-                        .asText();
-
-                    List<String> requiredAttributes = new ArrayList<>();
-                    List<String> optionalAttributes = new ArrayList<>();
-
-                    JsonNode documentTypeAttributes = documentTypeData.path(
-                        "attributes"
-                    );
-
-                    for (JsonNode attributeNameNode : documentTypeAttributes.path(
-                        "required"
-                    )) {
-                        DocumentAttribute attribute = attributeMap.get(
-                            attributeNameNode.asText()
-                        );
-
-                        if (attribute != null) {
-                            requiredAttributes.add(attribute.getName());
-                        }
-                    }
-
-                    for (JsonNode attributeNameNode : documentTypeAttributes.path(
-                        "optional"
-                    )) {
-                        DocumentAttribute attribute = attributeMap.get(
-                            attributeNameNode.asText()
-                        );
-
-                        if (attribute != null) {
-                            optionalAttributes.add(attribute.getName());
-                        }
-                    }
-
-                    DocumentType documentType = new DocumentType(
-                        documentTypeName,
-                        description,
-                        requiredAttributes,
-                        optionalAttributes
-                    );
-
-                    this.documentTypes.add(documentType);
-                }
-            }
+    private MetadataConfig loadConfig() {
+        try (
+            var is = resourceLoader
+                .getResource("classpath:" + yamlPath)
+                .getInputStream()
+        ) {
+            return objectMapper.readValue(is, MetadataConfig.class);
         } catch (IOException e) {
-            throw new RagException("Failed to read document metadata YAML.");
+            throw new RagException(
+                "Failed to load document metadata from " + yamlPath
+            );
         }
     }
+
+    private RegistryData buildRegistry(MetadataConfig config) {
+        Map<String, DocumentAttribute> attributeMap = new HashMap<>();
+        List<DocumentAttribute> attributes = new ArrayList<>();
+
+        if (config.attributes != null) {
+            for (var entry : config.attributes.entrySet()) {
+                String name = entry.getKey();
+                AttributeConfig attributeConfig = entry.getValue();
+
+                DocumentAttribute.AttributeType type =
+                    DocumentAttribute.AttributeType.STRING;
+                if (attributeConfig.type != null) {
+                    switch (attributeConfig.type.toLowerCase()) {
+                        case "integer" -> type =
+                            DocumentAttribute.AttributeType.INTEGER;
+                        case "string" -> type =
+                            DocumentAttribute.AttributeType.STRING;
+                        default -> throw new RagException(
+                            "Invalid type for attribute '" +
+                                name +
+                                "': " +
+                                attributeConfig.type
+                        );
+                    }
+                }
+
+                List<String> values = new ArrayList<>();
+                if (attributeConfig.values != null) {
+                    for (var v : attributeConfig.values) {
+                        if (type == DocumentAttribute.AttributeType.INTEGER) {
+                            try {
+                                Integer.parseInt(v.toString());
+                                values.add(v.toString());
+                            } catch (NumberFormatException e) {
+                                throw new RagException(
+                                    "Attribute '" +
+                                        name +
+                                        "' has non-integer value: " +
+                                        v
+                                );
+                            }
+                        } else {
+                            values.add(v.toString());
+                        }
+                    }
+                }
+
+                DocumentAttribute attribute = new DocumentAttribute(
+                    name,
+                    attributeConfig.description,
+                    type,
+                    values
+                );
+                attributeMap.put(name, attribute);
+                attributes.add(attribute);
+            }
+        }
+
+        List<DocumentType> documentTypes = new ArrayList<>();
+        if (config.document_types != null) {
+            for (var entry : config.document_types.entrySet()) {
+                String name = entry.getKey();
+                DocumentTypeConfig documentTypeConfig = entry.getValue();
+
+                List<String> required = resolveAttributes(
+                    name,
+                    documentTypeConfig.attributes != null
+                        ? documentTypeConfig.attributes.required
+                        : null,
+                    attributeMap
+                );
+
+                List<String> optional = resolveAttributes(
+                    name,
+                    documentTypeConfig.attributes != null
+                        ? documentTypeConfig.attributes.optional
+                        : null,
+                    attributeMap
+                );
+
+                Set<String> intersection = new HashSet<>(required);
+                intersection.retainAll(optional);
+                if (!intersection.isEmpty()) {
+                    throw new RagException(
+                        "Document type '" +
+                            name +
+                            "' has attributes both required and optional: " +
+                            intersection
+                    );
+                }
+
+                documentTypes.add(
+                    new DocumentType(
+                        name,
+                        documentTypeConfig.description,
+                        required,
+                        optional
+                    )
+                );
+            }
+        }
+
+        return new RegistryData(
+            List.copyOf(documentTypes),
+            List.copyOf(attributes)
+        );
+    }
+
+    private static List<String> resolveAttributes(
+        String documentType,
+        List<String> names,
+        Map<String, DocumentAttribute> attributeMap
+    ) {
+        if (names == null) return List.of();
+        return names
+            .stream()
+            .map(a -> {
+                if (!attributeMap.containsKey(a)) {
+                    throw new RagException(
+                        "Document type '" +
+                            documentType +
+                            "' references unknown attribute '" +
+                            a +
+                            "'"
+                    );
+                }
+                return a;
+            })
+            .collect(Collectors.toList());
+    }
+
+    private record RegistryData(
+        List<DocumentType> documentTypes,
+        List<DocumentAttribute> documentAttributes
+    ) {}
+
+    private record MetadataConfig(
+        Map<String, AttributeConfig> attributes,
+        Map<String, DocumentTypeConfig> document_types
+    ) {}
+
+    private record AttributeConfig(
+        String description,
+        String type,
+        List<Object> values
+    ) {}
+
+    private record DocumentTypeConfig(
+        String description,
+        AttributesConfig attributes
+    ) {}
+
+    private record AttributesConfig(
+        List<String> required,
+        List<String> optional
+    ) {}
 }
