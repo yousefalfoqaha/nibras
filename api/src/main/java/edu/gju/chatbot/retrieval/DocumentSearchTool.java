@@ -36,7 +36,9 @@ public class DocumentSearchTool implements ToolCallback {
     public ToolDefinition getToolDefinition() {
         ToolDefinition definition = ToolDefinition.builder()
             .name("search_documents")
-            .description(buildToolDescription())
+            .description(
+                "Search academic documents by type and attributes as filters."
+            )
             .inputSchema(buildInputSchema())
             .build();
 
@@ -75,9 +77,9 @@ public class DocumentSearchTool implements ToolCallback {
                 .getRequiredAttributes()
                 .stream()
                 .filter(
-                    attr ->
-                        query.getFilters() == null ||
-                        !query.getFilters().containsKey(attr)
+                    a ->
+                        query.getAttributeFilters() == null ||
+                        !query.getAttributeFilters().containsKey(a)
                 )
                 .collect(Collectors.toList());
 
@@ -125,31 +127,36 @@ public class DocumentSearchTool implements ToolCallback {
                 .getDocumentTypes()
                 .forEach(t -> documentTypeEnum.add(t.getName()));
 
-            ObjectNode filtersProperty = properties.putObject("filters");
-            filtersProperty.put("type", "object");
-            ObjectNode filterProperties = filtersProperty.putObject(
-                "properties"
+            ObjectNode attributeFiltersProperty = properties.putObject(
+                "attributeFilters"
             );
+            attributeFiltersProperty.put("type", "object");
+            ObjectNode attributeFilterProperties =
+                attributeFiltersProperty.putObject("properties");
 
             documentMetadataRegistry
                 .getDocumentAttributes()
                 .forEach(a -> {
-                    ObjectNode filterSchema = filterProperties.putObject(
-                        a.getName()
-                    );
+                    ObjectNode attributeFilterSchema =
+                        attributeFilterProperties.putObject(a.getName());
 
                     if (a.getValues() != null && !a.getValues().isEmpty()) {
-                        ArrayNode enumValues = filterSchema.putArray("enum");
+                        ArrayNode enumValues = attributeFilterSchema.putArray(
+                            "enum"
+                        );
                         a.getValues().forEach(enumValues::add);
                     } else if (a.getType().equals(AttributeType.INTEGER)) {
-                        filterSchema.put("type", "integer");
+                        attributeFilterSchema.put("type", "integer");
                     }
 
                     if (
                         a.getDescription() != null &&
                         !a.getDescription().isBlank()
                     ) {
-                        filterSchema.put("description", a.getDescription());
+                        attributeFilterSchema.put(
+                            "description",
+                            a.getDescription()
+                        );
                     }
                 });
 
@@ -159,20 +166,5 @@ public class DocumentSearchTool implements ToolCallback {
         } catch (Exception e) {
             throw new RagException("Failed to build input schema");
         }
-    }
-
-    private String buildToolDescription() {
-        String documentTypesDesc = documentMetadataRegistry
-            .getDocumentTypes()
-            .stream()
-            .map(DocumentType::toFormattedString)
-            .collect(Collectors.joining("\n"));
-
-        return """
-            Search academic documents by type and metadata attributes.
-
-            Document types:
-            %s
-        """.formatted(documentTypesDesc);
     }
 }

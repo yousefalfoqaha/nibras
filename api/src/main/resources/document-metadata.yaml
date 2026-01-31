@@ -11,7 +11,7 @@ document_types:
       optional: [department]
 
   academic_calendar:
-    description: "Events for all semesters (first, second, summer)"
+    description: "Events for all semesters (first, second, summer)."
     attributes:
       required: [year]
 
@@ -22,7 +22,7 @@ document_types:
 
 attributes:
   year:
-    description: "The academic year, that can define a cohort, and time (2023, 2024, 2025, etc.)"
+    description: "The academic year (in YYYY format), that can define a cohort, and time."
     type: integer
 
   program:

@@ -29,7 +29,10 @@ public class ChatClientConfig {
                     objectMapper
                 )
             )
-            .defaultAdvisors(new RagAdvisor(), new DocumentSearchAdvisor())
+            .defaultAdvisors(
+                new RagAdvisor(),
+                new DocumentSearchAdvisor(documentMetadataRegistry)
+            )
             .build();
     }
 }
