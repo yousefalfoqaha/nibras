@@ -25,16 +25,18 @@ public class DocumentType {
         StringBuilder sb = new StringBuilder();
         sb.append("- ").append(name).append(": ").append(description);
 
-        if (!requiredAttributes.isEmpty()) {
-            sb
-                .append("\n  Required attributes: ")
-                .append(String.join(", ", requiredAttributes));
+        List<String> allAttributes = new ArrayList<>();
+        if (requiredAttributes != null) {
+            allAttributes.addAll(requiredAttributes);
+        }
+        if (optionalAttributes != null) {
+            allAttributes.addAll(optionalAttributes);
         }
 
-        if (!optionalAttributes.isEmpty()) {
+        if (!allAttributes.isEmpty()) {
             sb
-                .append("\n  Optional attributes: ")
-                .append(String.join(", ", optionalAttributes));
+                .append("\n  attributes: ")
+                .append(String.join(", ", allAttributes));
         }
 
         return sb.toString();

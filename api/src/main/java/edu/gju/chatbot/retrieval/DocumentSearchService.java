@@ -89,8 +89,8 @@ public class DocumentSearchService {
         Map<String, List<Document>> sectionMap = expandedChunks
             .stream()
             .collect(
-                Collectors.groupingBy(doc ->
-                    doc.getMetadata().get(MetadataKeys.SECTION_ID).toString()
+                Collectors.groupingBy(d ->
+                    d.getMetadata().get(MetadataKeys.SECTION_ID).toString()
                 )
             );
 

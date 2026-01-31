@@ -14,5 +14,5 @@ public class DocumentSearchQuery {
 
     private String documentType;
 
-    private Map<String, Object> attributes;
+    private Map<String, Object> filters;
 }

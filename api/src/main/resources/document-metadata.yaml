@@ -1,14 +1,14 @@
 document_types:
   study_plan:
-  description: |
-    Program curriculum including admission requirements, placement tests, remedial courses,
-    learning outcomes, and program objectives.
+    description: |
+      Program curriculum including admission requirements, placement tests, remedial courses,
+      learning outcomes, and program objectives.
 
-    The year of a study plan represents the first student cohort it serves, and remains in effect
-    for later cohorts unless superseded by a newer study plan.
-  attributes:
-    required: [academic_level, year, program]
-    optional: [department]
+      The year of a study plan represents the first student cohort it serves, and remains in effect
+      for later cohorts unless superseded by a newer study plan.
+    attributes:
+      required: [academic_level, year, program]
+      optional: [department]
 
   academic_calendar:
     description: "Events for all semesters (first, second, summer)"
