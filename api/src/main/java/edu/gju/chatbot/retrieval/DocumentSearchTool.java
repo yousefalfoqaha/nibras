@@ -9,6 +9,7 @@ import edu.gju.chatbot.metadata.DocumentType;
 import edu.gju.chatbot.retrieval.AttributeFilter.AttributeFilterReason;
 import java.io.IOException;
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -58,9 +59,10 @@ public class DocumentSearchTool implements ToolCallback {
                 toolInput,
                 DocumentSearchQuery.class
             );
+
             log.info("Tool input: {}", query.toString());
 
-            DocumentType documentType = documentMetadataRegistry
+            DocumentType extractedDocumentType = documentMetadataRegistry
                 .getDocumentTypes()
                 .stream()
                 .filter(t -> t.getName().equals(query.getDocumentType()))
@@ -73,9 +75,14 @@ public class DocumentSearchTool implements ToolCallback {
                     )
                 );
 
+            Map<String, AttributeFilter> extractedAttributeFilters =
+                query.getAttributeFilters() == null
+                    ? Map.of()
+                    : query.getAttributeFilters();
+
             List<AttributeProblem> filterProblems = collectFilterProblems(
-                documentType,
-                query
+                extractedDocumentType,
+                extractedAttributeFilters
             )
                 .stream()
                 .filter(p -> !"year".equals(p.name()))
@@ -87,17 +94,12 @@ public class DocumentSearchTool implements ToolCallback {
                 return message;
             }
 
-            Map<String, AttributeFilter> providedFilters =
-                query.getAttributeFilters() == null
-                    ? Map.of()
-                    : query.getAttributeFilters();
-
             Map<String, AttributeFilter> documentTypeAttributeFilters =
-                providedFilters
+                extractedAttributeFilters
                     .entrySet()
                     .stream()
                     .filter(entry ->
-                        documentType
+                        extractedDocumentType
                             .getRequiredAttributes()
                             .contains(entry.getKey())
                     )
@@ -105,12 +107,13 @@ public class DocumentSearchTool implements ToolCallback {
                         Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
                     );
 
-            return searchWithYearFallback(
+            DocumentSearchQuery narrowedQuery = new DocumentSearchQuery(
                 query.getQuery(),
-                documentType,
-                documentTypeAttributeFilters,
-                providedFilters.get("year")
+                extractedDocumentType.getName(),
+                documentTypeAttributeFilters
             );
+
+            return searchWithYearFallback(narrowedQuery);
         } catch (IOException e) {
             throw new RagException(
                 "Failed to parse tool input: " + toolInput,
@@ -121,57 +124,49 @@ public class DocumentSearchTool implements ToolCallback {
         }
     }
 
-    private String searchWithYearFallback(
-        String queryText,
-        DocumentType documentType,
-        Map<String, AttributeFilter> baseFilters,
-        AttributeFilter yearAttr
-    ) {
-        if (
-            yearAttr != null &&
-            yearAttr.getReason() == AttributeFilterReason.CONVERSATION
-        ) {
-            Map<String, AttributeFilter> filters = new HashMap<>(baseFilters);
-            filters.put("year", yearAttr);
-            List<Document> docs = documentSearchService.search(
-                new DocumentSearchQuery(
-                    queryText,
-                    documentType.getName(),
-                    filters
-                )
-            );
+    private String searchWithYearFallback(DocumentSearchQuery query) {
+        AttributeFilter yearAttribute = query.getAttributeFilters().get("year");
+
+        if (!query.getAttributeFilters().containsKey("year")) {
+            List<Document> docs = documentSearchService.search(query);
+
             return mergeDocumentTexts(docs);
+        }
+
+        if (
+            yearAttribute.getValue() != null &&
+            yearAttribute.getReason() == AttributeFilterReason.CONVERSATION
+        ) {
+            query.getAttributeFilters().put("year", yearAttribute);
+            List<Document> documents = documentSearchService.search(query);
+
+            return mergeDocumentTexts(documents);
         }
 
         int latestYear = Year.now().getValue();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             int yearToTry = latestYear - i;
-            Map<String, AttributeFilter> filters = new HashMap<>(baseFilters);
 
-            filters.put(
-                "year",
-                new AttributeFilter(yearToTry, AttributeFilterReason.GUESS)
-            );
+            query
+                .getAttributeFilters()
+                .put(
+                    "year",
+                    new AttributeFilter(yearToTry, AttributeFilterReason.GUESS)
+                );
 
-            List<Document> docs = documentSearchService.search(
-                new DocumentSearchQuery(
-                    queryText,
-                    documentType.getName(),
-                    filters
-                )
-            );
-            if (!docs.isEmpty()) {
-                return mergeDocumentTexts(docs);
+            List<Document> docs = documentSearchService.search(query);
+
+            if (docs.isEmpty()) {
+                continue;
             }
+
+            return mergeDocumentTexts(docs);
         }
 
-        return (
-            "No documents found for the latest three years (" +
-            latestYear +
-            " to " +
-            (latestYear - 2) +
-            ")."
+        return "No documents found for the latest three years (%d to %d).".formatted(
+            latestYear,
+            latestYear - 2
         );
     }
 
@@ -180,24 +175,29 @@ public class DocumentSearchTool implements ToolCallback {
             .stream()
             .map(Document::getText)
             .collect(Collectors.joining("\n\n"));
+
         log.info(results);
+
         return results.isBlank() ? "No documents found." : results;
     }
 
     private List<AttributeProblem> collectFilterProblems(
         DocumentType documentType,
-        DocumentSearchQuery query
+        Map<String, AttributeFilter> extractedFilters
     ) {
-        var filters = query.getAttributeFilters();
-        java.util.List<AttributeProblem> problems = new java.util.ArrayList<>();
+        List<AttributeProblem> problems = new ArrayList<>();
 
         for (String required : documentType.getRequiredAttributes()) {
-            AttributeFilter f = filters == null ? null : filters.get(required);
+            AttributeFilter f =
+                extractedFilters == null
+                    ? null
+                    : extractedFilters.get(required);
 
             if (f == null || f.getValue() == null) {
                 problems.add(
                     new AttributeProblem(required, ProblemType.MISSING, null)
                 );
+
                 continue;
             }
 
