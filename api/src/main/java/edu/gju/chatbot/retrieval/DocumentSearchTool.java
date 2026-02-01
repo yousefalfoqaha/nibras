@@ -1,15 +1,17 @@
 package edu.gju.chatbot.retrieval;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.exception.ToolCallingException;
 import edu.gju.chatbot.metadata.DocumentAttribute.AttributeType;
 import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
 import edu.gju.chatbot.metadata.DocumentType;
+import edu.gju.chatbot.retrieval.AttributeFilter.AttributeFilterReason;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -36,9 +38,7 @@ public class DocumentSearchTool implements ToolCallback {
     public ToolDefinition getToolDefinition() {
         ToolDefinition definition = ToolDefinition.builder()
             .name("search_documents")
-            .description(
-                "Search academic documents by type and attributes as filters."
-            )
+            .description(buildDescription())
             .inputSchema(buildInputSchema())
             .build();
 
@@ -58,7 +58,7 @@ public class DocumentSearchTool implements ToolCallback {
                 DocumentSearchQuery.class
             );
 
-            log.info("Tool input: {}", toolInput);
+            log.info("Tool input: {}", query.toString());
 
             DocumentType documentType = documentMetadataRegistry
                 .getDocumentTypes()
@@ -73,32 +73,52 @@ public class DocumentSearchTool implements ToolCallback {
                     )
                 );
 
-            List<String> missingAttributes = documentType
-                .getRequiredAttributes()
-                .stream()
-                .filter(
-                    a ->
-                        query.getAttributeFilters() == null ||
-                        !query.getAttributeFilters().containsKey(a)
-                )
-                .collect(Collectors.toList());
+            List<AttributeProblem> filterProblems = collectFilterProblems(
+                documentType,
+                query
+            );
 
-            if (!missingAttributes.isEmpty()) {
-                throw new ToolCallingException(
-                    String.format(
-                        "Unable to search document type '%s'. Missing required attributes: %s. Please provide these attributes to proceed with the search.",
-                        query.getDocumentType(),
-                        String.join(", ", missingAttributes)
-                    )
-                );
+            if (!filterProblems.isEmpty()) {
+                String message = formatFilterProblemsMessage(filterProblems);
+                log.info(message);
+                return message;
             }
 
-            List<Document> documents = documentSearchService.search(query);
+            Map<String, AttributeFilter> documentTypeAttributeFilters = query
+                .getAttributeFilters()
+                .entrySet()
+                .stream()
+                .filter(entry ->
+                    documentType
+                        .getRequiredAttributes()
+                        .contains(entry.getKey())
+                )
+                .collect(
+                    Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
+                );
 
-            return documents
+            DocumentSearchQuery narrowedQuery = new DocumentSearchQuery(
+                query.getQuery(),
+                documentType.getName(),
+                documentTypeAttributeFilters
+            );
+
+            List<Document> documents = documentSearchService.search(
+                narrowedQuery
+            );
+
+            String results = documents
                 .stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
+
+            if (results.isBlank()) {
+                return "No documents found.";
+            }
+
+            log.info(results);
+
+            return results;
         } catch (IOException e) {
             throw new RagException("Failed to parse tool input: " + toolInput);
         } catch (ToolCallingException e) {
@@ -106,65 +126,191 @@ public class DocumentSearchTool implements ToolCallback {
         }
     }
 
+    private List<AttributeProblem> collectFilterProblems(
+        DocumentType documentType,
+        DocumentSearchQuery query
+    ) {
+        var filters = query.getAttributeFilters();
+        java.util.List<AttributeProblem> problems = new java.util.ArrayList<>();
+
+        for (String required : documentType.getRequiredAttributes()) {
+            AttributeFilter f = filters == null ? null : filters.get(required);
+
+            if (f == null || f.getValue() == null) {
+                problems.add(
+                    new AttributeProblem(required, ProblemType.MISSING, null)
+                );
+                continue;
+            }
+
+            if (f.getReason() == AttributeFilterReason.GUESS) {
+                problems.add(
+                    new AttributeProblem(
+                        required,
+                        ProblemType.GUESSED,
+                        f.getValue()
+                    )
+                );
+            }
+        }
+
+        return problems;
+    }
+
+    private String formatFilterProblemsMessage(
+        List<AttributeProblem> problems
+    ) {
+        List<String> missing = problems
+            .stream()
+            .filter(p -> p.type() == ProblemType.MISSING)
+            .map(AttributeProblem::name)
+            .collect(Collectors.toList());
+
+        List<String> guessed = problems
+            .stream()
+            .filter(p -> p.type() == ProblemType.GUESSED)
+            .map(p -> {
+                String value =
+                    p.value() == null ? "null" : String.valueOf(p.value());
+                return p.name() + "=" + value;
+            })
+            .collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder();
+        if (!missing.isEmpty()) {
+            sb
+                .append("Missing required filters: ")
+                .append(String.join(", ", missing))
+                .append(". Please ask the user to provide them.");
+        }
+        if (!guessed.isEmpty()) {
+            if (sb.length() > 0) sb.append(" ");
+            sb
+                .append("Model provided guessed values for required filters: ")
+                .append(String.join(", ", guessed))
+                .append(
+                    ". Please ask the user to confirm these values before searching."
+                );
+        }
+        return sb.toString();
+    }
+
+    private static enum ProblemType {
+        MISSING,
+        GUESSED,
+    }
+
+    private static final record AttributeProblem(
+        String name,
+        ProblemType type,
+        Object value
+    ) {}
+
     private String buildInputSchema() {
         try {
-            ObjectNode schema = objectMapper.createObjectNode();
+            Map<String, Object> schema = new HashMap<>();
             schema.put("type", "object");
+            schema.put("additionalProperties", false);
+            schema.put("required", List.of("query", "documentType"));
 
-            ArrayNode required = schema.putArray("required");
-            required.add("query");
-            required.add("documentType");
+            Map<String, Object> schemaProperties = new HashMap<>();
+            schemaProperties.put("query", Map.of("type", "string"));
 
-            ObjectNode properties = schema.putObject("properties");
-
-            properties.putObject("query").put("type", "string");
-
-            ObjectNode documentTypeProperty = properties.putObject(
-                "documentType"
-            );
-            ArrayNode documentTypeEnum = documentTypeProperty.putArray("enum");
-            documentMetadataRegistry
+            List<String> documentTypes = documentMetadataRegistry
                 .getDocumentTypes()
-                .forEach(t -> documentTypeEnum.add(t.getName()));
+                .stream()
+                .map(DocumentType::getName)
+                .toList();
+            schemaProperties.put("documentType", Map.of("enum", documentTypes));
 
-            ObjectNode attributeFiltersProperty = properties.putObject(
-                "attributeFilters"
-            );
-            attributeFiltersProperty.put("type", "object");
-            ObjectNode attributeFilterProperties =
-                attributeFiltersProperty.putObject("properties");
+            Map<String, Object> attributeFilterProperties = new HashMap<>();
 
             documentMetadataRegistry
                 .getDocumentAttributes()
                 .forEach(a -> {
-                    ObjectNode attributeFilterSchema =
-                        attributeFilterProperties.putObject(a.getName());
-
-                    if (a.getValues() != null && !a.getValues().isEmpty()) {
-                        ArrayNode enumValues = attributeFilterSchema.putArray(
-                            "enum"
-                        );
-                        a.getValues().forEach(enumValues::add);
-                    } else if (a.getType().equals(AttributeType.INTEGER)) {
-                        attributeFilterSchema.put("type", "integer");
-                    }
+                    Map<String, Object> attributeFilterProperty =
+                        new HashMap<>();
+                    attributeFilterProperty.put("type", "object");
+                    attributeFilterProperty.put(
+                        "required",
+                        List.of("value", "reason")
+                    );
 
                     if (
                         a.getDescription() != null &&
                         !a.getDescription().isBlank()
                     ) {
-                        attributeFilterSchema.put(
+                        attributeFilterProperty.put(
                             "description",
                             a.getDescription()
                         );
                     }
+
+                    Map<String, Object> nestedProperties = new HashMap<>();
+
+                    Map<String, Object> valueProperty = new HashMap<>();
+                    if (a.getValues() != null && !a.getValues().isEmpty()) {
+                        valueProperty.put("enum", a.getValues());
+                    } else if (a.getType().equals(AttributeType.INTEGER)) {
+                        valueProperty.put("type", "integer");
+                    } else {
+                        valueProperty.put("type", "string");
+                    }
+                    nestedProperties.put("value", valueProperty);
+
+                    List<String> reasons = Arrays.stream(
+                        AttributeFilterReason.values()
+                    )
+                        .map(Enum::name)
+                        .toList();
+                    nestedProperties.put("reason", Map.of("enum", reasons));
+
+                    attributeFilterProperty.put("properties", nestedProperties);
+                    attributeFilterProperties.put(
+                        a.getName(),
+                        attributeFilterProperty
+                    );
                 });
 
-            schema.put("additionalProperties", false);
+            schemaProperties.put(
+                "attributeFilters",
+                Map.of(
+                    "type",
+                    "object",
+                    "properties",
+                    attributeFilterProperties
+                )
+            );
 
+            schema.put("properties", schemaProperties);
             return objectMapper.writeValueAsString(schema);
         } catch (Exception e) {
             throw new RagException("Failed to build input schema");
         }
+    }
+
+    private String buildDescription() {
+        String documentTypesDescriptions = documentMetadataRegistry
+            .getDocumentTypes()
+            .stream()
+            .map(DocumentType::toFormattedString)
+            .collect(Collectors.joining("\n\n"));
+
+        String template = """
+                DOCUMENT TYPES:
+                %s
+
+                Decide the document type to search for.
+
+                Extract all attribute filters explicitly mentioned in the conversation.
+
+                Each attribute filter extracted has one of the following reasons:
+                  - CONVERSATION (mentioned in the conversation, possibly via synonym/abbreviation)
+                  - GUESS (you guessed it based on context)
+
+                If you cannot extract an attribute, leave it blank.
+            """;
+
+        return String.format(template, documentTypesDescriptions);
     }
 }

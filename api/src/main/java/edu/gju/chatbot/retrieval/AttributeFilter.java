@@ -1,6 +1,5 @@
 package edu.gju.chatbot.retrieval;
 
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,11 +9,14 @@ import lombok.ToString;
 @NoArgsConstructor
 @Getter
 @ToString
-public class DocumentSearchQuery {
+public class AttributeFilter {
 
-    private String query;
+    private Object value;
 
-    private String documentType;
+    private AttributeFilterReason reason;
 
-    private Map<String, AttributeFilter> attributeFilters;
+    public enum AttributeFilterReason {
+        CONVERSATION,
+        GUESS,
+    }
 }

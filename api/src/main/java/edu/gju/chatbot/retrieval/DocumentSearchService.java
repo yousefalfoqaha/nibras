@@ -4,12 +4,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.metadata.MetadataKeys;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStoreRetriever;
@@ -19,6 +22,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Service
 public class DocumentSearchService {
+
+    private static final Logger log = LoggerFactory.getLogger(
+        DocumentSearchService.class
+    );
 
     private final VectorStoreRetriever retriever;
 
@@ -31,11 +38,51 @@ public class DocumentSearchService {
             SearchRequest.builder()
                 .query(query.getQuery())
                 .similarityThreshold(0.4)
+                .filterExpression(buildFilterExpression(query))
                 .topK(5)
                 .build()
         );
 
         return expandChunks(similarChunks);
+    }
+
+    private String buildFilterExpression(DocumentSearchQuery query) {
+        if (
+            query.getAttributeFilters() == null ||
+            query.getAttributeFilters().isEmpty()
+        ) {
+            return null;
+        }
+
+        List<String> filterParts = new ArrayList<>();
+
+        for (Map.Entry<String, AttributeFilter> entry : query
+            .getAttributeFilters()
+            .entrySet()) {
+            String attributeName = entry.getKey();
+            Object value = entry.getValue().getValue();
+
+            if (value instanceof String) {
+                filterParts.add(attributeName + " == '" + value + "'");
+            } else {
+                filterParts.add(attributeName + " == " + value);
+            }
+        }
+
+        if (!query.getDocumentType().isBlank()) {
+            filterParts.add(
+                "document_type" + " == '" + query.getDocumentType() + "'"
+            );
+        }
+
+        if (filterParts.isEmpty()) {
+            return null;
+        }
+
+        String combinedFilters = String.join(" && ", filterParts);
+
+        log.info("Filter expression: " + combinedFilters);
+        return combinedFilters;
     }
 
     private List<Document> expandChunks(List<Document> chunks) {

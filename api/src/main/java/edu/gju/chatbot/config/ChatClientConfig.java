@@ -1,7 +1,6 @@
 package edu.gju.chatbot.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.gju.chatbot.advisor.DocumentSearchAdvisor;
 import edu.gju.chatbot.advisor.RagAdvisor;
 import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
 import edu.gju.chatbot.retrieval.DocumentSearchService;
@@ -29,10 +28,7 @@ public class ChatClientConfig {
                     objectMapper
                 )
             )
-            .defaultAdvisors(
-                new RagAdvisor(),
-                new DocumentSearchAdvisor(documentMetadataRegistry)
-            )
+            .defaultAdvisors(new RagAdvisor())
             .build();
     }
 }

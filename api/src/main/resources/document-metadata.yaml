@@ -32,6 +32,7 @@ attributes:
       - business intelligence and data analytics
 
   academic_level:
+    description: "The academic level can also be described in short-hand form (eg. BSc, MA, MSc, PHD, HD)"
     values:
       - bachelor
       - masters
