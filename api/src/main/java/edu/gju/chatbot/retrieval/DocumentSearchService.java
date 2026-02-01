@@ -95,7 +95,7 @@ public class DocumentSearchService {
             .toList();
 
         if (sectionIds.isEmpty()) {
-            return List.of(new Document("No documents found."));
+            return List.of();
         }
 
         String inSql = sectionIds

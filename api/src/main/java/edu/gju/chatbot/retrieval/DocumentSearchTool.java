@@ -8,6 +8,7 @@ import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
 import edu.gju.chatbot.metadata.DocumentType;
 import edu.gju.chatbot.retrieval.AttributeFilter.AttributeFilterReason;
 import java.io.IOException;
+import java.time.Year;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -57,7 +58,6 @@ public class DocumentSearchTool implements ToolCallback {
                 toolInput,
                 DocumentSearchQuery.class
             );
-
             log.info("Tool input: {}", query.toString());
 
             DocumentType documentType = documentMetadataRegistry
@@ -76,7 +76,10 @@ public class DocumentSearchTool implements ToolCallback {
             List<AttributeProblem> filterProblems = collectFilterProblems(
                 documentType,
                 query
-            );
+            )
+                .stream()
+                .filter(p -> !"year".equals(p.name()))
+                .collect(Collectors.toList());
 
             if (!filterProblems.isEmpty()) {
                 String message = formatFilterProblemsMessage(filterProblems);
@@ -84,46 +87,101 @@ public class DocumentSearchTool implements ToolCallback {
                 return message;
             }
 
-            Map<String, AttributeFilter> documentTypeAttributeFilters = query
-                .getAttributeFilters()
-                .entrySet()
-                .stream()
-                .filter(entry ->
-                    documentType
-                        .getRequiredAttributes()
-                        .contains(entry.getKey())
-                )
-                .collect(
-                    Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
-                );
+            Map<String, AttributeFilter> providedFilters =
+                query.getAttributeFilters() == null
+                    ? Map.of()
+                    : query.getAttributeFilters();
 
-            DocumentSearchQuery narrowedQuery = new DocumentSearchQuery(
+            Map<String, AttributeFilter> documentTypeAttributeFilters =
+                providedFilters
+                    .entrySet()
+                    .stream()
+                    .filter(entry ->
+                        documentType
+                            .getRequiredAttributes()
+                            .contains(entry.getKey())
+                    )
+                    .collect(
+                        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
+                    );
+
+            return searchWithYearFallback(
                 query.getQuery(),
-                documentType.getName(),
-                documentTypeAttributeFilters
+                documentType,
+                documentTypeAttributeFilters,
+                providedFilters.get("year")
             );
-
-            List<Document> documents = documentSearchService.search(
-                narrowedQuery
-            );
-
-            String results = documents
-                .stream()
-                .map(Document::getText)
-                .collect(Collectors.joining("\n\n"));
-
-            if (results.isBlank()) {
-                return "No documents found.";
-            }
-
-            log.info(results);
-
-            return results;
         } catch (IOException e) {
-            throw new RagException("Failed to parse tool input: " + toolInput);
+            throw new RagException(
+                "Failed to parse tool input: " + toolInput,
+                e
+            );
         } catch (ToolCallingException e) {
             return e.getMessage();
         }
+    }
+
+    private String searchWithYearFallback(
+        String queryText,
+        DocumentType documentType,
+        Map<String, AttributeFilter> baseFilters,
+        AttributeFilter yearAttr
+    ) {
+        if (
+            yearAttr != null &&
+            yearAttr.getReason() == AttributeFilterReason.CONVERSATION
+        ) {
+            Map<String, AttributeFilter> filters = new HashMap<>(baseFilters);
+            filters.put("year", yearAttr);
+            List<Document> docs = documentSearchService.search(
+                new DocumentSearchQuery(
+                    queryText,
+                    documentType.getName(),
+                    filters
+                )
+            );
+            return mergeDocumentTexts(docs);
+        }
+
+        int latestYear = Year.now().getValue();
+
+        for (int i = 0; i < 3; i++) {
+            int yearToTry = latestYear - i;
+            Map<String, AttributeFilter> filters = new HashMap<>(baseFilters);
+
+            filters.put(
+                "year",
+                new AttributeFilter(yearToTry, AttributeFilterReason.GUESS)
+            );
+
+            List<Document> docs = documentSearchService.search(
+                new DocumentSearchQuery(
+                    queryText,
+                    documentType.getName(),
+                    filters
+                )
+            );
+            if (!docs.isEmpty()) {
+                return mergeDocumentTexts(docs);
+            }
+        }
+
+        return (
+            "No documents found for the latest three years (" +
+            latestYear +
+            " to " +
+            (latestYear - 2) +
+            ")."
+        );
+    }
+
+    private String mergeDocumentTexts(List<Document> documents) {
+        String results = documents
+            .stream()
+            .map(Document::getText)
+            .collect(Collectors.joining("\n\n"));
+        log.info(results);
+        return results.isBlank() ? "No documents found." : results;
     }
 
     private List<AttributeProblem> collectFilterProblems(
