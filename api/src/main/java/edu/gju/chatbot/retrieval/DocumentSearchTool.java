@@ -176,8 +176,6 @@ public class DocumentSearchTool implements ToolCallback {
             .map(Document::getText)
             .collect(Collectors.joining("\n\n"));
 
-        log.info(results);
-
         return results.isBlank() ? "No documents found." : results;
     }
 

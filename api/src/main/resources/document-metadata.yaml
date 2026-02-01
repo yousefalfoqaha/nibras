@@ -4,6 +4,8 @@ document_types:
       Program curriculum including admission requirements, placement tests, remedial courses,
       learning outcomes, and program objectives.
 
+      There is also a study plan guide, where the courses are places in semesters, used as a guide for when to take the courses.
+
       The year of a study plan represents the first student cohort it serves, and remains in effect
       for later cohorts unless superseded by a newer study plan.
     attributes:
