@@ -11,10 +11,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class DocumentMetadataValidator {
 
-    private final DocumentMetadataRegistry documentMetadataRegistry;
+    private final DocumentMetadataRegistry registry;
 
     public DocumentType validateDocumentType(String type) {
-        return documentMetadataRegistry
+        return registry
             .getDocumentTypes()
             .stream()
             .filter(t -> t.getName().equals(type))
@@ -25,7 +25,7 @@ public class DocumentMetadataValidator {
     }
 
     public void validateDocumentAttributes(Map<String, Object> attributes) {
-        Map<String, DocumentAttribute> registryMap = documentMetadataRegistry
+        Map<String, DocumentAttribute> registryMap = registry
             .getDocumentAttributes()
             .stream()
             .collect(Collectors.toMap(DocumentAttribute::getName, a -> a));

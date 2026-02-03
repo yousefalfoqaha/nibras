@@ -3,7 +3,7 @@ package edu.gju.chatbot.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.gju.chatbot.advisor.RagAdvisor;
 import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
-import edu.gju.chatbot.retrieval.DocumentSearchIntentResolver;
+import edu.gju.chatbot.retrieval.DocumentSearchResolver;
 import edu.gju.chatbot.retrieval.DocumentSearchService;
 import edu.gju.chatbot.retrieval.DocumentSearchTool;
 import org.springframework.ai.chat.client.ChatClient;
@@ -20,7 +20,7 @@ public class ChatClientConfig {
     public ChatClient openAiChatClient(
         OpenAiChatModel chatModel,
         DocumentMetadataRegistry documentMetadataRegistry,
-        DocumentSearchIntentResolver documentSearchIntentResolver,
+        DocumentSearchResolver documentSearchResolver,
         DocumentSearchService documentSearchService,
         ChatMemory chatMemory,
         ObjectMapper objectMapper
@@ -29,7 +29,7 @@ public class ChatClientConfig {
             .defaultToolCallbacks(
                 new DocumentSearchTool(
                     documentMetadataRegistry,
-                    documentSearchIntentResolver,
+                    documentSearchResolver,
                     documentSearchService,
                     objectMapper
                 )

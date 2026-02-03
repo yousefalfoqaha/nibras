@@ -19,6 +19,7 @@ import org.springframework.ai.vectorstore.VectorStoreRetriever;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+// possible implementation of a DocumentSearchContextExpander
 @RequiredArgsConstructor
 @Service
 public class DocumentSearchService {
@@ -200,7 +201,7 @@ public class DocumentSearchService {
             expandedChunks.size()
         );
 
-        List<Document> reconstructedDocs = expandedChunks
+        List<Document> reconstructedDocuments = expandedChunks
             .stream()
             .collect(
                 Collectors.groupingBy(d ->
@@ -215,10 +216,10 @@ public class DocumentSearchService {
 
         log.info(
             "Reconstructed {} full section documents.",
-            reconstructedDocs.size()
+            reconstructedDocuments.size()
         );
 
-        return reconstructedDocs;
+        return reconstructedDocuments;
     }
 
     private Document reconstructSection(List<Document> sectionChunks) {

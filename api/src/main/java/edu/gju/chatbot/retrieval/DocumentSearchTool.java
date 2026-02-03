@@ -27,9 +27,9 @@ public class DocumentSearchTool implements ToolCallback {
 
     private final DocumentMetadataRegistry documentMetadataRegistry;
 
-    private final DocumentSearchIntentResolver documentSearchIntentResolver;
+    private final DocumentSearchResolver searchResolver;
 
-    private final DocumentSearchService documentSearchService;
+    private final DocumentSearchService searchService;
 
     private final ObjectMapper objectMapper;
 
@@ -62,8 +62,9 @@ public class DocumentSearchTool implements ToolCallback {
             searchIntent.getUnconfirmedAttributes()
         );
 
-        DocumentSearchIntent resolvedSearchIntent =
-            documentSearchIntentResolver.apply(searchIntent);
+        DocumentSearchIntent resolvedSearchIntent = searchResolver.apply(
+            searchIntent
+        );
 
         if (!resolvedSearchIntent.getUnconfirmedAttributes().isEmpty()) {
             String message = formatUnconfirmedAttributes(resolvedSearchIntent);
@@ -79,7 +80,7 @@ public class DocumentSearchTool implements ToolCallback {
             .attributes(resolvedSearchIntent.getConfirmedAttributes())
             .build();
 
-        List<Document> documents = documentSearchService.search(searchRequest);
+        List<Document> documents = searchService.search(searchRequest);
 
         log.info("Search Service returned {} documents.", documents.size());
 
@@ -100,13 +101,6 @@ public class DocumentSearchTool implements ToolCallback {
             );
         }
 
-        Map<String, List<Object>> unconfirmed = new HashMap<>();
-        if (toolInput.guessedAttributes() != null) {
-            toolInput
-                .guessedAttributes()
-                .forEach((k, v) -> unconfirmed.put(k, List.of(v)));
-        }
-
         return new DocumentSearchIntent(
             toolInput.query(),
             toolInput.documentType(),
@@ -114,7 +108,7 @@ public class DocumentSearchTool implements ToolCallback {
             toolInput.conversationAttributes() != null
                 ? toolInput.conversationAttributes()
                 : new HashMap<>(),
-            unconfirmed
+            new HashMap<>()
         );
     }
 

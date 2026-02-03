@@ -20,12 +20,12 @@ import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
-public class DocumentSearchIntentResolver
+public class DocumentSearchResolver
     implements Function<DocumentSearchIntent, DocumentSearchIntent>
 {
 
     private static final Logger log = LoggerFactory.getLogger(
-        DocumentSearchIntentResolver.class
+        DocumentSearchResolver.class
     );
 
     private final DocumentMetadataValidator documentMetadataValidator;
