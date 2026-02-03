@@ -20,11 +20,6 @@ document_types:
     attributes:
       required: [academic_level]
 
-  academic_department:
-    description: "Parent to many programs (of any academic level)"
-    attributes:
-      required: [department]
-
 attributes:
   program:
     values:
