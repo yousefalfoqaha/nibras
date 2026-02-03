@@ -1,8 +1,9 @@
 package edu.gju.chatbot.etl;
 
-import edu.gju.chatbot.exception.FileProcessingException;
+import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.metadata.DocumentAttribute;
 import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
+import edu.gju.chatbot.metadata.DocumentMetadataValidator;
 import edu.gju.chatbot.metadata.DocumentType;
 import edu.gju.chatbot.metadata.MetadataKeys;
 import java.util.List;
@@ -32,6 +33,8 @@ public class FileMetadataEnricher implements Function<Document, Document> {
 
             Extract the document type ONLY from the list below, and place them as key (document_type) and value pair.
 
+            Extract the year (if any mentioned) and place it as key (year) and value. If no year could be found of the document, place null instead.
+
             Extract the document attributes from the selected document type, required attributes are a must, while optional are good if they can be found. Place the attributes as key (attribute name) and value pair.
 
             DOCUMENT TYPES:
@@ -47,7 +50,10 @@ public class FileMetadataEnricher implements Function<Document, Document> {
         );
 
     private final ChatClient chatClient;
+
     private final DocumentMetadataRegistry documentMetadataRegistry;
+
+    private final DocumentMetadataValidator documentMetadataValidator;
 
     public Document enrich(Document document) {
         return apply(document);
@@ -88,27 +94,23 @@ public class FileMetadataEnricher implements Function<Document, Document> {
 
         log.debug("Metadata inferred: {}", enrichedMetadata);
 
-        DocumentType documentType = documentTypes
-            .stream()
-            .filter(t -> t.getName().equals(enrichedMetadata.documentType()))
-            .findFirst()
-            .orElseThrow(() ->
-                new FileProcessingException(
-                    "Document type '" +
-                        enrichedMetadata.documentType() +
-                        "' does not exist"
-                )
+        documentMetadataValidator.validateDocumentAttributes(
+            enrichedMetadata.attributes()
+        );
+
+        List<String> missingRequiredAttributes =
+            documentMetadataValidator.getMissingDocumentTypeAttributes(
+                enrichedMetadata.attributes(),
+                enrichedMetadata.documentType()
             );
 
-        Map<String, DocumentAttribute> attributeMap = documentAttributes
-            .stream()
-            .collect(Collectors.toMap(DocumentAttribute::getName, a -> a));
-
-        for (String requiredAttribute : documentType.getRequiredAttributes()) {
-            validateAttribute(
-                requiredAttribute,
-                enrichedMetadata.attributes(),
-                attributeMap
+        if (!missingRequiredAttributes.isEmpty()) {
+            throw new RagException(
+                String.format(
+                    "Document of type '%s' is missing required attributes: [%s].",
+                    enrichedMetadata.documentType(),
+                    String.join(", ", missingRequiredAttributes)
+                )
             );
         }
 
@@ -126,60 +128,6 @@ public class FileMetadataEnricher implements Function<Document, Document> {
         }
 
         return document;
-    }
-
-    private void validateAttribute(
-        String attributeName,
-        Map<String, Object> attributes,
-        Map<String, DocumentAttribute> attributeMap
-    ) {
-        DocumentAttribute attribute = attributeMap.get(attributeName);
-        if (attribute == null) {
-            throw new FileProcessingException(
-                "Attribute '" + attributeName + "' is not defined in schema"
-            );
-        }
-
-        Object value = attributes.get(attributeName);
-        if (value == null) {
-            throw new FileProcessingException(
-                "Required attribute '" + attributeName + "' is missing or null"
-            );
-        }
-
-        if (attribute.getType() == DocumentAttribute.AttributeType.STRING) {
-            attributes.put(attributeName, value.toString());
-            return;
-        }
-
-        if (value instanceof Number) {
-            attributes.put(attributeName, ((Number) value).intValue());
-            return;
-        }
-
-        if (value instanceof String) {
-            try {
-                attributes.put(
-                    attributeName,
-                    Integer.parseInt(((String) value).trim())
-                );
-                return;
-            } catch (NumberFormatException e) {
-                throw new FileProcessingException(
-                    "Attribute '" +
-                        attributeName +
-                        "' must be an integer, got: " +
-                        value
-                );
-            }
-        }
-
-        throw new FileProcessingException(
-            "Attribute '" +
-                attributeName +
-                "' must be an integer, got: " +
-                value
-        );
     }
 
     private record EnrichedMetadata(

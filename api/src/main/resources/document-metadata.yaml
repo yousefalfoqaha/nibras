@@ -4,29 +4,28 @@ document_types:
       Program curriculum including admission requirements, placement tests, remedial courses,
       learning outcomes, and program objectives.
 
-      There is also a study plan guide, where the courses are places in semesters, used as a guide for when to take the courses.
+      There is also a study plan guide, where the courses are places in semesters, used as a guide for when to take the courses in an appropriate sequence.
 
       The year of a study plan represents the first student cohort it serves, and remains in effect
       for later cohorts unless superseded by a newer study plan.
     attributes:
-      required: [academic_level, year, program]
+      required: [academic_level, program]
       optional: [department]
 
   academic_calendar:
     description: "Events for all semesters (first, second, summer)."
-    attributes:
-      required: [year]
 
   fees:
-    description: "Tuition, registration, and other mandatory payments"
+    description: "Tuition, registration, fees differ by academic department"
     attributes:
       required: [academic_level]
 
-attributes:
-  year:
-    description: "The academic year (in YYYY format), that can define a cohort, and time."
-    type: integer
+  academic_department:
+    description: "Parent to many programs (of any academic level)"
+    attributes:
+      required: [department]
 
+attributes:
   program:
     values:
       - computer science
@@ -34,12 +33,9 @@ attributes:
       - business intelligence and data analytics
 
   academic_level:
-    description: "The academic level can also be described in short-hand form (eg. BSc, MA, MSc, PHD, HD)"
     values:
-      - bachelor
-      - masters
-      - phd
-      - higher diploma
+      - undergraduate
+      - graduate
 
   department:
     values:

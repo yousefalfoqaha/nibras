@@ -4,6 +4,7 @@ import edu.gju.chatbot.etl.FileMetadataEnricher;
 import edu.gju.chatbot.etl.MarkdownHierarchyEnricher;
 import edu.gju.chatbot.etl.MarkdownTextSplitter;
 import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
+import edu.gju.chatbot.metadata.DocumentMetadataValidator;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -45,7 +46,8 @@ public class EtlPipelineConfig {
     @Bean
     public FileMetadataEnricher fileSummaryEnricher(
         OpenAiChatModel chatModel,
-        DocumentMetadataRegistry documentMetadataRegistry
+        DocumentMetadataRegistry documentMetadataRegistry,
+        DocumentMetadataValidator documentMetadataValidator
     ) {
         ChatClient chatClient = ChatClient.builder(chatModel)
             .defaultOptions(
@@ -53,6 +55,10 @@ public class EtlPipelineConfig {
             )
             .build();
 
-        return new FileMetadataEnricher(chatClient, documentMetadataRegistry);
+        return new FileMetadataEnricher(
+            chatClient,
+            documentMetadataRegistry,
+            documentMetadataValidator
+        );
     }
 }

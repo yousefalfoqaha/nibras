@@ -2,19 +2,19 @@ package edu.gju.chatbot.retrieval;
 
 import java.util.Map;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @AllArgsConstructor
-@NoArgsConstructor
 @Getter
-@ToString
-public class DocumentSearchQuery {
+@Builder
+public class DocumentSearchRequest {
 
     private String query;
 
     private String documentType;
 
-    private Map<String, AttributeFilter> attributeFilters;
+    private Integer year;
+
+    private Map<String, Object> attributes;
 }

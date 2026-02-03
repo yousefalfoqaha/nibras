@@ -2,15 +2,10 @@ package edu.gju.chatbot.retrieval;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.gju.chatbot.exception.RagException;
-import edu.gju.chatbot.exception.ToolCallingException;
-import edu.gju.chatbot.metadata.DocumentAttribute.AttributeType;
+import edu.gju.chatbot.metadata.DocumentAttribute;
 import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
 import edu.gju.chatbot.metadata.DocumentType;
-import edu.gju.chatbot.retrieval.AttributeFilter.AttributeFilterReason;
 import java.io.IOException;
-import java.time.Year;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,19 +27,19 @@ public class DocumentSearchTool implements ToolCallback {
 
     private final DocumentMetadataRegistry documentMetadataRegistry;
 
+    private final DocumentSearchIntentResolver documentSearchIntentResolver;
+
     private final DocumentSearchService documentSearchService;
 
     private final ObjectMapper objectMapper;
 
     @Override
     public ToolDefinition getToolDefinition() {
-        ToolDefinition definition = ToolDefinition.builder()
+        return ToolDefinition.builder()
             .name("search_documents")
             .description(buildDescription())
             .inputSchema(buildInputSchema())
             .build();
-
-        return definition;
     }
 
     @Override
@@ -54,213 +49,129 @@ public class DocumentSearchTool implements ToolCallback {
 
     @Override
     public String call(String toolInput) {
-        try {
-            DocumentSearchQuery query = this.objectMapper.readValue(
-                toolInput,
-                DocumentSearchQuery.class
-            );
+        log.info("=== Tool Call: search_documents ===");
 
-            log.info("Tool input: {}", query.toString());
+        DocumentSearchIntent searchIntent = getSearchIntent(toolInput);
 
-            DocumentType extractedDocumentType = documentMetadataRegistry
-                .getDocumentTypes()
-                .stream()
-                .filter(t -> t.getName().equals(query.getDocumentType()))
-                .findFirst()
-                .orElseThrow(() ->
-                    new ToolCallingException(
-                        "Document type '" +
-                            query.getDocumentType() +
-                            "' doesn't exist or isn't an exact match with available document types."
-                    )
-                );
+        log.info(
+            "Initial Intent -> Query: '{}', Type: '{}', Year: {}, Confirmed: {}, Guessed: {}",
+            searchIntent.getQuery(),
+            searchIntent.getDocumentType(),
+            searchIntent.getYear(),
+            searchIntent.getConfirmedAttributes(),
+            searchIntent.getUnconfirmedAttributes()
+        );
 
-            Map<String, AttributeFilter> extractedAttributeFilters =
-                query.getAttributeFilters() == null
-                    ? Map.of()
-                    : query.getAttributeFilters();
+        DocumentSearchIntent resolvedSearchIntent =
+            documentSearchIntentResolver.apply(searchIntent);
 
-            List<AttributeProblem> filterProblems = collectFilterProblems(
-                extractedDocumentType,
-                extractedAttributeFilters
-            )
-                .stream()
-                .filter(p -> !"year".equals(p.name()))
-                .collect(Collectors.toList());
+        if (!resolvedSearchIntent.getUnconfirmedAttributes().isEmpty()) {
+            String message = formatUnconfirmedAttributes(resolvedSearchIntent);
+            log.warn(message);
 
-            if (!filterProblems.isEmpty()) {
-                String message = formatFilterProblemsMessage(filterProblems);
-                log.info(message);
-                return message;
-            }
-
-            Map<String, AttributeFilter> documentTypeAttributeFilters =
-                extractedAttributeFilters
-                    .entrySet()
-                    .stream()
-                    .filter(entry ->
-                        extractedDocumentType
-                            .getRequiredAttributes()
-                            .contains(entry.getKey())
-                    )
-                    .collect(
-                        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
-                    );
-
-            DocumentSearchQuery narrowedQuery = new DocumentSearchQuery(
-                query.getQuery(),
-                extractedDocumentType.getName(),
-                documentTypeAttributeFilters
-            );
-
-            return searchWithYearFallback(narrowedQuery);
-        } catch (IOException e) {
-            throw new RagException(
-                "Failed to parse tool input: " + toolInput,
-                e
-            );
-        } catch (ToolCallingException e) {
-            return e.getMessage();
+            return message;
         }
+
+        DocumentSearchRequest searchRequest = DocumentSearchRequest.builder()
+            .query(resolvedSearchIntent.getQuery())
+            .documentType(resolvedSearchIntent.getDocumentType())
+            .year(resolvedSearchIntent.getYear())
+            .attributes(resolvedSearchIntent.getConfirmedAttributes())
+            .build();
+
+        List<Document> documents = documentSearchService.search(searchRequest);
+
+        log.info("Search Service returned {} documents.", documents.size());
+
+        return formatDocuments(documents);
     }
 
-    private String searchWithYearFallback(DocumentSearchQuery query) {
-        AttributeFilter yearAttribute = query.getAttributeFilters().get("year");
-
-        if (!query.getAttributeFilters().containsKey("year")) {
-            List<Document> docs = documentSearchService.search(query);
-
-            return mergeDocumentTexts(docs);
+    private DocumentSearchIntent getSearchIntent(String rawToolInput) {
+        ToolInput toolInput;
+        try {
+            toolInput = this.objectMapper.readValue(
+                rawToolInput,
+                ToolInput.class
+            );
+        } catch (IOException e) {
+            log.error("Failed to parse tool input JSON", e);
+            throw new RagException(
+                "Failed to parse tool input for document searching."
+            );
         }
 
-        if (
-            yearAttribute.getValue() != null &&
-            yearAttribute.getReason() == AttributeFilterReason.CONVERSATION
-        ) {
-            query.getAttributeFilters().put("year", yearAttribute);
-            List<Document> documents = documentSearchService.search(query);
-
-            return mergeDocumentTexts(documents);
+        Map<String, List<Object>> unconfirmed = new HashMap<>();
+        if (toolInput.guessedAttributes() != null) {
+            toolInput
+                .guessedAttributes()
+                .forEach((k, v) -> unconfirmed.put(k, List.of(v)));
         }
 
-        int latestYear = Year.now().getValue();
-
-        for (int i = 0; i < 5; i++) {
-            int yearToTry = latestYear - i;
-
-            query
-                .getAttributeFilters()
-                .put(
-                    "year",
-                    new AttributeFilter(yearToTry, AttributeFilterReason.GUESS)
-                );
-
-            List<Document> docs = documentSearchService.search(query);
-
-            if (docs.isEmpty()) {
-                continue;
-            }
-
-            return mergeDocumentTexts(docs);
-        }
-
-        return "No documents found for the latest three years (%d to %d).".formatted(
-            latestYear,
-            latestYear - 2
+        return new DocumentSearchIntent(
+            toolInput.query(),
+            toolInput.documentType(),
+            toolInput.year(),
+            toolInput.conversationAttributes() != null
+                ? toolInput.conversationAttributes()
+                : new HashMap<>(),
+            unconfirmed
         );
     }
 
-    private String mergeDocumentTexts(List<Document> documents) {
+    private String formatDocuments(List<Document> documents) {
         String results = documents
             .stream()
-            .map(Document::getText)
+            .map(Document::getFormattedContent)
             .collect(Collectors.joining("\n\n"));
 
-        return results.isBlank() ? "No documents found." : results;
+        String output = results.isBlank() ? "No documents found." : results;
+
+        String preview =
+            output.length() > 1000 ? output.substring(0, 1000) + "..." : output;
+        log.info("Tool Output Preview: {}", preview);
+
+        return output;
     }
 
-    private List<AttributeProblem> collectFilterProblems(
-        DocumentType documentType,
-        Map<String, AttributeFilter> extractedFilters
+    private String formatUnconfirmedAttributes(
+        DocumentSearchIntent searchIntent
     ) {
-        List<AttributeProblem> problems = new ArrayList<>();
+        Map<String, List<Object>> unconfirmed =
+            searchIntent.getUnconfirmedAttributes();
 
-        for (String required : documentType.getRequiredAttributes()) {
-            AttributeFilter f =
-                extractedFilters == null
-                    ? null
-                    : extractedFilters.get(required);
-
-            if (f == null || f.getValue() == null) {
-                problems.add(
-                    new AttributeProblem(required, ProblemType.MISSING, null)
-                );
-
-                continue;
-            }
-
-            if (f.getReason() == AttributeFilterReason.GUESS) {
-                problems.add(
-                    new AttributeProblem(
-                        required,
-                        ProblemType.GUESSED,
-                        f.getValue()
-                    )
-                );
-            }
+        if (unconfirmed == null || unconfirmed.isEmpty()) {
+            return "No unconfirmed attributes found.";
         }
 
-        return problems;
-    }
-
-    private String formatFilterProblemsMessage(
-        List<AttributeProblem> problems
-    ) {
-        List<String> missing = problems
+        String distinctIssues = unconfirmed
+            .entrySet()
             .stream()
-            .filter(p -> p.type() == ProblemType.MISSING)
-            .map(AttributeProblem::name)
-            .collect(Collectors.toList());
+            .map(entry -> {
+                String attributeName = entry.getKey();
+                List<Object> validOptions = entry.getValue();
 
-        List<String> guessed = problems
-            .stream()
-            .filter(p -> p.type() == ProblemType.GUESSED)
-            .map(p -> {
-                String value =
-                    p.value() == null ? "null" : String.valueOf(p.value());
-                return p.name() + "=" + value;
+                String optionsStr =
+                    validOptions == null || validOptions.isEmpty()
+                        ? "Unknown (User must provide this value)"
+                        : validOptions
+                              .stream()
+                              .map(String::valueOf)
+                              .collect(Collectors.joining(", "));
+
+                return String.format(
+                    " - Attribute '%s' is ambiguous. Valid options are: [%s]",
+                    attributeName,
+                    optionsStr
+                );
             })
-            .collect(Collectors.toList());
+            .collect(Collectors.joining("\n"));
 
-        StringBuilder sb = new StringBuilder();
-        if (!missing.isEmpty()) {
-            sb
-                .append("Missing required filters: ")
-                .append(String.join(", ", missing))
-                .append(". Please ask the user to provide them.");
-        }
-        if (!guessed.isEmpty()) {
-            if (sb.length() > 0) sb.append(" ");
-            sb
-                .append("Model provided guessed values for required filters: ")
-                .append(String.join(", ", guessed))
-                .append(
-                    ". Please ask the user to confirm these values before searching."
-                );
-        }
-        return sb.toString();
+        return (
+            "SEARCH ABORTED: Missing or ambiguous metadata.\n" +
+            "You must ask the user to clarify the following attributes before retrying the search:\n" +
+            distinctIssues
+        );
     }
-
-    private static enum ProblemType {
-        MISSING,
-        GUESSED,
-    }
-
-    private static final record AttributeProblem(
-        String name,
-        ProblemType type,
-        Object value
-    ) {}
 
     private String buildInputSchema() {
         try {
@@ -269,78 +180,60 @@ public class DocumentSearchTool implements ToolCallback {
             schema.put("additionalProperties", false);
             schema.put("required", List.of("query", "documentType"));
 
-            Map<String, Object> schemaProperties = new HashMap<>();
-            schemaProperties.put("query", Map.of("type", "string"));
+            Map<String, Object> properties = new HashMap<>();
+
+            properties.put(
+                "query",
+                Map.of(
+                    "type",
+                    "string",
+                    "description",
+                    "The search query rephrased for retrieval."
+                )
+            );
 
             List<String> documentTypes = documentMetadataRegistry
                 .getDocumentTypes()
                 .stream()
                 .map(DocumentType::getName)
                 .toList();
-            schemaProperties.put("documentType", Map.of("enum", documentTypes));
+            properties.put(
+                "documentType",
+                Map.of("type", "string", "enum", documentTypes)
+            );
 
-            Map<String, Object> attributeFilterProperties = new HashMap<>();
-
-            documentMetadataRegistry
-                .getDocumentAttributes()
-                .forEach(a -> {
-                    Map<String, Object> attributeFilterProperty =
-                        new HashMap<>();
-                    attributeFilterProperty.put("type", "object");
-                    attributeFilterProperty.put(
-                        "required",
-                        List.of("value", "reason")
-                    );
-
-                    if (
-                        a.getDescription() != null &&
-                        !a.getDescription().isBlank()
-                    ) {
-                        attributeFilterProperty.put(
-                            "description",
-                            a.getDescription()
-                        );
-                    }
-
-                    Map<String, Object> nestedProperties = new HashMap<>();
-
-                    Map<String, Object> valueProperty = new HashMap<>();
-                    if (a.getValues() != null && !a.getValues().isEmpty()) {
-                        valueProperty.put("enum", a.getValues());
-                    } else if (a.getType().equals(AttributeType.INTEGER)) {
-                        valueProperty.put("type", "integer");
-                    } else {
-                        valueProperty.put("type", "string");
-                    }
-                    nestedProperties.put("value", valueProperty);
-
-                    List<String> reasons = Arrays.stream(
-                        AttributeFilterReason.values()
-                    )
-                        .map(Enum::name)
-                        .toList();
-                    nestedProperties.put("reason", Map.of("enum", reasons));
-
-                    attributeFilterProperty.put("properties", nestedProperties);
-                    attributeFilterProperties.put(
-                        a.getName(),
-                        attributeFilterProperty
-                    );
-                });
-
-            schemaProperties.put(
-                "attributeFilters",
+            properties.put(
+                "year",
                 Map.of(
                     "type",
-                    "object",
-                    "properties",
-                    attributeFilterProperties
+                    "integer",
+                    "description",
+                    "The year of the document if explicitly mentioned. Null otherwise."
                 )
             );
 
-            schema.put("properties", schemaProperties);
+            Map<String, Object> attributeMapSchema = new HashMap<>();
+            attributeMapSchema.put("type", "object");
+            attributeMapSchema.put(
+                "description",
+                "Map of attribute names to values."
+            );
+
+            Map<String, Object> valueSchema = new HashMap<>();
+            valueSchema.put(
+                "anyOf",
+                List.of(Map.of("type", "string"), Map.of("type", "integer"))
+            );
+            attributeMapSchema.put("additionalProperties", valueSchema);
+
+            properties.put("conversationAttributes", attributeMapSchema);
+            properties.put("guessedAttributes", attributeMapSchema);
+
+            schema.put("properties", properties);
+
             return objectMapper.writeValueAsString(schema);
         } catch (Exception e) {
+            log.error("Error building tool input schema", e);
             throw new RagException("Failed to build input schema");
         }
     }
@@ -352,21 +245,42 @@ public class DocumentSearchTool implements ToolCallback {
             .map(DocumentType::toFormattedString)
             .collect(Collectors.joining("\n\n"));
 
+        String attributeDescriptions = documentMetadataRegistry
+            .getDocumentAttributes()
+            .stream()
+            .map(DocumentAttribute::toFormattedString)
+            .collect(Collectors.joining("\n"));
+
         String template = """
-                DOCUMENT TYPES:
-                %s
+            DOCUMENT SEARCH TOOL
 
-                Decide the document type to search for.
+            1. DOCUMENT TYPES:
+            %s
 
-                Extract all attribute filters explicitly mentioned in the conversation.
+            2. AVAILABLE ATTRIBUTES:
+            %s
 
-                Each attribute filter extracted has one of the following reasons:
-                  - CONVERSATION (mentioned in the conversation, possibly via synonym/abbreviation)
-                  - GUESS (you guessed it based on context)
-
-                If you cannot extract an attribute, leave it blank.
+            INSTRUCTIONS:
+            - Decide the 'documentType' based on the user's intent.
+            - Extract 'year' if explicitly mentioned (e.g., "2023"). If not mentioned, send null.
+            - Populate 'conversationAttributes': Key-value pairs for attributes EXPLICITLY CONFIRMED by the user.
+            - Populate 'guessedAttributes': Key-value pairs for attributes that are AMBIGUOUS or INFERRED (not explicitly confirmed).
+            - Only use attribute keys listed in AVAILABLE ATTRIBUTES.
+            - Rephrase the 'query' for search retrieval (keywords only, not a question).
             """;
 
-        return String.format(template, documentTypesDescriptions);
+        return String.format(
+            template,
+            documentTypesDescriptions,
+            attributeDescriptions
+        );
     }
+
+    private record ToolInput(
+        String query,
+        String documentType,
+        Integer year,
+        Map<String, Object> conversationAttributes,
+        Map<String, Object> guessedAttributes
+    ) {}
 }

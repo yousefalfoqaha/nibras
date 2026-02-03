@@ -165,12 +165,13 @@ public class DocumentMetadataRegistry {
         );
     }
 
-    private static List<String> resolveAttributes(
+    private List<String> resolveAttributes(
         String documentType,
         List<String> names,
         Map<String, DocumentAttribute> attributeMap
     ) {
         if (names == null) return List.of();
+
         return names
             .stream()
             .map(a -> {
