@@ -102,10 +102,12 @@ public class MarkdownTextSplitter
         }
 
         String breadcrumbString = formatBreadcrumbs(headers);
+        String sectionName = extractSectionName(headers);
 
         chunk.getMetadata().put(MetadataKeys.BREADCRUMBS, breadcrumbString);
         chunk.getMetadata().put(MetadataKeys.CHUNK_INDEX, chunks.size());
         chunk.getMetadata().put(MetadataKeys.SECTION_ID, sectionId);
+        chunk.getMetadata().put(MetadataKeys.SECTION_NAME, sectionName);
 
         chunks.add(chunk);
     }
@@ -142,6 +144,18 @@ public class MarkdownTextSplitter
         if (text.isEmpty()) return null;
 
         return new Header(level, text);
+    }
+
+    private String extractSectionName(String[] headers) {
+        for (int i = headers.length - 1; i >= 0; i--) {
+            String h = headers[i];
+
+            if (h != null && !h.isBlank()) {
+                return h;
+            }
+        }
+
+        return "";
     }
 
     private static final class Header {

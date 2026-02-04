@@ -28,8 +28,19 @@ public class DocumentType {
 
     public String toFormattedString() {
         StringBuilder sb = new StringBuilder();
+
         sb.append("- ").append(name).append(": ").append(description);
+
         sb.append("\n").append("Requires year: ").append(this.requiresYear);
+
+        if (!requiredAttributes.isEmpty()) {
+            String attrs = requiredAttributes
+                .stream()
+                .map(DocumentAttribute::getName)
+                .collect(Collectors.joining(", "));
+
+            sb.append("\n").append("Required attributes: ").append(attrs);
+        }
 
         return sb.toString();
     }

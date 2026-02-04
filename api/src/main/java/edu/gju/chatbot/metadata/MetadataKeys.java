@@ -16,6 +16,8 @@ public final class MetadataKeys {
 
     public static final String SECTION_ID = "section_id";
 
+    public static final String SECTION_NAME = "section_name";
+
     public static final String CHUNK_INDEX = "chunk_index";
 
     public static final String DOCUMENT_TYPE = "document_type";
