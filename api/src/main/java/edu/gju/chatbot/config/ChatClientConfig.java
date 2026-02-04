@@ -2,7 +2,7 @@ package edu.gju.chatbot.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.gju.chatbot.advisor.RagAdvisor;
-import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
+import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import edu.gju.chatbot.retrieval.DocumentSearchResolver;
 import edu.gju.chatbot.retrieval.DocumentSearchService;
 import edu.gju.chatbot.retrieval.DocumentSearchTool;
@@ -19,7 +19,7 @@ public class ChatClientConfig {
     @Bean
     public ChatClient openAiChatClient(
         OpenAiChatModel chatModel,
-        DocumentMetadataRegistry documentMetadataRegistry,
+        DocumentTypeRegistry documentTypeRegistry,
         DocumentSearchResolver documentSearchResolver,
         DocumentSearchService documentSearchService,
         ChatMemory chatMemory,
@@ -28,7 +28,7 @@ public class ChatClientConfig {
         return ChatClient.builder(chatModel)
             .defaultToolCallbacks(
                 new DocumentSearchTool(
-                    documentMetadataRegistry,
+                    documentTypeRegistry,
                     documentSearchResolver,
                     documentSearchService,
                     objectMapper

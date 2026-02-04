@@ -8,11 +8,13 @@ document_types:
 
       The year of a study plan represents the first student cohort it serves, and remains in effect
       for later cohorts unless superseded by a newer study plan.
+    requires_year: true
     attributes:
       required: [academic_level, program]
       optional: [department]
 
   academic_calendar:
+    requires_year: true
     description: "Events for all semesters (first, second, summer)."
 
   fees:

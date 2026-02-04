@@ -4,13 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.gju.chatbot.exception.RagException;
-import edu.gju.chatbot.metadata.DocumentMetadataValidator;
 import edu.gju.chatbot.metadata.DocumentType;
+import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import edu.gju.chatbot.metadata.MetadataKeys;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ public class DocumentSearchResolver
         DocumentSearchResolver.class
     );
 
-    private final DocumentMetadataValidator documentMetadataValidator;
+    private final DocumentTypeRegistry documentTypeRegistry;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -42,18 +43,30 @@ public class DocumentSearchResolver
             intent.getConfirmedAttributes()
         );
 
-        DocumentType documentType =
-            documentMetadataValidator.validateDocumentType(
-                intent.getDocumentType()
+        Optional<DocumentType> documentType =
+            documentTypeRegistry.getDocumentType(intent.getDocumentType());
+
+        if (documentType.isEmpty()) {
+            return new DocumentSearchIntent(
+                intent.getQuery(),
+                null,
+                intent.getYear(),
+                intent.getConfirmedAttributes(),
+                intent.getUnconfirmedAttributes()
             );
-        documentMetadataValidator.validateDocumentAttributes(
-            intent.getConfirmedAttributes()
+        }
+
+        Map<String, Object> confirmed = new HashMap<>(
+            documentType
+                .get()
+                .getValidRequiredAttributes(intent.getConfirmedAttributes())
         );
 
-        Map<String, Object> metadataFilters = new HashMap<>(
-            intent.getConfirmedAttributes()
+        Map<String, Object> metadataFilters = new HashMap<>(confirmed);
+        metadataFilters.put(
+            MetadataKeys.DOCUMENT_TYPE,
+            documentType.get().getName()
         );
-        metadataFilters.put(MetadataKeys.DOCUMENT_TYPE, documentType.getName());
 
         List<Map<String, Object>> candidates = fetchCandidates(metadataFilters);
 
@@ -65,16 +78,11 @@ public class DocumentSearchResolver
             return intent;
         }
 
-        Map<String, Object> confirmed = new HashMap<>(
-            intent.getConfirmedAttributes()
-        );
         Map<String, List<Object>> unconfirmed = new HashMap<>();
 
-        List<String> missingRequiredAttributes =
-            documentMetadataValidator.getMissingDocumentTypeAttributes(
-                confirmed,
-                documentType.getName()
-            );
+        List<String> missingRequiredAttributes = documentType
+            .get()
+            .getMissingRequiredAttributes(confirmed);
 
         for (String a : missingRequiredAttributes) {
             List<Object> options = candidates
@@ -99,7 +107,7 @@ public class DocumentSearchResolver
 
         return new DocumentSearchIntent(
             intent.getQuery(),
-            documentType.getName(),
+            documentType.get().getName(),
             intent.getYear(),
             confirmed,
             unconfirmed

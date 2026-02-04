@@ -2,22 +2,22 @@ package edu.gju.chatbot.config.metadata;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
+import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ResourceLoader;
 
 @Configuration
-@EnableConfigurationProperties({ DocumentMetadataRegistryProperties.class })
-public class DocumentMetadataRegistryConfig {
+@EnableConfigurationProperties({ DocumentTypeRegistryProperties.class })
+public class DocumentTypeRegistryConfig {
 
     @Bean
-    public DocumentMetadataRegistry documentMetadataRegistry(
+    public DocumentTypeRegistry documentMetadataRegistry(
         ResourceLoader resourceLoader,
-        DocumentMetadataRegistryProperties properties
+        DocumentTypeRegistryProperties properties
     ) {
-        return new DocumentMetadataRegistry(
+        return new DocumentTypeRegistry(
             resourceLoader,
             new ObjectMapper(new YAMLFactory()),
             properties.getPath()

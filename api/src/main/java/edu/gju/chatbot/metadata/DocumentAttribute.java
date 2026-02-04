@@ -17,14 +17,7 @@ public class DocumentAttribute {
 
     private String description;
 
-    private AttributeType type;
-
     private List<String> values = new ArrayList<>();
-
-    public enum AttributeType {
-        INTEGER,
-        STRING,
-    }
 
     public String toFormattedString() {
         StringBuilder sb = new StringBuilder();
@@ -33,8 +26,6 @@ public class DocumentAttribute {
         if (description != null && !description.isEmpty()) {
             sb.append(": ").append(description);
         }
-
-        sb.append(" (").append(type.toString().toLowerCase()).append(")");
 
         if (!values.isEmpty()) {
             sb.append("\n  Allowed values: ").append(String.join(", ", values));

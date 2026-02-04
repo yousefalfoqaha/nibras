@@ -24,7 +24,7 @@ public class RagAdvisor implements BaseAdvisor {
         3. If the tools called do not contain the answer, state that you cannot provide the specific information requested.
         4. If the question is about you personally, refer to the YOUR IDENTITY section.
         5. Do NOT summarize or compress information unless the context itself is summarized.
-        6. Do NOT rely on the conversation history to come up with an answer, always search documents when facts are needed.
+        6. Do NOT rely on the conversation history to come up with an answer that requires facts, always search documents.
 
         Your response must be a direct answer to the user.
         """;

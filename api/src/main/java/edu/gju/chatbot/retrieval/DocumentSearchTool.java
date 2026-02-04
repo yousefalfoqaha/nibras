@@ -3,13 +3,14 @@ package edu.gju.chatbot.retrieval;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.metadata.DocumentAttribute;
-import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
 import edu.gju.chatbot.metadata.DocumentType;
+import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,7 @@ public class DocumentSearchTool implements ToolCallback {
         DocumentSearchTool.class
     );
 
-    private final DocumentMetadataRegistry documentMetadataRegistry;
+    private final DocumentTypeRegistry documentTypeRegistry;
 
     private final DocumentSearchResolver searchResolver;
 
@@ -38,7 +39,38 @@ public class DocumentSearchTool implements ToolCallback {
         return ToolDefinition.builder()
             .name("search_documents")
             .description(buildDescription())
-            .inputSchema(buildInputSchema())
+            .inputSchema(
+                """
+                    {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string"
+                            },
+                            "documentType": {
+                                "type": "string"
+                            },
+                            "year": {
+                                "type": ["integer", "null"]
+                            },
+                            "conversationAttributes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "guessedAttributes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": ["query", "documentType", "year"],
+                        "additionalProperties": false
+                    }
+                """
+            )
             .build();
     }
 
@@ -67,7 +99,9 @@ public class DocumentSearchTool implements ToolCallback {
         );
 
         if (!resolvedSearchIntent.getUnconfirmedAttributes().isEmpty()) {
-            String message = formatUnconfirmedAttributes(resolvedSearchIntent);
+            String message = formatUnconfirmedAttributesMessage(
+                resolvedSearchIntent
+            );
             log.warn(message);
 
             return message;
@@ -84,7 +118,7 @@ public class DocumentSearchTool implements ToolCallback {
 
         log.info("Search Service returned {} documents.", documents.size());
 
-        return formatDocuments(documents);
+        return formatContextMessage(documents);
     }
 
     private DocumentSearchIntent getSearchIntent(String rawToolInput) {
@@ -101,18 +135,28 @@ public class DocumentSearchTool implements ToolCallback {
             );
         }
 
+        Map<String, Object> confirmedAttributes = IntStream.range(
+            0,
+            toolInput.conversationAttributes().size() / 2
+        )
+            .boxed()
+            .collect(
+                Collectors.toMap(
+                    i -> toolInput.conversationAttributes().get(i * 2),
+                    i -> toolInput.conversationAttributes().get(i * 2 + 1)
+                )
+            );
+
         return new DocumentSearchIntent(
             toolInput.query(),
             toolInput.documentType(),
             toolInput.year(),
-            toolInput.conversationAttributes() != null
-                ? toolInput.conversationAttributes()
-                : new HashMap<>(),
+            confirmedAttributes,
             new HashMap<>()
         );
     }
 
-    private String formatDocuments(List<Document> documents) {
+    private String formatContextMessage(List<Document> documents) {
         String results = documents
             .stream()
             .map(Document::getFormattedContent)
@@ -127,7 +171,7 @@ public class DocumentSearchTool implements ToolCallback {
         return output;
     }
 
-    private String formatUnconfirmedAttributes(
+    private String formatUnconfirmedAttributesMessage(
         DocumentSearchIntent searchIntent
     ) {
         Map<String, List<Object>> unconfirmed =
@@ -167,79 +211,14 @@ public class DocumentSearchTool implements ToolCallback {
         );
     }
 
-    private String buildInputSchema() {
-        try {
-            Map<String, Object> schema = new HashMap<>();
-            schema.put("type", "object");
-            schema.put("additionalProperties", false);
-            schema.put("required", List.of("query", "documentType"));
-
-            Map<String, Object> properties = new HashMap<>();
-
-            properties.put(
-                "query",
-                Map.of(
-                    "type",
-                    "string",
-                    "description",
-                    "The search query rephrased for retrieval."
-                )
-            );
-
-            List<String> documentTypes = documentMetadataRegistry
-                .getDocumentTypes()
-                .stream()
-                .map(DocumentType::getName)
-                .toList();
-            properties.put(
-                "documentType",
-                Map.of("type", "string", "enum", documentTypes)
-            );
-
-            properties.put(
-                "year",
-                Map.of(
-                    "type",
-                    "integer",
-                    "description",
-                    "The year of the document if explicitly mentioned. Null otherwise."
-                )
-            );
-
-            Map<String, Object> attributeMapSchema = new HashMap<>();
-            attributeMapSchema.put("type", "object");
-            attributeMapSchema.put(
-                "description",
-                "Map of attribute names to values."
-            );
-
-            Map<String, Object> valueSchema = new HashMap<>();
-            valueSchema.put(
-                "anyOf",
-                List.of(Map.of("type", "string"), Map.of("type", "integer"))
-            );
-            attributeMapSchema.put("additionalProperties", valueSchema);
-
-            properties.put("conversationAttributes", attributeMapSchema);
-            properties.put("guessedAttributes", attributeMapSchema);
-
-            schema.put("properties", properties);
-
-            return objectMapper.writeValueAsString(schema);
-        } catch (Exception e) {
-            log.error("Error building tool input schema", e);
-            throw new RagException("Failed to build input schema");
-        }
-    }
-
     private String buildDescription() {
-        String documentTypesDescriptions = documentMetadataRegistry
+        String documentTypesDescriptions = documentTypeRegistry
             .getDocumentTypes()
             .stream()
             .map(DocumentType::toFormattedString)
             .collect(Collectors.joining("\n\n"));
 
-        String attributeDescriptions = documentMetadataRegistry
+        String attributeDescriptions = documentTypeRegistry
             .getDocumentAttributes()
             .stream()
             .map(DocumentAttribute::toFormattedString)
@@ -255,12 +234,20 @@ public class DocumentSearchTool implements ToolCallback {
             %s
 
             INSTRUCTIONS:
-            - Decide the 'documentType' based on the user's intent.
-            - Extract 'year' if explicitly mentioned (e.g., "2023"). If not mentioned, send null.
-            - Populate 'conversationAttributes': Key-value pairs for attributes EXPLICITLY CONFIRMED by the user.
-            - Populate 'guessedAttributes': Key-value pairs for attributes that are AMBIGUOUS or INFERRED (not explicitly confirmed).
-            - Only use attribute keys listed in AVAILABLE ATTRIBUTES.
-            - Rephrase the 'query' for search retrieval (keywords only, not a question).
+            - Choose the 'documentType' based on the user's intent.
+            - If the type requires a year, extract it if mentioned (e.g., "2023"); otherwise set 'year' to null.
+            - Fill 'conversationAttributes' as a flat list: [KEY, VALUE, KEY, VALUE, ...] for confirmed attributes.
+            - Fill 'guessedAttributes' as a flat list in the same format for ambiguous or inferred attributes.
+            - Only include keys listed in AVAILABLE ATTRIBUTES.
+            - Rewrite the 'query' using keywords from the selected document type description (not as a question).
+            - Example ToolInput JSON:
+              {
+                "query": "list all courses",
+                "documentType": "StudyPlan",
+                "year": 2023,
+                "conversationAttributes": ["faculty", "Engineering", "program", "CS"],
+                "guessedAttributes": ["semester", "Fall"]
+              }
             """;
 
         return String.format(
@@ -274,7 +261,7 @@ public class DocumentSearchTool implements ToolCallback {
         String query,
         String documentType,
         Integer year,
-        Map<String, Object> conversationAttributes,
-        Map<String, Object> guessedAttributes
+        List<String> conversationAttributes,
+        List<String> guessedAttributes
     ) {}
 }

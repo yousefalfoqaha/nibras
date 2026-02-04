@@ -2,6 +2,8 @@ package edu.gju.chatbot.retrieval;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.gju.chatbot.metadata.DocumentType;
+import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import edu.gju.chatbot.metadata.MetadataKeys;
 import java.time.Year;
 import java.util.ArrayList;
@@ -9,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -19,7 +22,6 @@ import org.springframework.ai.vectorstore.VectorStoreRetriever;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-// possible implementation of a DocumentSearchContextExpander
 @RequiredArgsConstructor
 @Service
 public class DocumentSearchService {
@@ -28,6 +30,8 @@ public class DocumentSearchService {
         DocumentSearchService.class
     );
 
+    private final DocumentTypeRegistry documentTypeRegistry;
+
     private final VectorStoreRetriever retriever;
 
     private final JdbcTemplate jdbcTemplate;
@@ -35,6 +39,11 @@ public class DocumentSearchService {
     private final ObjectMapper objectMapper;
 
     public List<Document> search(DocumentSearchRequest searchRequest) {
+        Optional<DocumentType> documentType =
+            documentTypeRegistry.getDocumentType(
+                searchRequest.getDocumentType()
+            );
+
         log.info("=== Starting Search ===");
         log.info(
             "Query: '{}', Type: '{}', Year: {}",
@@ -43,12 +52,36 @@ public class DocumentSearchService {
             searchRequest.getYear()
         );
 
+        if (documentType.isEmpty()) {
+            return List.of();
+        }
+
         if (searchRequest.getYear() != null) {
             List<Document> documents = doSearch(searchRequest);
+
             log.info(
                 "Explicit year search found {} documents.",
                 documents.size()
             );
+
+            return documents;
+        }
+
+        if (!documentType.get().isRequiresYear()) {
+            List<Document> documents = doSearch(
+                DocumentSearchRequest.builder()
+                    .query(searchRequest.getQuery())
+                    .documentType(searchRequest.getDocumentType())
+                    .year(null)
+                    .attributes(searchRequest.getAttributes())
+                    .build()
+            );
+
+            log.info(
+                "Searched documents without year, found {} documents.",
+                documents.size()
+            );
+
             return documents;
         }
 

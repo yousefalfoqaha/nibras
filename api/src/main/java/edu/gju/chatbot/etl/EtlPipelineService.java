@@ -18,7 +18,7 @@ public class EtlPipelineService {
 
     private final MarkdownTextSplitter markdownHeaderTextSplitter;
 
-    private final FileMetadataEnricher fileSummaryEnricher;
+    private final FileMetadataEnricher fileMetadataEnricher;
 
     private final VectorStore vectorStore;
 
@@ -36,7 +36,7 @@ public class EtlPipelineService {
             ocrScan
         );
 
-        Document enrichedSummary = fileSummaryEnricher.enrich(
+        Document enrichedSummary = fileMetadataEnricher.enrich(
             enrichedMarkdownHierarchy
         );
 

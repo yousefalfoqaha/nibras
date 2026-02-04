@@ -6,8 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties(DocumentMetadataRegistryProperties.CONFIG_PREFIX)
-public class DocumentMetadataRegistryProperties {
+@ConfigurationProperties(DocumentTypeRegistryProperties.CONFIG_PREFIX)
+public class DocumentTypeRegistryProperties {
 
     public static final String CONFIG_PREFIX = "document-metadata";
 

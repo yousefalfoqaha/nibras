@@ -2,12 +2,12 @@ package edu.gju.chatbot.etl;
 
 import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.metadata.DocumentAttribute;
-import edu.gju.chatbot.metadata.DocumentMetadataRegistry;
-import edu.gju.chatbot.metadata.DocumentMetadataValidator;
 import edu.gju.chatbot.metadata.DocumentType;
+import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import edu.gju.chatbot.metadata.MetadataKeys;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -20,40 +20,32 @@ import org.springframework.ai.document.Document;
 @RequiredArgsConstructor
 public class FileMetadataEnricher implements Function<Document, Document> {
 
-    private static Logger log = LoggerFactory.getLogger(
+    private static final Logger log = LoggerFactory.getLogger(
         FileMetadataEnricher.class
     );
 
     private static final PromptTemplate SYSTEM_PROMPT_TEMPLATE =
         new PromptTemplate(
             """
-            You are extracting useful metadata from a document for retrieval in a knowledge base.
+            You are extracting useful metadata from a document for retrieval.
 
-            Create a clear, descriptive title for the provided text. It should serve as a label for the file, this title is the value for the "title" key in the structured output.
-
-            Extract the document type ONLY from the list below, and place them as key (document_type) and value pair.
-
-            Extract the year (if any mentioned) and place it as key (year) and value. If no year could be found of the document, place null instead.
-
-            Extract the document attributes from the selected document type, required attributes are a must, while optional are good if they can be found. Place the attributes as key (attribute name) and value pair.
+            - Create a clear title for the document ("title" key).
+            - Extract the document type from the list below ("document_type").
+            - Extract the year if mentioned ("year") as an integer, or null if no year is required for the document type.
+            - Extract the required attributes ("attributes") for the selected document type, key of the attribute name, value of the attribute value.
+            - You may use the metadata at the top for extra context to decide what attributes can be extracted.
 
             DOCUMENT TYPES:
-            <
             {document_types}
-            >>>
 
             DOCUMENT ATTRIBUTES:
-            <
             {document_attributes}
-            >>>
             """
         );
 
     private final ChatClient chatClient;
 
-    private final DocumentMetadataRegistry documentMetadataRegistry;
-
-    private final DocumentMetadataValidator documentMetadataValidator;
+    private final DocumentTypeRegistry documentTypeRegistry;
 
     public Document enrich(Document document) {
         return apply(document);
@@ -61,22 +53,21 @@ public class FileMetadataEnricher implements Function<Document, Document> {
 
     @Override
     public Document apply(Document document) {
-        List<DocumentType> documentTypes =
-            documentMetadataRegistry.getDocumentTypes();
-        String formattedDocumentTypes = documentTypes
+        String formattedDocumentTypes = documentTypeRegistry
+            .getDocumentTypes()
             .stream()
             .map(DocumentType::toFormattedString)
             .collect(Collectors.joining("\n\n"));
 
-        List<DocumentAttribute> documentAttributes =
-            documentMetadataRegistry.getDocumentAttributes();
-        String formattedDocumentAttributes = documentAttributes
+        String formattedDocumentAttributes = documentTypeRegistry
+            .getDocumentAttributes()
             .stream()
             .map(DocumentAttribute::toFormattedString)
-            .collect(Collectors.joining("\n\n"));
+            .collect(Collectors.joining("\n"));
 
-        EnrichedMetadata enrichedMetadata = this.chatClient.prompt()
-            .user(u -> u.text(document.getText()))
+        EnrichedMetadata enrichedMetadata = chatClient
+            .prompt()
+            .user(u -> u.text(document.getFormattedContent()))
             .system(s ->
                 s.text(
                     SYSTEM_PROMPT_TEMPLATE.render(
@@ -92,39 +83,51 @@ public class FileMetadataEnricher implements Function<Document, Document> {
             .call()
             .entity(EnrichedMetadata.class);
 
-        log.debug("Metadata inferred: {}", enrichedMetadata);
+        log.info("Metadata inferred: {}", enrichedMetadata);
 
-        documentMetadataValidator.validateDocumentAttributes(
-            enrichedMetadata.attributes()
-        );
-
-        List<String> missingRequiredAttributes =
-            documentMetadataValidator.getMissingDocumentTypeAttributes(
-                enrichedMetadata.attributes(),
+        Optional<DocumentType> optionalType =
+            documentTypeRegistry.getDocumentType(
                 enrichedMetadata.documentType()
             );
 
-        if (!missingRequiredAttributes.isEmpty()) {
+        if (optionalType.isEmpty()) {
+            throw new RagException(
+                "Unknown document type: " + enrichedMetadata.documentType()
+            );
+        }
+
+        DocumentType documentType = optionalType.get();
+
+        List<String> missingRequired =
+            documentType.getMissingRequiredAttributes(
+                enrichedMetadata.attributes()
+            );
+
+        if (!missingRequired.isEmpty()) {
             throw new RagException(
                 String.format(
-                    "Document of type '%s' is missing required attributes: [%s].",
-                    enrichedMetadata.documentType(),
-                    String.join(", ", missingRequiredAttributes)
+                    "Document of type '%s' is missing required attributes: [%s]",
+                    documentType.getName(),
+                    String.join(", ", missingRequired)
                 )
             );
         }
 
-        document
-            .getMetadata()
-            .put(MetadataKeys.TITLE, enrichedMetadata.title());
-        document
-            .getMetadata()
-            .put(MetadataKeys.DOCUMENT_TYPE, enrichedMetadata.documentType());
+        Map<String, Object> metadata = document.getMetadata();
+        metadata.put(MetadataKeys.TITLE, enrichedMetadata.title());
+        metadata.put(MetadataKeys.DOCUMENT_TYPE, documentType.getName());
+        enrichedMetadata.attributes().forEach(metadata::put);
 
-        for (Map.Entry<String, Object> entry : enrichedMetadata
-            .attributes()
-            .entrySet()) {
-            document.getMetadata().put(entry.getKey(), entry.getValue());
+        if (documentType.isRequiresYear() && enrichedMetadata.year() == null) {
+            throw new RagException(
+                "Document of type '" +
+                    documentType.getName() +
+                    "' requires a year, but none was found."
+            );
+        }
+
+        if (documentType.isRequiresYear()) {
+            metadata.put("year", enrichedMetadata.year());
         }
 
         return document;
@@ -133,6 +136,7 @@ public class FileMetadataEnricher implements Function<Document, Document> {
     private record EnrichedMetadata(
         String title,
         String documentType,
+        Integer year,
         Map<String, Object> attributes
     ) {}
 }

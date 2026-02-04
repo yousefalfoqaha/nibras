@@ -28,17 +28,6 @@ spring:
         options:
           model: text-embedding-3-small
           dimensions: 1536
-    jina:
-      base-url: https://api.jina.ai
-      api-key: ${JINA_API_KEY}
-      embedding:
-        embeddings-path: /v1/embeddings
-        metadata-mode: EMBED
-        options:
-          model: jina-embeddings-v3
-          task: text-matching
-          dimensions: 1024
-          late-chunking: true
 
     vectorstore:
       pgvector:
