@@ -6,9 +6,11 @@ import edu.gju.chatbot.metadata.DocumentAttribute;
 import edu.gju.chatbot.metadata.DocumentType;
 import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +55,9 @@ public class DocumentSearchTool implements ToolCallback {
                             "year": {
                                 "type": ["integer", "null"]
                             },
+                            "documentTypeYear": {
+                                "type": "string"
+                            },
                             "conversationAttributes": {
                                 "type": "array",
                                 "items": {
@@ -82,8 +87,16 @@ public class DocumentSearchTool implements ToolCallback {
     @Override
     public String call(String toolInput) {
         log.info("=== Tool Call: search_documents ===");
+        DocumentSearchIntent searchIntent;
 
-        DocumentSearchIntent searchIntent = getSearchIntent(toolInput);
+        try {
+            searchIntent = getSearchIntent(toolInput);
+        } catch (RagException e) {
+            return String.format(
+                "Invalid tool input {}. Follow the instructions more carefully.",
+                toolInput
+            );
+        }
 
         log.info(
             "Initial Intent -> Query: '{}', Type: '{}', Year: {}, Confirmed: {}, Guessed: {}",
@@ -97,6 +110,10 @@ public class DocumentSearchTool implements ToolCallback {
         DocumentSearchIntent resolvedSearchIntent = searchResolver.apply(
             searchIntent
         );
+
+        if (resolvedSearchIntent.getDocumentType() == null) {
+            return "SEARCH ABORTED: must provide a valid document type to search for.";
+        }
 
         if (!resolvedSearchIntent.getUnconfirmedAttributes().isEmpty()) {
             String message = formatUnconfirmedAttributesMessage(
@@ -135,22 +152,25 @@ public class DocumentSearchTool implements ToolCallback {
             );
         }
 
-        Map<String, Object> confirmedAttributes = IntStream.range(
-            0,
-            toolInput.conversationAttributes().size() / 2
+        Map<String, Object> confirmedAttributes = Optional.ofNullable(
+            toolInput.conversationAttributes()
         )
-            .boxed()
-            .collect(
-                Collectors.toMap(
-                    i -> toolInput.conversationAttributes().get(i * 2),
-                    i -> toolInput.conversationAttributes().get(i * 2 + 1)
-                )
-            );
+            .map(attrs ->
+                IntStream.range(0, attrs.size() / 2)
+                    .boxed()
+                    .collect(
+                        Collectors.toMap(
+                            i -> attrs.get(i * 2),
+                            i -> (Object) attrs.get(i * 2 + 1)
+                        )
+                    )
+            )
+            .orElse(Collections.emptyMap());
 
         return new DocumentSearchIntent(
             toolInput.query(),
             toolInput.documentType(),
-            toolInput.year(),
+            toolInput.documentTypeYear(),
             confirmedAttributes,
             new HashMap<>()
         );
@@ -234,20 +254,12 @@ public class DocumentSearchTool implements ToolCallback {
             %s
 
             INSTRUCTIONS:
-            - Choose the 'documentType' based on the user's intent.
-            - If the type requires a year, extract it if mentioned (e.g., "2023"); otherwise set 'year' to null.
-            - Fill 'conversationAttributes' as a flat list: [KEY, VALUE, KEY, VALUE, ...] for confirmed attributes.
-            - Fill 'guessedAttributes' as a flat list in the same format for ambiguous or inferred attributes.
-            - Only include keys listed in AVAILABLE ATTRIBUTES.
-            - Rewrite the 'query' using keywords from the selected document type description (not as a question).
-            - Example ToolInput JSON:
-              {
-                "query": "list all courses",
-                "documentType": "StudyPlan",
-                "year": 2023,
-                "conversationAttributes": ["faculty", "Engineering", "program", "CS"],
-                "guessedAttributes": ["semester", "Fall"]
-              }
+            - Pick the document type that best matches the user’s question.
+            - List attributes mentioned in the conversation:
+                - Put confirmed values in 'conversationAttributes' as [ATTRIBUTE_NAME, ATTRIBUTE_VALUE, ...].
+                - Put inferred or uncertain values in 'guessedAttributes' as [ATTRIBUTE_NAME, ATTRIBUTE_VALUE, ...].
+            - Set 'documentTypeYear' to the year mentioned in the conversation about the document type, or null if none.
+            - Rewrite the query using keywords from the document type description.
             """;
 
         return String.format(
@@ -260,7 +272,7 @@ public class DocumentSearchTool implements ToolCallback {
     private record ToolInput(
         String query,
         String documentType,
-        Integer year,
+        Integer documentTypeYear,
         List<String> conversationAttributes,
         List<String> guessedAttributes
     ) {}

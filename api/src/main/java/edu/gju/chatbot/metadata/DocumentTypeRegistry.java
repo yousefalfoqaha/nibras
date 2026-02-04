@@ -140,6 +140,9 @@ public class DocumentTypeRegistry {
                         Optional.ofNullable(
                             documentTypeConfig.requires_year()
                         ).orElse(false),
+                        Optional.ofNullable(
+                            documentTypeConfig.prefer_latest_year()
+                        ).orElse(false),
                         requiredAttributes,
                         optionalAttributes
                     )
@@ -168,6 +171,7 @@ public class DocumentTypeRegistry {
     private record DocumentTypeConfig(
         String description,
         Boolean requires_year,
+        Boolean prefer_latest_year,
         AttributesConfig attributes
     ) {}
 

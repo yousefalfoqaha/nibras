@@ -22,6 +22,8 @@ public class DocumentType {
 
     private boolean requiresYear;
 
+    private boolean preferLatestYear;
+
     private List<DocumentAttribute> requiredAttributes = new ArrayList<>();
 
     private List<DocumentAttribute> optionalAttributes = new ArrayList<>();

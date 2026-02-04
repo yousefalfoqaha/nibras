@@ -127,7 +127,7 @@ public class DocumentSearchService {
                 .query(searchRequest.getQuery())
                 .similarityThreshold(0.4)
                 .filterExpression(filter)
-                .topK(10)
+                .topK(3)
                 .build()
         );
 

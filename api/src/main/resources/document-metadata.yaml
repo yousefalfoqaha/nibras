@@ -4,6 +4,10 @@ document_types:
       Program curriculum including admission requirements, placement tests, remedial courses,
       learning outcomes, and program objectives.
 
+      Can be split into different tracks, requiring different courses and electives.
+
+      Includes categorizing courses into sections of different levels (university, school, program), and type (compulsory, elective), usually named the 'framework'.
+
       There is also a study plan guide, where the courses are places in semesters, used as a guide for when to take the courses in an appropriate sequence.
 
       The year of a study plan represents the first student cohort it serves, and remains in effect
@@ -15,6 +19,7 @@ document_types:
 
   academic_calendar:
     requires_year: true
+    prefer_latest_year: true
     description: "Events for all semesters (first, second, summer)."
 
   fees:
