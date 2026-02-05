@@ -2,16 +2,12 @@ package edu.gju.chatbot.retrieval;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.gju.chatbot.metadata.DocumentType;
-import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import edu.gju.chatbot.metadata.MetadataKeys;
-import java.time.Year;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

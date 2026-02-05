@@ -1,7 +1,7 @@
 document_types:
   study_plan:
     description: |
-      Program, with department, curriculum including admission requirements, placement tests, remedial courses,
+      Program, with school, curriculum including admission requirements, placement tests, remedial courses,
       learning outcomes, and program objectives.
 
       Framework section:
@@ -16,6 +16,8 @@ document_types:
 
       The year of a study plan represents the first student cohort it serves, and remains in effect
       for later cohorts unless superseded by a newer study plan.
+
+      A study plan's academic level usually represent's the student's academic level (because it's the program they are following).
     requires_year: true
     attributes:
       required: [academic_level, program]
@@ -27,7 +29,7 @@ document_types:
     description: "Events for all semesters (first, second, summer)."
 
   fees:
-    description: "Tuition, registration, fees for each academic department and program"
+    description: "Tuition, registration, fees for each academic a"
     attributes:
       required: [academic_level]
 
