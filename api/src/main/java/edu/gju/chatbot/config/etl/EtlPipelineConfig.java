@@ -13,7 +13,6 @@ import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.BatchingStrategy;
 import org.springframework.ai.embedding.TokenCountBatchingStrategy;
 import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,11 +26,7 @@ public class EtlPipelineConfig {
     public MarkdownHierarchyEnricher markdownHierarchyEnricher(
         OpenAiChatModel chatModel
     ) {
-        ChatClient chatClient = ChatClient.builder(chatModel)
-            .defaultOptions(
-                OpenAiChatOptions.builder().model("gpt-5.2").build()
-            )
-            .build();
+        ChatClient chatClient = ChatClient.builder(chatModel).build();
 
         return new MarkdownHierarchyEnricher(chatClient);
     }
@@ -50,15 +45,11 @@ public class EtlPipelineConfig {
     }
 
     @Bean
-    public FileMetadataEnricher fileSummaryEnricher(
+    public FileMetadataEnricher fileMetadataEnricher(
         OpenAiChatModel chatModel,
         DocumentTypeRegistry documentTypeRegistry
     ) {
-        ChatClient chatClient = ChatClient.builder(chatModel)
-            .defaultOptions(
-                OpenAiChatOptions.builder().model("gpt-5-mini").build()
-            )
-            .build();
+        ChatClient chatClient = ChatClient.builder(chatModel).build();
 
         return new FileMetadataEnricher(chatClient, documentTypeRegistry);
     }

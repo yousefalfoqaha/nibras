@@ -13,7 +13,7 @@ public class DocumentSearchIntent {
 
     private String documentType;
 
-    private Integer year;
+    private Integer targetYear;
 
     private Map<String, Object> confirmedAttributes;
 

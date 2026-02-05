@@ -30,8 +30,6 @@ public class DocumentSearchService {
         DocumentSearchService.class
     );
 
-    private final DocumentTypeRegistry documentTypeRegistry;
-
     private final VectorStoreRetriever retriever;
 
     private final JdbcTemplate jdbcTemplate;
@@ -39,83 +37,17 @@ public class DocumentSearchService {
     private final ObjectMapper objectMapper;
 
     public List<Document> search(DocumentSearchRequest searchRequest) {
-        Optional<DocumentType> documentType =
-            documentTypeRegistry.getDocumentType(
-                searchRequest.getDocumentType()
-            );
-
         log.info("=== Starting Search ===");
         log.info(
-            "Query: '{}', Type: '{}', Year: {}",
+            "Query: '{}', Type: '{}', Years: {}",
             searchRequest.getQuery(),
             searchRequest.getDocumentType(),
             searchRequest.getYear()
         );
 
-        if (documentType.isEmpty()) {
-            return List.of();
-        }
+        List<Document> documents = doSearch(searchRequest);
 
-        if (searchRequest.getYear() != null) {
-            List<Document> documents = doSearch(searchRequest);
-
-            log.info(
-                "Explicit year search found {} documents.",
-                documents.size()
-            );
-
-            return documents;
-        }
-
-        if (!documentType.get().isRequiresYear()) {
-            List<Document> documents = doSearch(
-                DocumentSearchRequest.builder()
-                    .query(searchRequest.getQuery())
-                    .documentType(searchRequest.getDocumentType())
-                    .year(null)
-                    .attributes(searchRequest.getAttributes())
-                    .build()
-            );
-
-            log.info(
-                "Searched documents without year, found {} documents.",
-                documents.size()
-            );
-
-            return documents;
-        }
-
-        int latestYear = Year.now().getValue();
-        log.info(
-            "No year provided. Attempting fallback search starting from {}.",
-            latestYear
-        );
-
-        for (int i = 0; i < 5; i++) {
-            int yearToTry = latestYear - i;
-            log.info(">>> Trying search for year: {}", yearToTry);
-
-            List<Document> documents = doSearch(
-                DocumentSearchRequest.builder()
-                    .query(searchRequest.getQuery())
-                    .documentType(searchRequest.getDocumentType())
-                    .year(yearToTry)
-                    .attributes(searchRequest.getAttributes())
-                    .build()
-            );
-
-            if (!documents.isEmpty()) {
-                log.info(
-                    "Match found in year {}. Returning {} documents.",
-                    yearToTry,
-                    documents.size()
-                );
-                return documents;
-            }
-        }
-
-        log.info("Fallback search exhausted. No documents found.");
-        return List.of();
+        return documents;
     }
 
     private List<Document> doSearch(DocumentSearchRequest searchRequest) {
@@ -127,7 +59,7 @@ public class DocumentSearchService {
                 .query(searchRequest.getQuery())
                 .similarityThreshold(0.4)
                 .filterExpression(filter)
-                .topK(3)
+                .topK(5)
                 .build()
         );
 

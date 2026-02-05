@@ -7,12 +7,15 @@ import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.metadata.DocumentType;
 import edu.gju.chatbot.metadata.DocumentTypeRegistry;
 import edu.gju.chatbot.metadata.MetadataKeys;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +53,7 @@ public class DocumentSearchResolver
             return new DocumentSearchIntent(
                 intent.getQuery(),
                 null,
-                intent.getYear(),
+                intent.getTargetYear(),
                 intent.getConfirmedAttributes(),
                 intent.getUnconfirmedAttributes()
             );
@@ -105,10 +108,73 @@ public class DocumentSearchResolver
             unconfirmed.keySet()
         );
 
+        if (unconfirmed.size() > 0) {
+            return new DocumentSearchIntent(
+                intent.getQuery(),
+                documentType.get().getName(),
+                intent.getTargetYear(),
+                confirmed,
+                unconfirmed
+            );
+        }
+
+        if (!documentType.get().isRequiresYear()) {
+            return new DocumentSearchIntent(
+                intent.getQuery(),
+                documentType.get().getName(),
+                null,
+                confirmed,
+                unconfirmed
+            );
+        }
+
+        Set<Integer> availableYears = candidates
+            .stream()
+            .map(m -> (Integer) m.get(MetadataKeys.YEAR))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        if (availableYears.isEmpty()) {
+            return new DocumentSearchIntent(
+                intent.getQuery(),
+                documentType.get().getName(),
+                null,
+                confirmed,
+                unconfirmed
+            );
+        }
+
+        Integer targetYear = null;
+
+        if (intent.getTargetYear() != null) {
+            Integer closestYear = availableYears
+                .stream()
+                .min(
+                    Comparator.comparingInt(y ->
+                        Math.abs(y - intent.getTargetYear())
+                    )
+                )
+                .orElse(null);
+
+            targetYear = closestYear;
+        }
+
+        if (
+            documentType.get().isPreferLatestYear() ||
+            intent.getTargetYear() == null
+        ) {
+            Integer latestAvailableYear = availableYears
+                .stream()
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+
+            targetYear = latestAvailableYear;
+        }
+
         return new DocumentSearchIntent(
             intent.getQuery(),
             documentType.get().getName(),
-            intent.getYear(),
+            targetYear,
             confirmed,
             unconfirmed
         );

@@ -1,14 +1,18 @@
 document_types:
   study_plan:
     description: |
-      Program curriculum including admission requirements, placement tests, remedial courses,
+      Program, with department, curriculum including admission requirements, placement tests, remedial courses,
       learning outcomes, and program objectives.
 
-      Can be split into different tracks, requiring different courses and electives.
+      Framework section:
+        Includes categorizing courses into sections of different levels (university, school, program), and type (compulsory, elective), usually named the 'framework'.
+        All track courses and electives are found here courses.
 
-      Includes categorizing courses into sections of different levels (university, school, program), and type (compulsory, elective), usually named the 'framework'.
+      Study plan guide section:
+      Courses are places in semesters, used as a guide for when to take the courses in an appropriate sequence.
 
-      There is also a study plan guide, where the courses are places in semesters, used as a guide for when to take the courses in an appropriate sequence.
+      Courses offered section:
+      A list of courses offered by department, and other schools, including full description of each course.
 
       The year of a study plan represents the first student cohort it serves, and remains in effect
       for later cohorts unless superseded by a newer study plan.
@@ -23,7 +27,7 @@ document_types:
     description: "Events for all semesters (first, second, summer)."
 
   fees:
-    description: "Tuition, registration, fees differ by academic department"
+    description: "Tuition, registration, fees for each academic department and program"
     attributes:
       required: [academic_level]
 

@@ -20,6 +20,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
+import org.springframework.lang.NonNull;
 
 @RequiredArgsConstructor
 public class DocumentSearchTool implements ToolCallback {
@@ -52,11 +53,8 @@ public class DocumentSearchTool implements ToolCallback {
                             "documentType": {
                                 "type": "string"
                             },
-                            "year": {
-                                "type": ["integer", "null"]
-                            },
                             "documentTypeYear": {
-                                "type": "string"
+                                "type": ["integer", "null"]
                             },
                             "conversationAttributes": {
                                 "type": "array",
@@ -71,7 +69,7 @@ public class DocumentSearchTool implements ToolCallback {
                                 }
                             }
                         },
-                        "required": ["query", "documentType", "year"],
+                        "required": ["query", "documentType", "documentTypeYear"],
                         "additionalProperties": false
                     }
                 """
@@ -86,52 +84,47 @@ public class DocumentSearchTool implements ToolCallback {
 
     @Override
     public String call(String toolInput) {
-        log.info("=== Tool Call: search_documents ===");
-        DocumentSearchIntent searchIntent;
+        DocumentSearchIntent intent;
 
-        try {
-            searchIntent = getSearchIntent(toolInput);
-        } catch (RagException e) {
-            return String.format(
-                "Invalid tool input {}. Follow the instructions more carefully.",
-                toolInput
-            );
-        }
+        intent = getSearchIntent(toolInput);
 
         log.info(
-            "Initial Intent -> Query: '{}', Type: '{}', Year: {}, Confirmed: {}, Guessed: {}",
-            searchIntent.getQuery(),
-            searchIntent.getDocumentType(),
-            searchIntent.getYear(),
-            searchIntent.getConfirmedAttributes(),
-            searchIntent.getUnconfirmedAttributes()
+            "Initial Intent -> Query: '{}', Type: '{}', Years: {}, Confirmed: {}, Guessed: {}",
+            intent.getQuery(),
+            intent.getDocumentType(),
+            intent.getTargetYear(),
+            intent.getConfirmedAttributes(),
+            intent.getUnconfirmedAttributes()
         );
 
-        DocumentSearchIntent resolvedSearchIntent = searchResolver.apply(
-            searchIntent
-        );
+        DocumentSearchIntent resolvedIntent = searchResolver.apply(intent);
 
-        if (resolvedSearchIntent.getDocumentType() == null) {
+        if (resolvedIntent.getDocumentType() == null) {
             return "SEARCH ABORTED: must provide a valid document type to search for.";
         }
 
-        if (!resolvedSearchIntent.getUnconfirmedAttributes().isEmpty()) {
-            String message = formatUnconfirmedAttributesMessage(
-                resolvedSearchIntent
-            );
+        if (!resolvedIntent.getUnconfirmedAttributes().isEmpty()) {
+            String message = formatUnconfirmedAttributesMessage(resolvedIntent);
             log.warn(message);
 
             return message;
         }
 
-        DocumentSearchRequest searchRequest = DocumentSearchRequest.builder()
-            .query(resolvedSearchIntent.getQuery())
-            .documentType(resolvedSearchIntent.getDocumentType())
-            .year(resolvedSearchIntent.getYear())
-            .attributes(resolvedSearchIntent.getConfirmedAttributes())
+        Optional<String> yearResolutionMessage =
+            formatClarifyYearFallbackMessage(intent, resolvedIntent);
+
+        if (yearResolutionMessage.isPresent()) {
+            return yearResolutionMessage.get();
+        }
+
+        DocumentSearchRequest request = DocumentSearchRequest.builder()
+            .query(resolvedIntent.getQuery())
+            .documentType(resolvedIntent.getDocumentType())
+            .year(resolvedIntent.getTargetYear())
+            .attributes(resolvedIntent.getConfirmedAttributes())
             .build();
 
-        List<Document> documents = searchService.search(searchRequest);
+        List<Document> documents = searchService.search(request);
 
         log.info("Search Service returned {} documents.", documents.size());
 
@@ -148,20 +141,21 @@ public class DocumentSearchTool implements ToolCallback {
         } catch (IOException e) {
             log.error("Failed to parse tool input JSON", e);
             throw new RagException(
-                "Failed to parse tool input for document searching."
+                "Failed to parse tool input for document searching.",
+                e
             );
         }
 
         Map<String, Object> confirmedAttributes = Optional.ofNullable(
             toolInput.conversationAttributes()
         )
-            .map(attrs ->
-                IntStream.range(0, attrs.size() / 2)
+            .map(a ->
+                IntStream.range(0, a.size() / 2)
                     .boxed()
                     .collect(
                         Collectors.toMap(
-                            i -> attrs.get(i * 2),
-                            i -> (Object) attrs.get(i * 2 + 1)
+                            i -> a.get(i * 2),
+                            i -> (Object) a.get(i * 2 + 1)
                         )
                     )
             )
@@ -174,6 +168,47 @@ public class DocumentSearchTool implements ToolCallback {
             confirmedAttributes,
             new HashMap<>()
         );
+    }
+
+    private Optional<String> formatClarifyYearFallbackMessage(
+        DocumentSearchIntent original,
+        DocumentSearchIntent resolved
+    ) {
+        Integer requestedYear = original.getTargetYear();
+        Integer resolvedYear = resolved.getTargetYear();
+
+        if (
+            requestedYear == null ||
+            resolvedYear == null ||
+            requestedYear.equals(resolvedYear)
+        ) {
+            return Optional.empty();
+        }
+
+        DocumentType docType = documentTypeRegistry
+            .getDocumentType(resolved.getDocumentType())
+            .orElse(null);
+
+        if (docType == null) {
+            return Optional.empty();
+        }
+
+        if (docType.isPreferLatestYear()) {
+            return Optional.empty();
+        }
+
+        if (docType.isRequiresYear()) {
+            return Optional.of(
+                String.format(
+                    "It seems there are no documents found for the exact year %s. " +
+                        "The closest available year is %s.",
+                    requestedYear,
+                    resolvedYear
+                )
+            );
+        }
+
+        return Optional.empty();
     }
 
     private String formatContextMessage(List<Document> documents) {
@@ -225,8 +260,8 @@ public class DocumentSearchTool implements ToolCallback {
             .collect(Collectors.joining("\n"));
 
         return (
-            "SEARCH ABORTED: Missing or ambiguous metadata.\n" +
-            "You must ask the user to clarify the following attributes before retrying the search:\n" +
+            "TO CONTINUE SEARCH: Missing or ambiguous attributes.\n" +
+            "You must ask the user to clarify the following attributes to continue the search:\n" +
             distinctIssues
         );
     }
@@ -255,11 +290,21 @@ public class DocumentSearchTool implements ToolCallback {
 
             INSTRUCTIONS:
             - Pick the document type that best matches the user’s question.
-            - List attributes mentioned in the conversation:
+            - List attributes (as valid JSON array of strings) mentioned in the conversation:
                 - Put confirmed values in 'conversationAttributes' as [ATTRIBUTE_NAME, ATTRIBUTE_VALUE, ...].
                 - Put inferred or uncertain values in 'guessedAttributes' as [ATTRIBUTE_NAME, ATTRIBUTE_VALUE, ...].
-            - Set 'documentTypeYear' to the year mentioned in the conversation about the document type, or null if none.
+            - Set 'documentTypeYear' to the year mentioned in the conversation about the document type, or null if no year was mentioned.
             - Rewrite the query using keywords from the document type description.
+
+            Example of correct tool input:
+
+            {
+              "query": "remedial courses admission requirements",
+              "documentType": "study_plan",
+              "documentTypeYear": 2023,
+              "conversationAttributes": ["program", "computer science", "academic_level", "undergraduate"],
+              "guessedAttributes": []
+            }
             """;
 
         return String.format(
@@ -270,8 +315,8 @@ public class DocumentSearchTool implements ToolCallback {
     }
 
     private record ToolInput(
-        String query,
-        String documentType,
+        @NonNull String query,
+        @NonNull String documentType,
         Integer documentTypeYear,
         List<String> conversationAttributes,
         List<String> guessedAttributes
