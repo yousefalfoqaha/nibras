@@ -24,7 +24,6 @@ document_types:
       optional: [department]
 
   academic_calendar:
-    requires_year: true
     prefer_latest_year: true
     description: "Events for all semesters (first, second, summer)."
 

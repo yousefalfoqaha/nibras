@@ -118,7 +118,10 @@ public class DocumentSearchResolver
             );
         }
 
-        if (!documentType.get().isRequiresYear()) {
+        if (
+            !documentType.get().isRequiresYear() &&
+            !documentType.get().isPreferLatestYear()
+        ) {
             return new DocumentSearchIntent(
                 intent.getQuery(),
                 documentType.get().getName(),

@@ -114,6 +114,7 @@ public class DocumentSearchTool implements ToolCallback {
             formatClarifyYearFallbackMessage(intent, resolvedIntent);
 
         if (yearResolutionMessage.isPresent()) {
+            log.info("Asking for clarification on year.");
             return yearResolutionMessage.get();
         }
 
@@ -201,7 +202,8 @@ public class DocumentSearchTool implements ToolCallback {
             return Optional.of(
                 String.format(
                     "It seems there are no documents found for the exact year %s. " +
-                        "The closest available year is %s.",
+                        "The closest available year to %s is %s. Inform the user.",
+                    requestedYear,
                     requestedYear,
                     resolvedYear
                 )
