@@ -1,218 +1,77 @@
 package edu.gju.chatbot.retrieval;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.gju.chatbot.metadata.MetadataKeys;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.document.DocumentTransformer;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStoreRetriever;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-@Service
 public class DocumentSearchService {
 
-    private static final Logger log = LoggerFactory.getLogger(
-        DocumentSearchService.class
-    );
+  private static final Logger log = LoggerFactory.getLogger(
+      DocumentSearchService.class);
 
-    private final VectorStoreRetriever retriever;
+  private final VectorStoreRetriever retriever;
 
-    private final JdbcTemplate jdbcTemplate;
+  private final DocumentTransformer documentTransformer;
 
-    private final ObjectMapper objectMapper;
+  public List<Document> search(UserQuery query) {
+    String filter = buildFilterExpression(query);
+    log.info("Applied Filter: [{}]", filter != null ? filter : "NONE");
 
-    public List<Document> search(DocumentSearchRequest searchRequest) {
-        log.info("=== Starting Search ===");
-        log.info(
-            "Query: '{}', Type: '{}', Years: {}",
-            searchRequest.getQuery(),
-            searchRequest.getDocumentType(),
-            searchRequest.getYear()
-        );
+    List<Document> similarChunks = retriever.similaritySearch(
+        SearchRequest.builder()
+            .query(query.getQuery())
+            .similarityThreshold(0.4)
+            .filterExpression(filter)
+            .topK(5)
+            .build());
 
-        List<Document> documents = doSearch(searchRequest);
+    log.info("Vector Store returned {} raw chunks.", similarChunks.size());
 
-        return documents;
+    if (similarChunks.isEmpty()) {
+      return List.of();
     }
 
-    private List<Document> doSearch(DocumentSearchRequest searchRequest) {
-        String filter = buildFilterExpression(searchRequest);
-        log.info("Applied Filter: [{}]", filter != null ? filter : "NONE");
+    return documentTransformer.transform(similarChunks);
+  }
 
-        List<Document> similarChunks = retriever.similaritySearch(
-            SearchRequest.builder()
-                .query(searchRequest.getQuery())
-                .similarityThreshold(0.4)
-                .filterExpression(filter)
-                .topK(5)
-                .build()
-        );
+  private String buildFilterExpression(UserQuery query) {
+    List<String> filterParts = new ArrayList<>();
 
-        log.info("Vector Store returned {} raw chunks.", similarChunks.size());
+    if (query.getConfirmedAttributes() != null) {
+      for (Map.Entry<String, Object> entry : query
+          .getConfirmedAttributes()
+          .entrySet()) {
+        String key = entry.getKey();
+        Object val = entry.getValue();
+        String condition = (val instanceof String)
+            ? String.format("%s == '%s'", key, val)
+            : String.format("%s == %s", key, val);
 
-        if (similarChunks.isEmpty()) {
-            return List.of();
-        }
-
-        return expandChunks(similarChunks);
+        filterParts.add(condition);
+      }
     }
 
-    private String buildFilterExpression(DocumentSearchRequest searchRequest) {
-        List<String> filterParts = new ArrayList<>();
-
-        if (searchRequest.getAttributes() != null) {
-            for (Map.Entry<String, Object> entry : searchRequest
-                .getAttributes()
-                .entrySet()) {
-                String key = entry.getKey();
-                Object val = entry.getValue();
-                String condition = (val instanceof String)
-                    ? String.format("%s == '%s'", key, val)
-                    : String.format("%s == %s", key, val);
-
-                filterParts.add(condition);
-            }
-        }
-
-        if (
-            searchRequest.getDocumentType() != null &&
-            !searchRequest.getDocumentType().isBlank()
-        ) {
-            filterParts.add(
-                "document_type == '" + searchRequest.getDocumentType() + "'"
-            );
-        }
-
-        if (searchRequest.getYear() != null) {
-            filterParts.add("year == " + searchRequest.getYear());
-        }
-
-        return filterParts.isEmpty() ? null : String.join(" && ", filterParts);
+    if (query.getDocumentType() != null &&
+        !query.getDocumentType().isBlank()) {
+      filterParts.add(
+          "document_type == '" + query.getDocumentType() + "'");
     }
 
-    private List<Document> expandChunks(List<Document> chunks) {
-        List<String> sectionIds = chunks
-            .stream()
-            .map(doc -> doc.getMetadata().get(MetadataKeys.SECTION_ID))
-            .filter(Objects::nonNull)
-            .map(Object::toString)
-            .distinct()
-            .toList();
-
-        if (sectionIds.isEmpty()) {
-            log.warn("No section_ids found in chunks. Returning raw chunks.");
-            return chunks;
-        }
-
-        log.info(
-            "Identifying parent sections. Found {} unique section IDs: {}",
-            sectionIds.size(),
-            sectionIds
-        );
-
-        String inSql = sectionIds
-            .stream()
-            .map(s -> "'" + s + "'")
-            .collect(Collectors.joining(","));
-
-        String sql = String.format(
-            """
-            SELECT content, metadata
-            FROM vector_store
-            WHERE metadata ->> 'section_id' IN (%s)
-            ORDER BY metadata ->> 'section_id', CAST(metadata ->> 'chunk_index' AS INTEGER)
-            """,
-            inSql
-        );
-
-        List<Document> expandedChunks = this.jdbcTemplate.query(
-            sql,
-            (rs, rowNum) -> {
-                try {
-                    Map<String, Object> meta = objectMapper.readValue(
-                        rs.getString("metadata"),
-                        new TypeReference<Map<String, Object>>() {}
-                    );
-                    return new Document(rs.getString("content"), meta);
-                } catch (Exception e) {
-                    log.error("Error parsing metadata for row {}", rowNum, e);
-                    return null;
-                }
-            }
-        );
-
-        expandedChunks = expandedChunks
-            .stream()
-            .filter(Objects::nonNull)
-            .toList();
-
-        log.info(
-            "Retrieved {} total chunks from database for reconstruction.",
-            expandedChunks.size()
-        );
-
-        List<Document> reconstructedDocuments = expandedChunks
-            .stream()
-            .collect(
-                Collectors.groupingBy(d ->
-                    d.getMetadata().get(MetadataKeys.SECTION_ID).toString()
-                )
-            )
-            .values()
-            .stream()
-            .map(this::reconstructSection)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-
-        log.info(
-            "Reconstructed {} full section documents.",
-            reconstructedDocuments.size()
-        );
-
-        return reconstructedDocuments;
+    if (query.getTargetYear() != null) {
+      filterParts.add("year == " + query.getTargetYear());
     }
 
-    private Document reconstructSection(List<Document> sectionChunks) {
-        if (sectionChunks == null || sectionChunks.isEmpty()) return null;
+    return filterParts.isEmpty() ? null : String.join(" && ", filterParts);
+  }
 
-        sectionChunks.sort(
-            Comparator.comparingInt(doc ->
-                Integer.parseInt(
-                    doc.getMetadata().get(MetadataKeys.CHUNK_INDEX).toString()
-                )
-            )
-        );
-
-        StringBuilder content = new StringBuilder();
-        String lastBreadcrumb = "";
-        Map<String, Object> metadata = sectionChunks.get(0).getMetadata();
-
-        for (Document chunk : sectionChunks) {
-            String breadcrumb = (String) chunk
-                .getMetadata()
-                .get(MetadataKeys.BREADCRUMBS);
-            if (!Objects.equals(breadcrumb, lastBreadcrumb)) {
-                content
-                    .append("\n** Location: ")
-                    .append(breadcrumb)
-                    .append(" **\n");
-                lastBreadcrumb = breadcrumb;
-            }
-            content.append(chunk.getText()).append("\n");
-        }
-
-        metadata.remove(MetadataKeys.BREADCRUMBS);
-        return new Document(content.toString().trim(), metadata);
-    }
 }
