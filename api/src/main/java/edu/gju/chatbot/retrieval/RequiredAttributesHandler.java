@@ -18,7 +18,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class RequiredAttributesHandler implements SearchDecisionHandler {
 
@@ -34,18 +36,23 @@ public class RequiredAttributesHandler implements SearchDecisionHandler {
     Map<String, Object> attributes = context.getUserQuery().getConfirmedAttributes();
     List<String> missingRequiredAttributes = documentType.getMissingRequiredAttributes(attributes);
 
-    Map<String, Object> confirmedAttributes = new HashMap<>(
+    log.info("Processing required attributes for document type: {}", documentType.getName());
+    log.info("Missing required attributes: {}", missingRequiredAttributes);
+
+    Map<String, Object> confirmedRequiredAttributes = new HashMap<>(
         documentType
             .getValidRequiredAttributes(userQuery.getConfirmedAttributes()));
 
-    Map<String, Object> metadataFilters = new HashMap<>(confirmedAttributes);
+    Map<String, Object> metadataFilters = new HashMap<>(confirmedRequiredAttributes);
     metadataFilters.put(
         MetadataKeys.DOCUMENT_TYPE,
         documentType.getName());
 
     DocumentMetadataList candidates = fetchCandidates(metadataFilters);
+    log.info("Found {} candidate documents", candidates.metadatas().size());
 
     if (candidates.metadatas().isEmpty()) {
+      log.info("No documents found with specified required attributes: {}", confirmedRequiredAttributes);
       return context.interrupted("No documents found with specified required attributes.");
     }
 
@@ -61,24 +68,22 @@ public class RequiredAttributesHandler implements SearchDecisionHandler {
           .toList();
 
       if (options.size() == 1) {
-        confirmedAttributes.put(a, options.get(0));
+        confirmedRequiredAttributes.put(a, options.get(0));
+        log.info("Auto-confirmed attribute '{}' with single value: {}", a, options.get(0));
       } else {
         unconfirmedAttributes.put(a, options);
       }
     }
 
     if (unconfirmedAttributes.size() > 0) {
+      log.info("User clarification needed for {} attributes: {}",
+          unconfirmedAttributes.size(), unconfirmedAttributes.keySet());
       return context.interrupted(formatUnconfirmedAttributesMessage(unconfirmedAttributes));
     }
 
-    if (!documentType.isRequiresYear() && !documentType.isPreferLatestYear()) {
-      userQuery = userQuery.mutate().confirmedAttributes(null).build();
-
-      return context.withUserQuery(userQuery);
-    }
-
+    log.info("All required attributes confirmed: {}", confirmedRequiredAttributes);
     return context
-        .withUserQuery(userQuery.mutate().confirmedAttributes(confirmedAttributes).build())
+        .withUserQuery(userQuery.mutate().confirmedAttributes(confirmedRequiredAttributes).build())
         .withMetadata("available_documents", candidates);
   }
 

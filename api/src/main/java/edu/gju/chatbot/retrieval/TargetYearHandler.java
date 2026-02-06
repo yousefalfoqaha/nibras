@@ -9,7 +9,9 @@ import edu.gju.chatbot.metadata.DocumentMetadataList;
 import edu.gju.chatbot.metadata.DocumentType;
 import edu.gju.chatbot.metadata.MetadataKeys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class TargetYearHandler implements SearchDecisionHandler {
 
@@ -17,6 +19,7 @@ public class TargetYearHandler implements SearchDecisionHandler {
   public SearchDecisionContext handle(SearchDecisionContext context) {
     DocumentType documentType = (DocumentType) context.getMetadata().get("confirmed_document_type");
     DocumentMetadataList availableDocuments = (DocumentMetadataList) context.getMetadata().get("available_documents");
+
     Set<Integer> availableYears = availableDocuments
         .metadatas()
         .stream()
@@ -24,20 +27,22 @@ public class TargetYearHandler implements SearchDecisionHandler {
         .filter(Objects::nonNull)
         .collect(Collectors.toSet());
 
+    log.info("Processing target year for document type: {}", documentType.getName());
+    log.info("Available years: {}", availableYears);
+
     if (availableYears.isEmpty() && documentType.isRequiresYear()) {
+      log.info("No documents with year metadata found, but year is required");
       return context.interrupted("No document available for any year in knowledgebase.");
     }
 
     UserQuery userQuery = context.getUserQuery();
-
     Integer latestAvailableYear = availableYears
         .stream()
         .max(Comparator.naturalOrder())
         .orElse(null);
 
-    Integer targetYear = null;
-
     if (documentType.isPreferLatestYear()) {
+      log.info("Using latest available year: {}", latestAvailableYear);
       return context.withUserQuery(userQuery.mutate().targetYear(latestAvailableYear).build());
     }
 
@@ -48,18 +53,20 @@ public class TargetYearHandler implements SearchDecisionHandler {
               Comparator.comparingInt(y -> Math.abs(y - userQuery.getTargetYear())))
           .orElse(null);
 
-      if (targetYear != closestYear) {
+      if (!Objects.equals(userQuery.getTargetYear(), closestYear)) {
+        log.info("Requested year {} not found, closest available is {}",
+            userQuery.getTargetYear(), closestYear);
         return context.interrupted(String.format(
             "It seems there are no documents found for the exact year %s. " +
                 "The closest available year is %s. Inform the user.",
             userQuery.getTargetYear(),
             closestYear));
       }
-
       return context;
     }
 
     if (documentType.isRequiresYear() && userQuery.getTargetYear() == null) {
+      log.info("No target year specified, using latest: {}", latestAvailableYear);
       return context.withUserQuery(userQuery.mutate().targetYear(latestAvailableYear).build());
     }
 

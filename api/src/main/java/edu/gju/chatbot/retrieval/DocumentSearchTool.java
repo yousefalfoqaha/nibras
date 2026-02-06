@@ -51,7 +51,7 @@ public class DocumentSearchTool implements ToolCallback {
       return searchDecisionResult.getInterruptMessage().get();
     }
 
-    List<Document> retrievedDocuments = this.searchService.search(userQuery);
+    List<Document> retrievedDocuments = this.searchService.search(searchDecisionResult.getUserQuery());
 
     return retrievedDocuments.stream()
         .map(Document::getFormattedContent)
