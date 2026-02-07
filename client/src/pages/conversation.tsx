@@ -2,15 +2,11 @@ import { Image, Text } from '@mantine/core';
 import { UserInput } from '../components/user-input';
 import styles from './conversation.module.css';
 import { useChatHistory, type ChatMessage } from '../contexts/chat-history';
-import React from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 export function Conversation() {
   const { chatHistory } = useChatHistory();
-
-  React.useEffect(() => {
-  }, [chatHistory]);
 
   return (
     <main className={styles.main}>
@@ -24,7 +20,7 @@ export function Conversation() {
 
       <div className={styles.messages}>
         {chatHistory.map(m => (
-          m.role === 'user' ? <UserMessageBubble message={m} /> : <BotMessageMarkdown message={m} />
+          m.role === 'USER' ? <UserMessageBubble message={m} /> : <BotMessageMarkdown message={m} />
         ))}
       </div>
 
@@ -52,7 +48,7 @@ type BotMessageMarkdownProps = {
 function BotMessageMarkdown({ message }: BotMessageMarkdownProps) {
   const { chatHistory } = useChatHistory();
 
-  const isPending = chatHistory.some(m => m.status === 'pending' && m.id === message.id);
+  const isPending = chatHistory.some(m => m.status === 'PENDING' && m.id === message.id);
 
   if (isPending) {
     return (

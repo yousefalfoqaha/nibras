@@ -1,7 +1,11 @@
 package edu.gju.chatbot.chat;
 
+import java.util.List;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,7 +27,7 @@ public class ChatController {
       @RequestParam(value = "message") String message,
       @RequestParam(value = "c", required = false) String conversationId) {
 
-    String validConversationId = chatService.validateConversationId(conversationId);
+    String validConversationId = chatService.getValidConversationId(conversationId);
 
     return chatClient
         .prompt(message)
@@ -31,5 +35,10 @@ public class ChatController {
         .stream()
         .content()
         .map(token -> ServerSentEvent.builder(new Completion(token, validConversationId)).build());
+  }
+
+  @GetMapping("/chat/messages")
+  public ResponseEntity<List<ChatMessage>> getChatMessages(@RequestParam(value = "c") String conversationId) {
+    return new ResponseEntity<>(chatService.getConversation(conversationId), HttpStatus.OK);
   }
 }

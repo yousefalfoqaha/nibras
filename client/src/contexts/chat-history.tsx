@@ -2,9 +2,9 @@ import React from "react";
 
 export type ChatMessage = {
   id: string;
-  role: "bot" | "user";
+  role: "ASSISTANT" | "USER";
   content: string;
-  status: "pending" | "streaming" | "done";
+  status: "PENDING" | "STREAMING" | "DONE";
 };
 
 type ChatHistoryContextValue = {
@@ -21,19 +21,51 @@ const ChatHistoryContext = React.createContext<ChatHistoryContextValue | undefin
 
 type ChatHistoryProviderProps = { children: React.ReactNode };
 
+const getChatHistory = async (): Promise<ChatMessage[]> => {
+  const conversationId = new URL(window.location.href).searchParams.get("c");
+
+  if (!conversationId) {
+    return [];
+  }
+
+  const res = await fetch(
+    `${CHAT_URL}/messages?c=${encodeURIComponent(conversationId)}`
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch chat history");
+  }
+
+  return res.json();
+};
+
 export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
   const [chatHistory, setChatHistory] = React.useState<ChatMessage[]>([]);
+
+  React.useEffect(() => {
+    getChatHistory()
+      .then(v => {
+        if (v.length === 0) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("c");
+          window.history.replaceState(null, "", url);
+        }
+
+        setChatHistory(v);
+      })
+      .catch(() => setChatHistory([]));
+  }, []);
 
   const addUserMessage = (content: string) => {
     const id = crypto.randomUUID();
     setChatHistory((prev) => [
       ...prev,
-      { id, role: "user", content, status: "done" },
+      { id, role: "USER", content, status: "DONE" },
     ]);
   };
 
   const isBotBusy = chatHistory.some(
-    (m) => m.status === "streaming" || m.status === "pending"
+    (m) => m.status === "STREAMING" || m.status === "PENDING"
   );
 
   const streamBotAnswer = (prompt: string) => {
@@ -42,7 +74,7 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
     const id = crypto.randomUUID();
     setChatHistory((prev) => [
       ...prev,
-      { id, role: "bot", content: "", status: "pending" },
+      { id, role: "ASSISTANT", content: "", status: "PENDING" },
     ]);
 
     const url = new URL(window.location.href);
@@ -64,7 +96,7 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
       setChatHistory((prev) =>
         prev.map((m) =>
           m.id === id
-            ? { ...m, content: m.content + data.text, status: "streaming" }
+            ? { ...m, content: m.content + data.text, status: "STREAMING" }
             : m
         )
       );
@@ -78,7 +110,7 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
 
     eventSource.onerror = () => {
       setChatHistory((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, status: "done" } : m))
+        prev.map((m) => (m.id === id ? { ...m, status: "DONE" } : m))
       );
       eventSource.close();
     };

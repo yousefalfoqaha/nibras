@@ -68,7 +68,6 @@ public final class ChatMemoryAdvisor implements BaseChatMemoryAdvisor {
         List<Message> memoryMessages = chatMemory
                 .get(conversationId)
                 .stream()
-                .filter(m -> (m.getMessageType() == MessageType.ASSISTANT || m.getMessageType() == MessageType.USER))
                 .toList();
 
         List<Message> processedMessages = new ArrayList<>(memoryMessages);
@@ -96,7 +95,7 @@ public final class ChatMemoryAdvisor implements BaseChatMemoryAdvisor {
             AdvisorChain advisorChain) {
         String conversationId = chatClientResponse
                 .context()
-                .getOrDefault("conversationId", defaultConversationId)
+                .getOrDefault(ChatMemory.CONVERSATION_ID, defaultConversationId)
                 .toString();
 
         List<Message> assistantMessages = new ArrayList<>();
