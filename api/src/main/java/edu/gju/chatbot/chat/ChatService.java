@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
-import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.stereotype.Service;
 
@@ -29,14 +28,7 @@ public class ChatService {
   }
 
   public List<ChatMessage> getConversation(String conversationId) {
-    List<Message> messages = chatMemoryRepository.findByConversationId(conversationId);
-
-    for (Message m : messages) {
-      System.out.println(m.getText());
-      System.out.println(m.getMessageType());
-    }
-
-    return messages
+    return chatMemoryRepository.findByConversationId(conversationId)
         .stream()
         .filter(m -> m.getMessageType() == MessageType.ASSISTANT || m.getMessageType() == MessageType.USER)
         .map(m -> new ChatMessage(m.getText(), m.getMessageType().toString()))

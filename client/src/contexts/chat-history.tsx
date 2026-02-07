@@ -86,6 +86,7 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
     }
     searchParams.set("message", prompt);
 
+
     let answerConversationId: string | null = null;
 
     const eventSource = new EventSource(`${CHAT_URL}?${searchParams.toString()}`);

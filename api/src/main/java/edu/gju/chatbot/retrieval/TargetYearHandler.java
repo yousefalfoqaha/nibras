@@ -90,13 +90,11 @@ public class TargetYearHandler implements SearchDecisionHandler {
       Integer requestedYear,
       Set<Integer> availableYears) {
 
-    // Check if exact year is available
     if (availableYears.contains(requestedYear)) {
       log.info("Requested year {} is available", requestedYear);
-      return context; // Year already set correctly
+      return context;
     }
 
-    // Find closest year
     Integer closestYear = availableYears
         .stream()
         .min(Comparator.comparingInt(y -> Math.abs(y - requestedYear)))
