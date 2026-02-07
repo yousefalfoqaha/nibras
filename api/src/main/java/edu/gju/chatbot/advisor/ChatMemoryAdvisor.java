@@ -2,7 +2,7 @@ package edu.gju.chatbot.advisor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import org.springframework.ai.chat.client.ChatClientMessageAggregator;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
@@ -13,8 +13,9 @@ import org.springframework.ai.chat.client.advisor.api.BaseChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.StreamAdvisorChain;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.util.Assert;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
@@ -30,16 +31,14 @@ public final class ChatMemoryAdvisor implements BaseChatMemoryAdvisor {
     private final Scheduler scheduler;
 
     public ChatMemoryAdvisor(
-        ChatMemory chatMemory,
-        String defaultConversationId,
-        int order,
-        Scheduler scheduler
-    ) {
+            ChatMemory chatMemory,
+            String defaultConversationId,
+            int order,
+            Scheduler scheduler) {
         Assert.notNull(chatMemory, "chatMemory cannot be null");
         Assert.hasText(
-            defaultConversationId,
-            "defaultConversationId cannot be null or empty"
-        );
+                defaultConversationId,
+                "defaultConversationId cannot be null or empty");
         Assert.notNull(scheduler, "scheduler cannot be null");
         this.chatMemory = chatMemory;
         this.defaultConversationId = defaultConversationId;
@@ -59,33 +58,31 @@ public final class ChatMemoryAdvisor implements BaseChatMemoryAdvisor {
 
     @Override
     public ChatClientRequest before(
-        ChatClientRequest chatClientRequest,
-        AdvisorChain advisorChain
-    ) {
+            ChatClientRequest chatClientRequest,
+            AdvisorChain advisorChain) {
         String conversationId = chatClientRequest
-            .context()
-            .getOrDefault("conversationId", defaultConversationId)
-            .toString();
+                .context()
+                .getOrDefault(ChatMemory.CONVERSATION_ID, defaultConversationId)
+                .toString();
 
         List<Message> memoryMessages = chatMemory
-            .get(conversationId)
-            .stream()
-            .filter(m -> !(m instanceof SystemMessage))
-            .collect(Collectors.toList());
+                .get(conversationId)
+                .stream()
+                .filter(m -> (m.getMessageType() == MessageType.ASSISTANT || m.getMessageType() == MessageType.USER))
+                .toList();
 
         List<Message> processedMessages = new ArrayList<>(memoryMessages);
         processedMessages.addAll(chatClientRequest.prompt().getInstructions());
 
         ChatClientRequest processedRequest = chatClientRequest
-            .mutate()
-            .prompt(
-                chatClientRequest
-                    .prompt()
-                    .mutate()
-                    .messages(processedMessages)
-                    .build()
-            )
-            .build();
+                .mutate()
+                .prompt(
+                        chatClientRequest
+                                .prompt()
+                                .mutate()
+                                .messages(processedMessages)
+                                .build())
+                .build();
 
         Message userMessage = processedRequest.prompt().getUserMessage();
         chatMemory.add(conversationId, userMessage);
@@ -95,23 +92,22 @@ public final class ChatMemoryAdvisor implements BaseChatMemoryAdvisor {
 
     @Override
     public ChatClientResponse after(
-        ChatClientResponse chatClientResponse,
-        AdvisorChain advisorChain
-    ) {
+            ChatClientResponse chatClientResponse,
+            AdvisorChain advisorChain) {
         String conversationId = chatClientResponse
-            .context()
-            .getOrDefault("conversationId", defaultConversationId)
-            .toString();
+                .context()
+                .getOrDefault("conversationId", defaultConversationId)
+                .toString();
 
         List<Message> assistantMessages = new ArrayList<>();
         if (chatClientResponse.chatResponse() != null) {
             assistantMessages = chatClientResponse
-                .chatResponse()
-                .getResults()
-                .stream()
-                .map(g -> (Message) g.getOutput())
-                .filter(m -> !(m instanceof SystemMessage))
-                .toList();
+                    .chatResponse()
+                    .getResults()
+                    .stream()
+                    .map(g -> (Message) g.getOutput())
+                    .filter(m -> m.getMessageType() == MessageType.ASSISTANT)
+                    .toList();
         }
 
         chatMemory.add(conversationId, assistantMessages);
@@ -120,19 +116,15 @@ public final class ChatMemoryAdvisor implements BaseChatMemoryAdvisor {
 
     @Override
     public Flux<ChatClientResponse> adviseStream(
-        ChatClientRequest chatClientRequest,
-        StreamAdvisorChain streamAdvisorChain
-    ) {
+            ChatClientRequest chatClientRequest,
+            StreamAdvisorChain streamAdvisorChain) {
         return Mono.just(chatClientRequest)
-            .publishOn(this.scheduler)
-            .map(request -> this.before(request, streamAdvisorChain))
-            .flatMapMany(streamAdvisorChain::nextStream)
-            .transform(flux ->
-                new ChatClientMessageAggregator().aggregateChatClientResponse(
-                    flux,
-                    response -> this.after(response, streamAdvisorChain)
-                )
-            );
+                .publishOn(this.scheduler)
+                .map(request -> this.before(request, streamAdvisorChain))
+                .flatMapMany(streamAdvisorChain::nextStream)
+                .transform(flux -> new ChatClientMessageAggregator().aggregateChatClientResponse(
+                        flux,
+                        response -> this.after(response, streamAdvisorChain)));
     }
 
     public static Builder builder(ChatMemory chatMemory) {
@@ -170,11 +162,10 @@ public final class ChatMemoryAdvisor implements BaseChatMemoryAdvisor {
 
         public ChatMemoryAdvisor build() {
             return new ChatMemoryAdvisor(
-                this.chatMemory,
-                this.conversationId,
-                this.order,
-                this.scheduler
-            );
+                    this.chatMemory,
+                    this.conversationId,
+                    this.order,
+                    this.scheduler);
         }
     }
 }

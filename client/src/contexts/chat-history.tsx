@@ -13,20 +13,18 @@ type ChatHistoryContextValue = {
   isBotBusy: boolean;
 };
 
-const ChatHistoryContext = React.createContext<
-  ChatHistoryContextValue | undefined
->(undefined);
+const CHAT_URL = "/chat";
 
-type ChatHistoryProviderProps = {
-  children: React.ReactNode;
-};
+const ChatHistoryContext = React.createContext<ChatHistoryContextValue | undefined>(
+  undefined
+);
+
+type ChatHistoryProviderProps = { children: React.ReactNode };
 
 export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
   const [chatHistory, setChatHistory] = React.useState<ChatMessage[]>([]);
 
   const addUserMessage = (content: string) => {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-
     const id = crypto.randomUUID();
     setChatHistory((prev) => [
       ...prev,
@@ -35,7 +33,7 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
   };
 
   const isBotBusy = chatHistory.some(
-    (m) => m.status === "streaming" || m.status === "pending",
+    (m) => m.status === "streaming" || m.status === "pending"
   );
 
   const streamBotAnswer = (prompt: string) => {
@@ -47,27 +45,41 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
       { id, role: "bot", content: "", status: "pending" },
     ]);
 
-    const eventSource = new EventSource(
-      `/ai/chat?message=${encodeURIComponent(prompt)}`,
-    );
+    const url = new URL(window.location.href);
+    const searchParams = new URLSearchParams();
+    const currentConversationId = url.searchParams.get("c");
+
+    if (currentConversationId) {
+      searchParams.set("c", currentConversationId);
+    }
+    searchParams.set("message", prompt);
+
+    let answerConversationId: string | null = null;
+
+    const eventSource = new EventSource(`${CHAT_URL}?${searchParams.toString()}`);
 
     eventSource.onmessage = (e) => {
-      const token = JSON.parse(e.data) as { text: string };
+      const data = JSON.parse(e.data) as { text: string; conversationId: string };
 
       setChatHistory((prev) =>
         prev.map((m) =>
           m.id === id
-            ? { ...m, content: m.content + token.text, status: "streaming" }
-            : m,
-        ),
+            ? { ...m, content: m.content + data.text, status: "streaming" }
+            : m
+        )
       );
+
+      if (!answerConversationId) {
+        answerConversationId = data.conversationId;
+        url.searchParams.set("c", answerConversationId);
+        window.history.replaceState(null, "", url);
+      }
     };
 
     eventSource.onerror = () => {
       setChatHistory((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, status: "done" } : m)),
+        prev.map((m) => (m.id === id ? { ...m, status: "done" } : m))
       );
-
       eventSource.close();
     };
   };
@@ -83,10 +95,6 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
 
 export const useChatHistory = () => {
   const context = React.useContext(ChatHistoryContext);
-
-  if (!context) {
-    throw new Error("We are Charlie Kirk");
-  }
-
+  if (!context) throw new Error("We are Charlie Kirk");
   return context;
 };

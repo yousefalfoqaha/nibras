@@ -20,7 +20,7 @@ export default defineConfig({
 
   server: {
     proxy: {
-      '/ai': {
+      '/chat': {
         target: process.env.VITE_PROXY_TARGET ?? 'http://localhost:8080',
         changeOrigin: true,
         secure: false,

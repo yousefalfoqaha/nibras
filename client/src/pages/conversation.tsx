@@ -10,11 +10,6 @@ export function Conversation() {
   const { chatHistory } = useChatHistory();
 
   React.useEffect(() => {
-    const atBottom = Math.abs(document.body.scrollHeight - document.body.clientHeight - document.body.scrollTop) <= 1;
-
-    if (!atBottom) {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
   }, [chatHistory]);
 
   return (
@@ -43,7 +38,6 @@ type UserMessageBubbleProps = {
 }
 
 function UserMessageBubble({ message }: UserMessageBubbleProps) {
-
   return (
     <div className={styles.userMessageBubble}>
       {message.content}

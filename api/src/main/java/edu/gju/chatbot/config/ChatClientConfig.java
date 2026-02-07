@@ -22,30 +22,30 @@ import edu.gju.chatbot.retrieval.UserQuery;
 @Configuration
 public class ChatClientConfig {
 
-  @Bean
-  public DocumentSearchToolInputConverter documentSearchToolInputConverter(ObjectMapper ObjectMapper) {
-    return new DocumentSearchToolInputConverter(ObjectMapper);
-  }
+    @Bean
+    public DocumentSearchToolInputConverter documentSearchToolInputConverter(ObjectMapper ObjectMapper) {
+        return new DocumentSearchToolInputConverter(ObjectMapper);
+    }
 
-  @Primary
-  @Bean
-  public ChatClient toolCallingChatClient(
-      OpenAiChatModel chatModel,
-      DocumentTypeRegistry documentTypeRegistry,
-      Converter<String, UserQuery> documentSearchToolInputConverter,
-      SearchDecisionChain searchDecisionChain,
-      DocumentSearchService searchService,
-      ChatMemory chatMemory) {
-    return ChatClient.builder(chatModel)
-        .defaultToolCallbacks(
-            new DocumentSearchTool(
-                documentTypeRegistry,
-                searchDecisionChain,
-                searchService,
-                documentSearchToolInputConverter))
-        .defaultAdvisors(
-            new RagAdvisor(),
-            ChatMemoryAdvisor.builder(chatMemory).build())
-        .build();
-  }
+    @Primary
+    @Bean
+    public ChatClient questionAnswerChatClient(
+            OpenAiChatModel chatModel,
+            DocumentTypeRegistry documentTypeRegistry,
+            Converter<String, UserQuery> documentSearchToolInputConverter,
+            SearchDecisionChain searchDecisionChain,
+            DocumentSearchService searchService,
+            ChatMemory chatMemory) {
+        return ChatClient.builder(chatModel)
+                .defaultToolCallbacks(
+                        new DocumentSearchTool(
+                                documentTypeRegistry,
+                                searchDecisionChain,
+                                searchService,
+                                documentSearchToolInputConverter))
+                .defaultAdvisors(
+                        new RagAdvisor(),
+                        ChatMemoryAdvisor.builder(chatMemory).build())
+                .build();
+    }
 }
