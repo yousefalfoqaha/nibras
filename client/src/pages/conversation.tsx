@@ -4,6 +4,7 @@ import styles from './conversation.module.css';
 import { useChatHistory, type ChatMessage } from '../contexts/chat-history';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import React from 'react';
 
 export function Conversation() {
   const { chatHistory } = useChatHistory();
@@ -18,11 +19,13 @@ export function Conversation() {
         </Text>
       </section>
 
-      <div className={styles.messages}>
-        {chatHistory.map(m => (
-          m.role === 'USER' ? <UserMessageBubble message={m} /> : <BotMessageMarkdown message={m} />
-        ))}
-      </div>
+      <AutoScroll>
+        <div className={styles.messages}>
+          {chatHistory.map(m => (
+            m.role === 'USER' ? <UserMessageBubble message={m} /> : <BotMessageMarkdown message={m} />
+          ))}
+        </div>
+      </AutoScroll>
 
       <ChatInterface />
     </main>
@@ -81,5 +84,25 @@ function ChatInterface() {
         GJUBot can make mistakes, check with an academic advisor.
       </Text>
     </section>
+  );
+}
+
+function AutoScroll({ children }: { children: React.ReactNode }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const { chatHistory } = useChatHistory();
+  const prevCount = React.useRef(0);
+
+  React.useEffect(() => {
+    if (chatHistory.length !== prevCount.current) {
+      ref.current?.scrollIntoView({ behavior: "smooth" });
+      prevCount.current = chatHistory.length;
+    }
+  }, [chatHistory.length]);
+
+  return (
+    <>
+      {children}
+      <div ref={ref} />
+    </>
   );
 }

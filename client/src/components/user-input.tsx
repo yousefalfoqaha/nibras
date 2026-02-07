@@ -11,11 +11,6 @@ export function UserInput() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const atBottom = Math.abs(document.body.scrollHeight - document.body.clientHeight - document.body.scrollTop) <= 1;
-
-    if (!atBottom) {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
 
     const trimmedText = text.trim();
     if (trimmedText === '') return;
