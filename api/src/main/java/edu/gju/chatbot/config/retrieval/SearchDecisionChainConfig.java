@@ -9,8 +9,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.gju.chatbot.metadata.DocumentTypeRegistry;
-import edu.gju.chatbot.retrieval.DocumentTypeValidationHandler;
-import edu.gju.chatbot.retrieval.RequiredAttributesHandler;
+import edu.gju.chatbot.retrieval.DocumentTypeHandler;
+import edu.gju.chatbot.retrieval.AttributesHandler;
 import edu.gju.chatbot.retrieval.SearchDecisionChain;
 import edu.gju.chatbot.retrieval.SearchDecisionHandler;
 import edu.gju.chatbot.retrieval.TargetYearHandler;
@@ -19,16 +19,16 @@ import edu.gju.chatbot.retrieval.TargetYearHandler;
 public class SearchDecisionChainConfig {
 
   @Bean
-  public DocumentTypeValidationHandler documentTypeValidationHandler(
+  public DocumentTypeHandler documentTypeHandler(
       DocumentTypeRegistry documentTypeRegistry) {
-    return new DocumentTypeValidationHandler(documentTypeRegistry);
+    return new DocumentTypeHandler(documentTypeRegistry);
   }
 
   @Bean
-  public RequiredAttributesHandler requiredAttributesHandler(
+  public AttributesHandler attributesHandler(
       JdbcTemplate jdbcTemplate,
       ObjectMapper objectMapper) {
-    return new RequiredAttributesHandler(jdbcTemplate, objectMapper);
+    return new AttributesHandler(jdbcTemplate, objectMapper);
   }
 
   @Bean

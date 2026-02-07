@@ -1,23 +1,13 @@
 document_types:
   study_plan:
     description: |
-      Program, with school, curriculum including admission requirements, placement tests, remedial courses,
-      learning outcomes, and program objectives.
-
-      Framework section:
-        Includes categorizing courses into sections of different levels (university, school, program), and type (compulsory, elective), usually named the 'framework'.
-        All track courses and electives are found here courses.
-
-      Study plan guide section:
-      Courses are places in semesters, used as a guide for when to take the courses in an appropriate sequence.
-
-      Courses offered section:
-      A list of courses offered by department, and other schools, including full description of each course.
-
-      The year of a study plan represents the first student cohort it serves, and remains in effect
-      for later cohorts unless superseded by a newer study plan.
-
-      A study plan's academic level usually represent's the student's academic level (because it's the program they are following).
+      Program: Includes school, curriculum, admission requirements, placement tests, remedial courses, learning outcomes, and program objectives.
+      Framework: Categorizes courses by level (university, school, program) and type (compulsory, elective). All track courses and electives are listed here.
+      Study Plan Guide: Organizes courses by semester, providing a recommended sequence.
+      Courses Offered: Lists all courses by department and other schools, with full descriptions.
+      Notes:
+        - The study plan year indicates the first cohort it serves and remains in effect until superseded.
+        - The academic level reflects the student’s level within the program.
     requires_year: true
     attributes:
       required: [academic_level, program]

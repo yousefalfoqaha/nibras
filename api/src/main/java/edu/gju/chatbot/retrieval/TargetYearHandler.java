@@ -18,63 +18,97 @@ public class TargetYearHandler implements SearchDecisionHandler {
   @Override
   public SearchDecisionContext handle(SearchDecisionContext context) {
     DocumentType documentType = (DocumentType) context.getMetadata().get("confirmed_document_type");
-    DocumentMetadataList availableDocuments = (DocumentMetadataList) context.getMetadata().get("available_documents");
 
-    Set<Integer> availableYears = availableDocuments
-        .metadatas()
-        .stream()
-        .map(m -> (Integer) m.get(MetadataKeys.YEAR))
-        .filter(Objects::nonNull)
-        .collect(Collectors.toSet());
+    if (!documentType.isRequiresYear()) {
+      log.info("Year not required for document type: {}", documentType.getName());
+      return clearTargetYearDecision(context);
+    }
+
+    DocumentMetadataList availableDocuments = (DocumentMetadataList) context.getMetadata().get("available_documents");
+    Set<Integer> availableYears = extractAvailableYears(availableDocuments);
 
     log.info("Processing target year for document type: {}", documentType.getName());
     log.info("Available years: {}", availableYears);
 
-    if (availableYears.isEmpty() && documentType.isRequiresYear()) {
-      log.info("No documents with year metadata found, but year is required");
+    if (availableYears.isEmpty()) {
+      log.warn("No documents with year metadata found, but year is required");
       return context.interrupted("No document available for any year in knowledgebase.");
     }
 
     UserQuery userQuery = context.getUserQuery();
-    Integer latestAvailableYear = availableYears
-        .stream()
-        .max(Comparator.naturalOrder())
-        .orElse(null);
+    Integer requestedYear = userQuery.getTargetYear();
 
     if (documentType.isPreferLatestYear()) {
-      log.info("Using latest available year: {}", latestAvailableYear);
-      return context.withUserQuery(userQuery.mutate().targetYear(latestAvailableYear).build());
+      return useLatestYearDecision(context, availableYears);
     }
 
-    if (documentType.isRequiresYear() && userQuery.getTargetYear() != null) {
-      Integer closestYear = availableYears
-          .stream()
-          .min(
-              Comparator.comparingInt(y -> Math.abs(y - userQuery.getTargetYear())))
-          .orElse(null);
-
-      if (!Objects.equals(userQuery.getTargetYear(), closestYear)) {
-        log.info("Requested year {} not found, closest available is {}",
-            userQuery.getTargetYear(), closestYear);
-        return context.interrupted(String.format(
-            "It seems there are no documents found for the exact year %s. " +
-                "The closest available year is %s. Inform the user.",
-            userQuery.getTargetYear(),
-            closestYear));
-      }
-      return context;
+    if (requestedYear == null) {
+      return useLatestYearDecision(context, availableYears);
     }
 
-    if (documentType.isRequiresYear() && userQuery.getTargetYear() == null) {
-      log.info("No target year specified, using latest: {}", latestAvailableYear);
-      return context.withUserQuery(userQuery.mutate().targetYear(latestAvailableYear).build());
-    }
-
-    return context;
+    return handleRequestedYearDecision(context, requestedYear, availableYears);
   }
 
   @Override
   public int getOrder() {
     return 3;
+  }
+
+  private SearchDecisionContext clearTargetYearDecision(SearchDecisionContext context) {
+    UserQuery userQuery = context.getUserQuery();
+    return context.withUserQuery(
+        userQuery.mutate().targetYear(null).build());
+  }
+
+  private Set<Integer> extractAvailableYears(DocumentMetadataList availableDocuments) {
+    return availableDocuments
+        .metadatas()
+        .stream()
+        .map(m -> (Integer) m.get(MetadataKeys.YEAR))
+        .filter(Objects::nonNull)
+        .collect(Collectors.toSet());
+  }
+
+  private SearchDecisionContext useLatestYearDecision(
+      SearchDecisionContext context,
+      Set<Integer> availableYears) {
+
+    Integer latestYear = availableYears
+        .stream()
+        .max(Comparator.naturalOrder())
+        .orElseThrow(() -> new IllegalStateException("availableYears should not be empty"));
+
+    log.info("Using latest available year: {}", latestYear);
+
+    UserQuery userQuery = context.getUserQuery();
+    return context.withUserQuery(
+        userQuery.mutate().targetYear(latestYear).build());
+  }
+
+  private SearchDecisionContext handleRequestedYearDecision(
+      SearchDecisionContext context,
+      Integer requestedYear,
+      Set<Integer> availableYears) {
+
+    // Check if exact year is available
+    if (availableYears.contains(requestedYear)) {
+      log.info("Requested year {} is available", requestedYear);
+      return context; // Year already set correctly
+    }
+
+    // Find closest year
+    Integer closestYear = availableYears
+        .stream()
+        .min(Comparator.comparingInt(y -> Math.abs(y - requestedYear)))
+        .orElseThrow(() -> new IllegalStateException("availableYears should not be empty"));
+
+    log.info("Requested year {} not found, closest available is {}",
+        requestedYear, closestYear);
+
+    return context.interrupted(String.format(
+        "It seems there are no documents found for the exact year %s. " +
+            "The closest available year is %s. Inform the user.",
+        requestedYear,
+        closestYear));
   }
 }

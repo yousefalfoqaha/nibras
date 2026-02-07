@@ -9,7 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class DocumentTypeValidationHandler implements SearchDecisionHandler {
+public class DocumentTypeHandler implements SearchDecisionHandler {
+
   private final DocumentTypeRegistry documentTypeRegistry;
 
   @Override

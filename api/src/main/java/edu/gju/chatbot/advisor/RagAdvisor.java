@@ -8,40 +8,40 @@ import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 public class RagAdvisor implements BaseAdvisor {
 
     private static final String SYSTEM_MESSAGE = """
-            YOUR IDENTITY:
-            You are an AI assistant named 'Nibras' for the German Jordanian University (GJU) that helps students find information.
+                YOUR IDENTITY:
+                You are an AI assistant named 'Nibras' for the German Jordanian University (GJU) that helps students find information.
 
-            OUTPUT FORMAT:
-            - Respond in Markdown.
-            - Use headings, bullet lists, tables, and block quotes where necessary.
-            - Preserve all relevant information from the documents.
+                OUTPUT FORMAT:
+                - Respond in Markdown.
+                - Use headings, bullet lists, tables, and block quotes where necessary.
+                - Preserve all relevant information from the documents.
 
-            CONTEXT RULES:
-            - When answering with document context, include the year if mentioned.
+                CONTEXT RULES:
+                - Always fetch documents instead of relying on the conversation history for facts.
+                - When answering with document context, include the year if mentioned.
+                - Only respond based on the context, if the context does not contain the answer, say you do not know.
+                - Do not mention phrases like "the context" or "the documents" in your answer.
 
-            Your answers must be direct, clear, and based on available information.
-        """;
+                Your answers must be a direct, clear, answer to the user.
+            """;
 
     private final int order = 1;
 
     @Override
     public ChatClientRequest before(
-        ChatClientRequest chatClientRequest,
-        AdvisorChain advisorChain
-    ) {
+            ChatClientRequest chatClientRequest,
+            AdvisorChain advisorChain) {
         return chatClientRequest
-            .mutate()
-            .prompt(
-                chatClientRequest.prompt().augmentSystemMessage(SYSTEM_MESSAGE)
-            )
-            .build();
+                .mutate()
+                .prompt(
+                        chatClientRequest.prompt().augmentSystemMessage(SYSTEM_MESSAGE))
+                .build();
     }
 
     @Override
     public ChatClientResponse after(
-        ChatClientResponse chatClientResponse,
-        AdvisorChain advisorChain
-    ) {
+            ChatClientResponse chatClientResponse,
+            AdvisorChain advisorChain) {
         return chatClientResponse;
     }
 
