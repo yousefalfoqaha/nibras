@@ -69,7 +69,6 @@ function AssistantMessageMarkdown({ message }: BotMessageMarkdownProps) {
   }
 
   const avatarSrc = `nibras-${avatarState}.png`;
-  const isThinking = avatarState === "thinking";
 
   if (isPending) {
     return (
@@ -94,7 +93,7 @@ function AssistantMessageMarkdown({ message }: BotMessageMarkdownProps) {
         </Typography>
       </div>
       {isLastAssistantMessage && (
-        <div className={styles.assistantAvatar} data-thinking={isThinking}>
+        <div className={styles.assistantAvatar}>
           <Image
             key={avatarState}
             w={100}
