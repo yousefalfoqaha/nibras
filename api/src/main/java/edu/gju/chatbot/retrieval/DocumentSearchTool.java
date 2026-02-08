@@ -8,6 +8,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 
+import edu.gju.chatbot.exception.RagException;
 import edu.gju.chatbot.metadata.DocumentAttribute;
 import edu.gju.chatbot.metadata.DocumentType;
 import edu.gju.chatbot.metadata.DocumentTypeRegistry;
@@ -43,7 +44,12 @@ public class DocumentSearchTool implements ToolCallback {
 
     @Override
     public String call(String toolInput) {
-        UserQuery userQuery = this.toolInputConverter.convert(toolInput);
+        UserQuery userQuery;
+        try {
+            userQuery = this.toolInputConverter.convert(toolInput);
+        } catch (RagException e) {
+            return e.getMessage();
+        }
 
         SearchDecisionResult searchDecisionResult = this.searchDecisionChain.execute(userQuery);
 
@@ -85,6 +91,7 @@ public class DocumentSearchTool implements ToolCallback {
                 - List attributes (as valid JSON array of strings) mentioned in the conversation:
                     - Put confirmed values in 'conversationAttributes' as [ATTRIBUTE_NAME, ATTRIBUTE_VALUE, ...].
                     - Put inferred or uncertain values in 'guessedAttributes' as [ATTRIBUTE_NAME, ATTRIBUTE_VALUE, ...].
+                - Cannot use the same attribute more than once in one tool call.
                 - Set 'documentTypeYear' to the year mentioned in the conversation about the document type, or null if no year was mentioned.
                 - Rewrite the query using keywords from the document type description.
 

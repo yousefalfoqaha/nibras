@@ -56,19 +56,29 @@ function AssistantMessageMarkdown({ message }: BotMessageMarkdownProps) {
   const lastAssistantMessage = [...chatHistory]
     .reverse()
     .find(m => m.role === 'ASSISTANT');
-
   const isLastAssistantMessage = lastAssistantMessage?.id === message.id;
   const isPending = chatHistory.some(m => m.status === 'PENDING' && m.id === message.id);
-  const isAnswering = chatHistory.some(m => m.status === 'STREAMING' && m.id === message.id) && isLastAssistantMessage;
+  const isAnswering = chatHistory.some(m => m.status === 'STREAMING' && m.id === message.id);
+
+  let avatarState = "standing";
+
+  if (isPending) {
+    avatarState = "thinking";
+  } else if (isAnswering) {
+    avatarState = "talking";
+  }
+
+  const avatarSrc = `nibras-${avatarState}.png`;
+  const isThinking = avatarState === "thinking";
 
   if (isPending) {
     return (
       <div className={styles.assistantAvatar} data-thinking={true}>
         <Image
-          key="thinking"
+          key={avatarState}
           w={100}
           h="auto"
-          src="nibras-thinking.png"
+          src={avatarSrc}
         />
       </div>
     );
@@ -83,23 +93,13 @@ function AssistantMessageMarkdown({ message }: BotMessageMarkdownProps) {
           </Markdown>
         </Typography>
       </div>
-
-      {isLastAssistantMessage && !isAnswering && <div className={styles.assistantAvatar}>
-        <Image
-          key="standing"
-          w={100}
-          h="auto"
-          src="nibras-standing.png"
-        />
-      </div>}
-
-      {isAnswering && (
-        <div className={styles.assistantAvatar}>
+      {isLastAssistantMessage && (
+        <div className={styles.assistantAvatar} data-thinking={isThinking}>
           <Image
-            key="talking"
+            key={avatarState}
             w={100}
             h="auto"
-            src="nibras-talking.png"
+            src={avatarSrc}
           />
         </div>
       )}
