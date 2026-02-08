@@ -36,7 +36,14 @@ const getChatHistory = async (): Promise<ChatMessage[]> => {
     throw new Error("Failed to fetch chat history");
   }
 
-  return res.json();
+  const messages = await res.json();
+
+  return messages.map((m: Partial<ChatMessage>) => ({
+    id: crypto.randomUUID(),
+    role: m.role!,
+    content: m.content!,
+    status: "DONE" as const
+  }));
 };
 
 export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {

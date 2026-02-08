@@ -1,62 +1,95 @@
-import { Button, Flex, Group, Stack, Text, Title, Image, type ButtonProps } from '@mantine/core';
-import { Banknote, BookOpen, Bot, Glasses, Map } from 'lucide-react';
+import { Button, Flex, Stack, Text, Image, type ButtonProps } from '@mantine/core';
+import { Banknote, Glasses, Map } from 'lucide-react';
 import { UserInput } from '../components/user-input';
 import styles from './home.module.css';
 import topicButtonClasses from './topic-button.module.css';
+import { useChatHistory } from '../contexts/chat-history';
+import { Conversation } from './conversation';
+
+const suggestedTopics: Topic[] = [
+  {
+    name: 'Study plan framework',
+    prompt: 'What is the framework in the study plan?',
+    icon: Map
+  },
+  {
+    name: 'Academic and registration fees',
+    prompt: 'What are the admission fees',
+    icon: Banknote
+  },
+  {
+    name: 'Program admission requirements',
+    prompt: 'What is the framework in the study plan?',
+    icon: Map
+  },
+  {
+    name: 'Academic calendar events',
+    prompt: 'Who is the lecturer ',
+    icon: Glasses
+  },
+  {
+    name: 'Registration deadlines',
+    prompt: 'Who is the lecturer ',
+    icon: Glasses
+  },
+  {
+    name: 'Study plan semester guide',
+    prompt: 'Who is the lecturer ',
+    icon: Glasses
+  },
+  {
+    name: 'Course prerequisites',
+    prompt: 'Who is the lecturer ',
+    icon: Glasses
+  },
+];
 
 export function Home() {
-  const suggestedTopics: Topic[] = [
-    {
-      name: 'Study plans',
-      prompt: 'What is the basic study plan for ',
-      icon: Map
-    },
-    {
-      name: 'Admission fees',
-      prompt: 'What are the admission fees',
-      icon: Banknote
-    },
-    {
-      name: 'Past exams',
-      prompt: 'Give me past exam questions for the course ',
-      icon: BookOpen
-    },
-    {
-      name: 'Lecturers',
-      prompt: 'Who is the lecturer ',
-      icon: Glasses
-    }
-  ];
-
   return (
     <main className={styles.main}>
-      <section className={styles.content}>
-        <Stack gap="xs" align="center" justify="center">
-          <Image h={70} w="auto" src="../../public/logo.png" />
-
-          <Title>What can I help with?</Title>
+      <Stack>
+        <Image h={125} w={125} src="nibras.png" />
+        <Stack gap={0}>
+          <Text>Hi, I'm <span style={{ color: 'var(--mantine-color-primary-filled)', fontWeight: 700 }}>Nibras</span></Text>
+          <h1 className={styles.header}>GJU's AI assistant</h1>
         </Stack>
+      </Stack>
 
-        <UserInput />
+      <Chat />
 
-        <Stack align="center">
-          <Group gap="xs">
-            <Bot size={16} style={{ color: 'var(--mantine-primary-color-filled)' }} />
-
-            <Text size="xs" c="dimmed">Suggested topics</Text>
-          </Group>
-
-          <Flex gap="lg">
-            {suggestedTopics.map(t => <TopicButton key={t.name} topic={t} />)}
-          </Flex>
-        </Stack>
-      </section>
-
-
-      <Text size="xs" c="dimmed" mt="auto" ta="center" my="sm">
-        GJUBot can make mistakes, check with an academic advisor.
-      </Text>
+      <Disclaimer />
     </main>
+  );
+}
+
+function Chat() {
+  const { chatHistory } = useChatHistory();
+
+  if (chatHistory.length === 0) {
+    return (
+      <section className={styles.chatInterface}>
+        <UserInput />
+        <Flex wrap="wrap" gap={5}>
+          {suggestedTopics.map(t => <TopicButton key={t.name} topic={t} />)}
+        </Flex>
+      </section>
+    );
+  }
+
+  return <Conversation />;
+}
+
+function Disclaimer() {
+  const { chatHistory } = useChatHistory();
+
+  if (chatHistory.length > 0) {
+    return null;
+  }
+
+  return (
+    <p className={styles.disclaimer}>
+      Nibras can make mistakes, check with an academic advisor.
+    </p>
   );
 }
 
@@ -70,12 +103,19 @@ interface TopicButtonProps extends ButtonProps {
   topic: Topic;
 }
 
-export function TopicButton({ topic, ...props }: TopicButtonProps) {
+export function TopicButton({ topic }: TopicButtonProps) {
   const Icon = topic.icon;
 
   return (
-    <Button {...props} classNames={topicButtonClasses} leftSection={<Icon size={16} />}>
-
+    <Button classNames={{
+      root: topicButtonClasses.root,
+      section: topicButtonClasses.section,
+      label: topicButtonClasses.label,
+      inner: topicButtonClasses.inner
+    }}
+      leftSection={<Icon size={14} />}
+      size="xs"
+    >
       {topic.name}
     </Button>
   );

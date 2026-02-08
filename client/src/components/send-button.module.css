@@ -1,0 +1,17 @@
+.root {
+  --ai-bg: transparent;
+  --ai-hover: transparent;
+}
+
+.root[data-disabled="true"] {
+  background: transparent;
+
+  .icon {
+    color: var(--mantine-color-disabled);
+  }
+}
+
+.icon {
+  --ai-hover-color: var(--mantine-primary-color-filled-hover);
+  color: var(--mantine-color-primary-filled);
+}

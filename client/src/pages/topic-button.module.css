@@ -1,21 +1,15 @@
 .root {
-  --button-bg: var(--mantine-primary-color-contrast);
-  --button-hover: var(--mantine-color-default-hover);
-  --button-bd: 1px solid var(--mantine-primary-color-1);
+  --button-hover: var(--mantine-color-gray-1);
+  --button-bg: var(--mantine-color-gray-0);
   --button-radius: var(--mantine-radius-lg);
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--mantine-spacing-xs);
+  --button-bd: 1px solid var(--mantine-color-default-border);
 }
 
 .section {
-  color: var(--mantine-color-dimmed);
+  color: var(--mantine-color-primary-filled);
 }
 
 .label {
   color: var(--mantine-color-text);
-  font-weight: 450;
-  font-size: var(--mantine-font-size-sm);
+  font-weight: 400;
 }

@@ -1,8 +1,8 @@
 import { createTheme, MantineProvider, type CSSVariablesResolver } from "@mantine/core";
 import { Home } from "./pages/home";
 import '@mantine/core/styles.css';
-import { ChatHistoryProvider, useChatHistory } from "./contexts/chat-history";
-import { Conversation } from "./pages/conversation";
+import { ChatHistoryProvider } from "./contexts/chat-history";
+import { Suspense } from "react";
 
 function App() {
   const theme = createTheme({
@@ -43,24 +43,23 @@ function App() {
   });
 
   const resolver: CSSVariablesResolver = (theme) => ({
+    variables: {},
     light: {
-      '--mantine-color-default-border': theme.colors.gray[1]
+      '--mantine-color-default-border': theme.colors.gray[1],
+      '--mantine-color-text': '#333434'
     },
+    dark: {}
   })
 
   return (
     <MantineProvider theme={theme} cssVariablesResolver={resolver}>
       <ChatHistoryProvider>
-        <GJUBot />
+        <Suspense fallback={"Loading..."}>
+          <Home />
+        </Suspense>
       </ChatHistoryProvider>
     </MantineProvider>
   );
-}
-
-function GJUBot() {
-  const { chatHistory } = useChatHistory();
-
-  return chatHistory.length === 0 ? <Home /> : <Conversation />;
 }
 
 export default App;

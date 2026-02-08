@@ -3,6 +3,7 @@ import { SendHorizonal } from "lucide-react";
 import styles from './user-input.module.css';
 import { useChatHistory } from "../contexts/chat-history";
 import React from "react";
+import sendButtonClasses from "./send-button.module.css";
 
 export function UserInput() {
   const { streamBotAnswer } = useChatHistory();
@@ -26,21 +27,29 @@ export function UserInput() {
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
-          style={{ width: '100%', }}
-          placeholder="Ask about GJU..."
+          style={{ width: '100%' }}
+          placeholder="Ask Nibras..."
         />
 
-        <SendButton />
+        <SendButton isPromptValid={text.trim() !== ''} />
       </div>
     </form>
   );
 }
 
-function SendButton() {
+type SendButtonProps = {
+  isPromptValid: boolean;
+}
+
+function SendButton({ isPromptValid }: SendButtonProps) {
   const { isBotBusy } = useChatHistory();
 
   return (
-    <ActionIcon disabled={isBotBusy} type="submit" radius="md" color="var(--mantine-primary-color-9)" size="lg">
+    <ActionIcon
+      classNames={sendButtonClasses}
+      data-disabled={isBotBusy || !isPromptValid}
+      type="submit"
+    >
       <SendHorizonal size={20} />
     </ActionIcon>
   )

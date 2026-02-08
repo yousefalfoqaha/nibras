@@ -1,35 +1,31 @@
-import { Image, Text } from '@mantine/core';
+import { Avatar, Image, Typography } from '@mantine/core';
 import { UserInput } from '../components/user-input';
 import styles from './conversation.module.css';
 import { useChatHistory, type ChatMessage } from '../contexts/chat-history';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import React from 'react';
+import { SquareUserRound, UserRound } from 'lucide-react';
 
 export function Conversation() {
   const { chatHistory } = useChatHistory();
 
   return (
-    <main className={styles.main}>
-      <section className={styles.header}>
-        <Image src="../../public/logo.png" w="auto" h={40} />
-
-        <Text size="xs" c="dimmed" ta="center">
-          Friday, Dec 12 • GJUBot
-        </Text>
-      </section>
-
+    <main className={styles.conversation}>
       <AutoScroll>
         <div className={styles.messages}>
           {chatHistory.map(m => (
-            m.role === 'USER' ? <UserMessageBubble message={m} /> : <BotMessageMarkdown message={m} />
+            m.role === 'USER' ?
+              <UserMessageBubble message={m} /> :
+              <AssistantMessageMarkdown message={m} />
           ))}
         </div>
       </AutoScroll>
 
+
       <ChatInterface />
     </main>
-  )
+  );
 }
 
 type UserMessageBubbleProps = {
@@ -38,7 +34,14 @@ type UserMessageBubbleProps = {
 
 function UserMessageBubble({ message }: UserMessageBubbleProps) {
   return (
-    <div className={styles.userMessageBubble}>
+    <div className={styles.userMessage}>
+      <Avatar
+        color="var(--mantine-color-primary-filled)"
+        variant="transparent"
+      >
+        <UserRound />
+      </Avatar>
+
       {message.content}
     </div>
   )
@@ -48,29 +51,55 @@ type BotMessageMarkdownProps = {
   message: ChatMessage;
 }
 
-function BotMessageMarkdown({ message }: BotMessageMarkdownProps) {
+function AssistantMessageMarkdown({ message }: BotMessageMarkdownProps) {
   const { chatHistory } = useChatHistory();
+  const lastAssistantMessage = [...chatHistory]
+    .reverse()
+    .find(m => m.role === 'ASSISTANT');
 
+  const isLastAssistantMessage = lastAssistantMessage?.id === message.id;
   const isPending = chatHistory.some(m => m.status === 'PENDING' && m.id === message.id);
+  const isAnswering = chatHistory.some(m => m.status === 'STREAMING' && m.id === message.id) && isLastAssistantMessage;
 
   if (isPending) {
     return (
-      <svg width="15" height="15" viewBox="0 0 15 15" className={styles.botPending}>
-        <circle
-          cx="6"
-          cy="6"
-          r="6"
-          strokeWidth="2"
+      <div className={styles.assistantAvatar} data-thinking={true}>
+        <Image
+          w={100}
+          h="auto"
+          src="nibras-thinking.png"
         />
-      </svg>
+      </div>
     );
   }
 
   return (
-    <div className={styles.botMessageMarkdown}>
-      <Markdown remarkPlugins={[remarkGfm]}>
-        {message.content}
-      </Markdown>
+    <div className={styles.assistantMessage}>
+      <div className={styles.assistantMessageMarkdown}>
+        <Typography>
+          <Markdown remarkPlugins={[remarkGfm]}>
+            {message.content}
+          </Markdown>
+        </Typography>
+      </div>
+
+      {isLastAssistantMessage && !isAnswering && <div className={styles.assistantAvatar}>
+        <Image
+          w={100}
+          h="auto"
+          src="nibras-standing.png"
+        />
+      </div>}
+
+      {isLastAssistantMessage && isAnswering && (
+        <div className={styles.assistantAvatar}>
+          <Image
+            w={100}
+            h="auto"
+            src="nibras-talking.png"
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -80,29 +109,62 @@ function ChatInterface() {
     <section className={styles.chatInterface}>
       <UserInput />
 
-      <Text size="xs" c="dimmed" my="sm" ta="center">
-        GJUBot can make mistakes, check with an academic advisor.
-      </Text>
+      <p className={styles.disclaimer}>
+        Nibras can make mistakes, check with an academic advisor.
+      </p>
     </section>
   );
 }
 
 function AutoScroll({ children }: { children: React.ReactNode }) {
-  const ref = React.useRef<HTMLDivElement>(null);
   const { chatHistory } = useChatHistory();
-  const prevCount = React.useRef(0);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = React.useState(true);
+  const isScrollingRef = React.useRef(false);
 
+  // Observe when bottom marker is visible
   React.useEffect(() => {
-    if (chatHistory.length !== prevCount.current) {
-      ref.current?.scrollIntoView({ behavior: "smooth" });
-      prevCount.current = chatHistory.length;
-    }
-  }, [chatHistory.length]);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Only update if we're not actively scrolling
+        if (!isScrollingRef.current) {
+          setAutoScroll(entry.isIntersecting);
+        }
+      },
+      {
+        threshold: 1.0, // Fully visible
+        rootMargin: "0px 0px 50px 0px" // Add buffer at bottom
+      }
+    );
 
+    if (bottomRef.current) {
+      observer.observe(bottomRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-scroll when chat updates and autoScroll is true
+  React.useEffect(() => {
+    if (autoScroll && bottomRef.current) {
+      isScrollingRef.current = true;
+
+      bottomRef.current.scrollIntoView({
+        behavior: "smooth", // Changed to auto - smooth can cause issues
+        block: "nearest"
+      });
+
+      // Reset scrolling flag
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 100);
+    }
+  }, [chatHistory, autoScroll]);
+
+  // <div ref={bottomRef} style={{ height: 10 }} /> {/* Made taller */}
   return (
     <>
       {children}
-      <div ref={ref} />
     </>
   );
 }

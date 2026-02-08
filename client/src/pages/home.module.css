@@ -1,23 +1,29 @@
 .main {
-  margin: auto;
-  height: 100%;
+  margin: 0 auto;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
-  justify-content: center;
-  width: 800px;
-}
-
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  justify-content: center;
-  height: 100%;
-  margin-bottom: 8rem;
+  width: 700px;
+  padding-top: 4rem;
+  gap: var(--mantine-spacing-lg);
 }
 
 .header {
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 2.5rem;
+  font-weight: var(--mantine-heading-font-weight);
+  margin: 0;
+}
+
+.chatInterface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+  flex-grow: 1;
+}
+
+.disclaimer {
+  margin-bottom: 0.5rem;
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+  text-align: center;
 }

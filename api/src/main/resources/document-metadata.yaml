@@ -1,11 +1,11 @@
 document_types:
   study_plan:
     description: |
-      Program: Includes school, curriculum, admission requirements, placement tests, remedial courses, learning outcomes, and program objectives.
-      Framework: Categorizes courses by level (university, school, program) and type (compulsory, elective). All track courses and electives are listed here.
-      Study Plan Guide: Organizes courses by semester, providing a recommended sequence.
-      Courses Offered: Lists all courses by department and other schools, with full descriptions.
-      Notes:
+      The study plan includes school, curriculum, admission requirements, placement tests, remedial courses, learning outcomes, and program objectives.
+      The framework categorizes courses by level (university, school, program) and type (compulsory, elective). All track courses and electives are listed here.
+      The study plan guide organizes courses by semester, providing a recommended sequence.
+      Courses offered section Lists all courses by department and other schools, with full descriptions.
+      Some extra notes,
         - The study plan year indicates the first cohort it serves and remains in effect until superseded.
         - The academic level reflects the student’s level within the program.
     requires_year: true
