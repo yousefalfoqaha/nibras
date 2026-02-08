@@ -1,5 +1,5 @@
 import { Button, Flex, Stack, Text, Image, type ButtonProps } from '@mantine/core';
-import { Banknote, Glasses, Map } from 'lucide-react';
+import { Banknote, BookOpen, Calendar, Clock, Glasses, GraduationCap, Map, ScrollText } from 'lucide-react';
 import { UserInput } from '../components/user-input';
 import styles from './home.module.css';
 import topicButtonClasses from './topic-button.module.css';
@@ -10,7 +10,7 @@ const suggestedTopics: Topic[] = [
   {
     name: 'Study plan framework',
     prompt: 'What is the framework in the study plan?',
-    icon: Map
+    icon: ScrollText
   },
   {
     name: 'Academic and registration fees',
@@ -20,27 +20,27 @@ const suggestedTopics: Topic[] = [
   {
     name: 'Program admission requirements',
     prompt: 'What is the framework in the study plan?',
-    icon: Map
+    icon: GraduationCap
   },
   {
     name: 'Academic calendar events',
     prompt: 'Who is the lecturer ',
-    icon: Glasses
+    icon: Calendar
   },
   {
     name: 'Registration deadlines',
     prompt: 'Who is the lecturer ',
-    icon: Glasses
+    icon: Clock
   },
   {
     name: 'Study plan semester guide',
     prompt: 'Who is the lecturer ',
-    icon: Glasses
+    icon: Map
   },
   {
     name: 'Course prerequisites',
     prompt: 'Who is the lecturer ',
-    icon: Glasses
+    icon: BookOpen
   },
 ];
 

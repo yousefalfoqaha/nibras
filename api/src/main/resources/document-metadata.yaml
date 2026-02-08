@@ -1,7 +1,7 @@
 document_types:
   study_plan:
     description: |
-      The study plan includes school, curriculum, admission requirements, placement tests, remedial courses, learning outcomes, and program objectives.
+      The study plan includes school, curriculum, admission requirements, placement tests (aka remedials), learning outcomes, and program objectives.
       The framework categorizes courses by level (university, school, program) and type (compulsory, elective). All track courses and electives are listed here.
       The study plan guide organizes courses by semester, providing a recommended sequence.
       Courses offered section Lists all courses by department and other schools, with full descriptions.
