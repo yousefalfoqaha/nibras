@@ -5,7 +5,7 @@ import { useChatHistory, type ChatMessage } from '../contexts/chat-history';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import React from 'react';
-import { SquareUserRound, UserRound } from 'lucide-react';
+import { UserRound } from 'lucide-react';
 
 export function Conversation() {
   const { chatHistory } = useChatHistory();
