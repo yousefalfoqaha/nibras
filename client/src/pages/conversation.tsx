@@ -65,6 +65,7 @@ function AssistantMessageMarkdown({ message }: BotMessageMarkdownProps) {
     return (
       <div className={styles.assistantAvatar} data-thinking={true}>
         <Image
+          key="thinking"
           w={100}
           h="auto"
           src="nibras-thinking.png"
@@ -85,15 +86,17 @@ function AssistantMessageMarkdown({ message }: BotMessageMarkdownProps) {
 
       {isLastAssistantMessage && !isAnswering && <div className={styles.assistantAvatar}>
         <Image
+          key="standing"
           w={100}
           h="auto"
           src="nibras-standing.png"
         />
       </div>}
 
-      {isLastAssistantMessage && isAnswering && (
+      {isAnswering && (
         <div className={styles.assistantAvatar}>
           <Image
+            key="talking"
             w={100}
             h="auto"
             src="nibras-talking.png"
