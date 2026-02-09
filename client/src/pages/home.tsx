@@ -127,6 +127,8 @@ interface TopicButtonProps extends ButtonProps {
 }
 
 export function TopicButton({ topic }: TopicButtonProps) {
+  const { prompt } = useChat();
+
   const Icon = topic.icon;
 
   return (
@@ -138,6 +140,14 @@ export function TopicButton({ topic }: TopicButtonProps) {
     }}
       leftSection={<Icon size={14} />}
       size="xs"
+      onClick={() => {
+        prompt(topic.name);
+
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: 'smooth'
+        });
+      }}
     >
       {topic.name}
     </Button>

@@ -45,7 +45,7 @@ const getChatHistory = async (): Promise<ChatMessage[]> => {
   return messages.map((m: Partial<ChatMessage>) => ({
     id: crypto.randomUUID(),
     role: m.role!,
-    content: m.content!
+    content: m.content!,
   } as ChatMessage));
 };
 
@@ -53,18 +53,20 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const [chatHistory, setChatHistory] = React.useState<ChatMessage[]>([]);
   const [answerStream, setAnswerStream] = React.useState<string | null>(null);
 
+  const eventSourceRef = React.useRef<EventSource | null>(null);
+
   const assistantState: AssistantState =
     answerStream === null ? "IDLE" :
       answerStream === "" ? "THINKING" :
         "ANSWERING";
 
   const lastUserMessageId: string | undefined = chatHistory
-    .filter(m => m.role === 'USER')
+    .filter((m) => m.role === "USER")
     .at(-1)?.id;
 
   React.useEffect(() => {
     getChatHistory()
-      .then(v => {
+      .then((v) => {
         if (v.length === 0) {
           const url = new URL(window.location.href);
           url.searchParams.delete("c");
@@ -73,25 +75,30 @@ export function ChatProvider({ children }: ChatProviderProps) {
         setChatHistory(v);
       })
       .catch(() => setChatHistory([]));
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
   }, []);
 
   const addUserMessage = (content: string) => {
     const id = crypto.randomUUID();
-    setChatHistory((prev) => [
-      ...prev,
-      { id, role: "USER", content },
-    ]);
+    setChatHistory((prev) => [...prev, { id, role: "USER", content }]);
   };
 
   const addAssistantMessage = (content: string) => {
     const id = crypto.randomUUID();
-    setChatHistory((prev) => [
-      ...prev,
-      { id, role: "ASSISTANT", content },
-    ]);
-  }
+    setChatHistory((prev) => [...prev, { id, role: "ASSISTANT", content }]);
+  };
 
   const prompt = (promptText: string) => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+
     addUserMessage(promptText);
     setAnswerStream("");
 
@@ -103,16 +110,24 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
     searchParams.set("message", promptText);
 
+    const eventSource = new EventSource(`${CHAT_URL}?${searchParams.toString()}`);
+    eventSourceRef.current = eventSource;
+
     let accumulatedResponse = "";
     let answerConversationId: string | null = null;
 
-    const eventSource = new EventSource(`${CHAT_URL}?${searchParams.toString()}`);
-
     eventSource.onmessage = (e) => {
-      const data = JSON.parse(e.data) as { text: string; conversationId: string };
+      if (eventSource !== eventSourceRef.current) {
+        eventSource.close();
+        return;
+      }
+
+      const data = JSON.parse(e.data) as {
+        text: string;
+        conversationId: string;
+      };
 
       accumulatedResponse += data.text;
-
       setAnswerStream((prev) => (prev || "") + data.text);
 
       if (!answerConversationId) {
@@ -123,7 +138,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
     };
 
     eventSource.onerror = () => {
+      if (eventSource !== eventSourceRef.current) {
+        return;
+      }
+
       eventSource.close();
+      eventSourceRef.current = null;
 
       if (accumulatedResponse) {
         addAssistantMessage(accumulatedResponse);
@@ -134,9 +154,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
   };
 
   const newChat = () => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+
+    setAnswerStream(null);
     setChatHistory([]);
+
     window.history.replaceState(null, "", "/");
-  }
+  };
 
   return (
     <ChatContext.Provider
@@ -146,7 +173,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
         prompt,
         assistantState,
         answerStream,
-        lastUserMessageId
+        lastUserMessageId,
       }}
     >
       {children}
@@ -156,6 +183,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
 export const useChat = () => {
   const context = React.useContext(ChatContext);
-  if (!context) throw new Error("We are Charlie Kirk");
+  if (!context) throw new Error("useChat must be used within a ChatProvider");
   return context;
 };
