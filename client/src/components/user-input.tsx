@@ -6,7 +6,7 @@ import React from "react";
 import sendButtonClasses from "./send-button.module.css";
 
 export function UserInput() {
-  const { prompt } = useChat();
+  const { chatHistory, prompt } = useChat();
   const [text, setText] = React.useState<string>('');
 
   const onSubmit = (e: React.FormEvent) => {
@@ -16,7 +16,13 @@ export function UserInput() {
     if (trimmedText === '') return;
 
     setText('');
+
     prompt(trimmedText);
+
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    });
   }
 
   return (
@@ -25,10 +31,11 @@ export function UserInput() {
         <TextInput
           variant="unstyled"
           autoFocus
+          autoComplete="off"
           value={text}
           onChange={(e) => setText(e.target.value)}
           style={{ width: '100%' }}
-          placeholder="Ask Nibras..."
+          placeholder={chatHistory.length > 0 ? 'Ask a follow-up...' : 'Ask Nibras...'}
         />
 
         <SendButton isPromptValid={text.trim() !== ''} />

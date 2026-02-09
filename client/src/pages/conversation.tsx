@@ -1,14 +1,15 @@
-import { Avatar, Image, Typography } from '@mantine/core';
+import { ActionIcon, Avatar, Button, Image, Typography } from '@mantine/core';
 import { UserInput } from '../components/user-input';
 import styles from './conversation.module.css';
 import { useChat, type ChatMessage } from '../contexts/chat-context';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { UserRound } from 'lucide-react';
+import { ArrowDown, UserRound } from 'lucide-react';
 import nibrasIdle from '/nibras-idle.png';
 import nibrasThinking from '/nibras-thinking.png';
 import nibrasAnswering from '/nibras-answering.png';
 import React from 'react';
+import scrollDownButtonStyles from './scroll-down-button.module.css';
 
 const AVATAR_IMAGES = {
   IDLE: nibrasIdle,
@@ -26,6 +27,13 @@ export function Conversation() {
     });
   }, []);
 
+  React.useEffect(() => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    });
+  }, [lastUserMessageId]);
+
   return (
     <main className={styles.conversation}>
       <section className={styles.messages}>
@@ -41,45 +49,10 @@ export function Conversation() {
         )}
         <AssistantAnswerOutput />
         <AssistantAvatar />
-        {lastUserMessageRef && <AnswerSpace userMessageRef={lastUserMessageRef} />}
       </section>
       <ChatInterface />
     </main>
   );
-}
-
-type AnswerSpaceProps = {
-  userMessageRef: React.RefObject<HTMLDivElement | null>;
-};
-
-export function AnswerSpace({ userMessageRef }: AnswerSpaceProps) {
-  const [height, setHeight] = React.useState(0);
-  const { assistantState } = useChat();
-
-  if (!userMessageRef.current) return;
-  if (assistantState === 'IDLE' || assistantState === 'ANSWERING') return;
-
-  React.useLayoutEffect(() => {
-    console.log('hey')
-
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth'
-    });
-
-    const updateHeight = () => {
-      const top = userMessageRef.current!.getBoundingClientRect().top;
-      setHeight(top);
-    };
-
-    updateHeight();
-    window.addEventListener("resize", updateHeight);
-
-    return () => window.removeEventListener("resize", updateHeight);
-  }, [userMessageRef]);
-
-  console.log(height)
-  return <div style={{ height }} />;
 }
 
 type UserMessageBubbleProps = {
@@ -139,11 +112,48 @@ function AssistantAvatar() {
 function ChatInterface() {
   return (
     <section className={styles.chatInterface}>
-      <UserInput />
+      <ScrollDownButton />
 
-      <p className={styles.disclaimer}>
-        Nibras can make mistakes, check with an academic advisor.
-      </p>
+      <div className={styles.chatInput}>
+        <UserInput />
+
+        <p className={styles.disclaimer}>
+          Nibras can make mistakes, check with an academic advisor.
+        </p>
+      </div>
     </section>
+  );
+}
+
+function ScrollDownButton() {
+  const [show, setShow] = React.useState(false);
+  const SHOW_THRESHOLD = 50;
+
+  React.useEffect(() => {
+    const checkScroll = () => {
+      setShow(
+        window.innerHeight + window.scrollY < document.documentElement.scrollHeight - SHOW_THRESHOLD
+      );
+    };
+
+    window.addEventListener('scroll', checkScroll);
+    checkScroll();
+
+    return () => window.removeEventListener('scroll', checkScroll);
+  }, []);
+
+  return (
+    <ActionIcon
+      classNames={{
+        root: styles.scrollDownButton
+      }}
+      data-visible={show}
+      variant="default"
+      radius="xl"
+      size="lg"
+      onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
+    >
+      <ArrowDown size={16} />
+    </ActionIcon>
   );
 }
