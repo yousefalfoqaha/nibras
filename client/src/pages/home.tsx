@@ -54,10 +54,11 @@ export function Home() {
       <section className={styles.app}>
         <Stack>
           <Image h={125} w={125} src="nibras.png" />
-          <Stack gap={0}>
+
+          <header>
             <Text>Hi, I'm <span style={{ color: 'var(--mantine-color-primary-filled)', fontWeight: 700 }}>Nibras</span></Text>
             <h1 className={styles.header}>GJU's AI assistant</h1>
-          </Stack>
+          </header>
         </Stack>
 
         <Chat />
