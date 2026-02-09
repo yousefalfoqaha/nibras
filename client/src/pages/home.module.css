@@ -3,8 +3,11 @@
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  width: 700px;
+  min-width: 400px;
+  max-width: 700px;
   padding-top: 4rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
   gap: var(--mantine-spacing-lg);
 }
 
@@ -26,4 +29,10 @@
   font-size: var(--mantine-font-size-xs);
   color: var(--mantine-color-dimmed);
   text-align: center;
+}
+
+@media (max-width: 500px) {
+  .header {
+    font-size: 2.25rem;
+  }
 }

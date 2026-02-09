@@ -1,4 +1,4 @@
-import { ActionIcon, Avatar, Button, Image, Typography } from '@mantine/core';
+import { ActionIcon, Avatar, Image, Typography } from '@mantine/core';
 import { UserInput } from '../components/user-input';
 import styles from './conversation.module.css';
 import { useChat, type ChatMessage } from '../contexts/chat-context';
@@ -9,7 +9,6 @@ import nibrasIdle from '/nibras-idle.png';
 import nibrasThinking from '/nibras-thinking.png';
 import nibrasAnswering from '/nibras-answering.png';
 import React from 'react';
-import scrollDownButtonStyles from './scroll-down-button.module.css';
 
 const AVATAR_IMAGES = {
   IDLE: nibrasIdle,
@@ -77,7 +76,7 @@ type AssistantMessageMarkdownProps = {
 
 function AssistantMessageMarkdown({ message }: AssistantMessageMarkdownProps) {
   return (
-    <Typography>
+    <Typography className={styles.assistantMessage}>
       <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
     </Typography>
   );
@@ -126,10 +125,14 @@ function ChatInterface() {
 }
 
 function ScrollDownButton() {
+  const { answerStream, assistantState } = useChat();
   const [show, setShow] = React.useState(false);
   const SHOW_THRESHOLD = 50;
 
   React.useEffect(() => {
+    setShow(false);
+    if (assistantState === 'THINKING') return;
+
     const checkScroll = () => {
       setShow(
         window.innerHeight + window.scrollY < document.documentElement.scrollHeight - SHOW_THRESHOLD
@@ -140,7 +143,7 @@ function ScrollDownButton() {
     checkScroll();
 
     return () => window.removeEventListener('scroll', checkScroll);
-  }, []);
+  }, [answerStream, assistantState]);
 
   return (
     <ActionIcon

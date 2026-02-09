@@ -30,14 +30,10 @@ public class DocumentSearchService {
     List<Document> similarChunks = retriever.similaritySearch(
         SearchRequest.builder()
             .query(query.getQuery())
-            .similarityThreshold(0.4)
+            .similarityThreshold(0.3)
             .filterExpression(filter)
-            .topK(5)
+            .topK(10)
             .build());
-
-    for (Document c : similarChunks) {
-      System.out.println(c.getFormattedContent());
-    }
 
     log.info("Vector Store returned {} raw chunks.", similarChunks.size());
 

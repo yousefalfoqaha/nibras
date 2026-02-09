@@ -64,11 +64,36 @@
 .assistantMessage {
   display: flex;
   flex-direction: column;
+
+  h1 {
+    font-size: 1.5rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+  }
+  h3 {
+    font-size: 1.125rem;
+  }
+  h4 {
+    font-size: 1rem;
+  }
+  h5 {
+    font-size: 0.875rem;
+  }
+  h6 {
+    font-size: 0.75rem;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
 }
 
 .assistantAvatar {
   margin-top: 0.5rem;
-  margin-bottom: 5rem;
+  margin-bottom: 4rem;
 
   img {
     animation: pop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -108,3 +133,14 @@
     transform: translateY(-6px);
   }
 }
+
+/* @media (max-width: 1000px) { */
+/*   .assistantMessage { */
+/*     table { */
+/*     width: 100vw; */
+/*     max-width: 100vw; */
+/*     margin-left: calc(-50vw + 50%); */
+/*     margin-right: calc(-50vw + 50%); */
+/*     } */
+/*   } */
+/* } */
