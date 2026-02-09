@@ -17,8 +17,7 @@ const AVATAR_IMAGES = {
 };
 
 export function Conversation() {
-  const { chatHistory, answerStream } = useChat();
-  // console.log(answerStream)
+  const { chatHistory } = useChat();
 
   return (
     <main className={styles.conversation}>
@@ -32,12 +31,7 @@ export function Conversation() {
             )
           )}
 
-          {answerStream && (
-            <AssistantMessageMarkdown
-              key="answer-stream"
-              message={{ id: "streaming", role: "ASSISTANT", content: answerStream }}
-            />
-          )}
+          <AssistantAnswerOutput />
 
           <AssistantAvatar />
         </div>
@@ -75,11 +69,22 @@ function AssistantMessageMarkdown({ message }: AssistantMessageMarkdownProps) {
   );
 }
 
+function AssistantAnswerOutput() {
+  const { answerStream } = useChat();
+
+  if (!answerStream) {
+    return null;
+  }
+
+  return <AssistantMessageMarkdown message={{ id: 'streaming', content: answerStream, role: 'ASSISTANT' }} />
+}
+
 function AssistantAvatar() {
   const { assistantState } = useChat();
 
   return (
     <div
+      key={assistantState}
       className={styles.assistantAvatar}
       data-avatar-state={assistantState}
       role="img"
@@ -131,7 +136,7 @@ function AutoScroll({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      {/* <div ref={bottomRef} style={{ height: 10 }} /> */}
+      <div ref={bottomRef} style={{ height: 10 }} />
     </>
   );
 }

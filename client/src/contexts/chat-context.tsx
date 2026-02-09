@@ -85,8 +85,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
     ]);
   }
 
-  const prompt = (prompt: string) => {
-    addUserMessage(prompt);
+  const prompt = (promptText: string) => {
+    addUserMessage(promptText);
     setAnswerStream("");
 
     const url = new URL(window.location.href);
@@ -95,13 +95,18 @@ export function ChatProvider({ children }: ChatProviderProps) {
     if (currentConversationId) {
       searchParams.set("c", currentConversationId);
     }
-    searchParams.set("message", prompt);
+    searchParams.set("message", promptText);
 
+    let accumulatedResponse = "";
     let answerConversationId: string | null = null;
+
     const eventSource = new EventSource(`${CHAT_URL}?${searchParams.toString()}`);
 
     eventSource.onmessage = (e) => {
       const data = JSON.parse(e.data) as { text: string; conversationId: string };
+
+      accumulatedResponse += data.text;
+
       setAnswerStream((prev) => (prev || "") + data.text);
 
       if (!answerConversationId) {
@@ -114,12 +119,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
     eventSource.onerror = () => {
       eventSource.close();
 
-      setAnswerStream((currentStream) => {
-        if (currentStream) {
-          addAssistantMessage(currentStream);
-        }
-        return null;
-      });
+      if (accumulatedResponse) {
+        addAssistantMessage(accumulatedResponse);
+      }
+
+      setAnswerStream(null);
     };
   };
 
