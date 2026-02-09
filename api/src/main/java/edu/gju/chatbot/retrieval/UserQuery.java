@@ -5,9 +5,11 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @AllArgsConstructor
 @Getter
+@ToString
 public class UserQuery {
 
   private String query;

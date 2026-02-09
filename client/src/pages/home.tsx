@@ -1,9 +1,9 @@
 import { Button, Flex, Stack, Text, Image, type ButtonProps } from '@mantine/core';
-import { Banknote, BookOpen, Calendar, Clock, Glasses, GraduationCap, Map, ScrollText } from 'lucide-react';
+import { Banknote, BookOpen, Calendar, Clock, GraduationCap, Map, ScrollText } from 'lucide-react';
 import { UserInput } from '../components/user-input';
 import styles from './home.module.css';
 import topicButtonClasses from './topic-button.module.css';
-import { useChatHistory } from '../contexts/chat-history';
+import { useChat } from '../contexts/chat-context';
 import { Conversation } from './conversation';
 
 const suggestedTopics: Topic[] = [
@@ -63,9 +63,9 @@ export function Home() {
 }
 
 function Chat() {
-  const { chatHistory } = useChatHistory();
+  const { chatHistory, assistantState } = useChat();
 
-  if (chatHistory.length === 0) {
+  if (chatHistory.length === 0 && assistantState === 'IDLE') {
     return (
       <section className={styles.chatInterface}>
         <UserInput />
@@ -80,17 +80,15 @@ function Chat() {
 }
 
 function Disclaimer() {
-  const { chatHistory } = useChatHistory();
+  const { chatHistory, assistantState } = useChat();
 
-  if (chatHistory.length > 0) {
-    return null;
+  if (chatHistory.length === 0 && assistantState === 'IDLE') {
+    return (
+      <p className={styles.disclaimer}>
+        Nibras can make mistakes, check with an academic advisor.
+      </p>
+    );
   }
-
-  return (
-    <p className={styles.disclaimer}>
-      Nibras can make mistakes, check with an academic advisor.
-    </p>
-  );
 }
 
 type Topic = {

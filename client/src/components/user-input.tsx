@@ -1,12 +1,12 @@
 import { ActionIcon, TextInput } from "@mantine/core";
 import { SendHorizonal } from "lucide-react";
 import styles from './user-input.module.css';
-import { useChatHistory } from "../contexts/chat-history";
+import { useChat } from "../contexts/chat-context";
 import React from "react";
 import sendButtonClasses from "./send-button.module.css";
 
 export function UserInput() {
-  const { streamBotAnswer } = useChatHistory();
+  const { prompt } = useChat();
   const [text, setText] = React.useState<string>('');
 
   const onSubmit = (e: React.FormEvent) => {
@@ -16,7 +16,7 @@ export function UserInput() {
     if (trimmedText === '') return;
 
     setText('');
-    streamBotAnswer(trimmedText);
+    prompt(trimmedText);
   }
 
   return (
@@ -42,12 +42,12 @@ type SendButtonProps = {
 }
 
 function SendButton({ isPromptValid }: SendButtonProps) {
-  const { isBotBusy } = useChatHistory();
+  const { assistantState } = useChat();
 
   return (
     <ActionIcon
       classNames={sendButtonClasses}
-      data-disabled={isBotBusy || !isPromptValid}
+      data-disabled={assistantState === 'THINKING' || assistantState === 'ANSWERING' || !isPromptValid}
       type="submit"
     >
       <SendHorizonal size={20} />

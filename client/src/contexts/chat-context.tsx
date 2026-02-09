@@ -4,22 +4,24 @@ export type ChatMessage = {
   id: string;
   role: "ASSISTANT" | "USER";
   content: string;
-  status: "PENDING" | "STREAMING" | "DONE";
 };
 
-type ChatHistoryContextValue = {
+export type AssistantState = "IDLE" | "THINKING" | "ANSWERING";
+
+type ChatContextValue = {
   chatHistory: ChatMessage[];
-  streamBotAnswer: (prompt: string) => void;
-  isBotBusy: boolean;
+  prompt: (prompt: string) => void;
+  assistantState: AssistantState;
+  answerStream: string | null;
 };
 
 const CHAT_URL = "/chat";
 
-const ChatHistoryContext = React.createContext<ChatHistoryContextValue | undefined>(
+const ChatContext = React.createContext<ChatContextValue | undefined>(
   undefined
 );
 
-type ChatHistoryProviderProps = { children: React.ReactNode };
+type ChatProviderProps = { children: React.ReactNode };
 
 const getChatHistory = async (): Promise<ChatMessage[]> => {
   const conversationId = new URL(window.location.href).searchParams.get("c");
@@ -41,13 +43,18 @@ const getChatHistory = async (): Promise<ChatMessage[]> => {
   return messages.map((m: Partial<ChatMessage>) => ({
     id: crypto.randomUUID(),
     role: m.role!,
-    content: m.content!,
-    status: "DONE" as const
-  }));
+    content: m.content!
+  } as ChatMessage));
 };
 
-export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
+export function ChatProvider({ children }: ChatProviderProps) {
   const [chatHistory, setChatHistory] = React.useState<ChatMessage[]>([]);
+  const [answerStream, setAnswerStream] = React.useState<string | null>(null);
+
+  const assistantState: AssistantState =
+    answerStream === null ? "IDLE" :
+      answerStream === "" ? "THINKING" :
+        "ANSWERING";
 
   React.useEffect(() => {
     getChatHistory()
@@ -57,7 +64,6 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
           url.searchParams.delete("c");
           window.history.replaceState(null, "", url);
         }
-
         setChatHistory(v);
       })
       .catch(() => setChatHistory([]));
@@ -67,47 +73,36 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
     const id = crypto.randomUUID();
     setChatHistory((prev) => [
       ...prev,
-      { id, role: "USER", content, status: "DONE" },
+      { id, role: "USER", content },
     ]);
   };
 
-  const isBotBusy = chatHistory.some(
-    (m) => m.status === "STREAMING" || m.status === "PENDING"
-  );
-
-  const streamBotAnswer = (prompt: string) => {
-    addUserMessage(prompt);
-
+  const addAssistantMessage = (content: string) => {
     const id = crypto.randomUUID();
     setChatHistory((prev) => [
       ...prev,
-      { id, role: "ASSISTANT", content: "", status: "PENDING" },
+      { id, role: "ASSISTANT", content },
     ]);
+  }
+
+  const prompt = (prompt: string) => {
+    addUserMessage(prompt);
+    setAnswerStream("");
 
     const url = new URL(window.location.href);
     const searchParams = new URLSearchParams();
     const currentConversationId = url.searchParams.get("c");
-
     if (currentConversationId) {
       searchParams.set("c", currentConversationId);
     }
     searchParams.set("message", prompt);
 
-
     let answerConversationId: string | null = null;
-
     const eventSource = new EventSource(`${CHAT_URL}?${searchParams.toString()}`);
 
     eventSource.onmessage = (e) => {
       const data = JSON.parse(e.data) as { text: string; conversationId: string };
-
-      setChatHistory((prev) =>
-        prev.map((m) =>
-          m.id === id
-            ? { ...m, content: m.content + data.text, status: "STREAMING" }
-            : m
-        )
-      );
+      setAnswerStream((prev) => (prev || "") + data.text);
 
       if (!answerConversationId) {
         answerConversationId = data.conversationId;
@@ -117,24 +112,33 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
     };
 
     eventSource.onerror = () => {
-      setChatHistory((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, status: "DONE" } : m))
-      );
       eventSource.close();
+
+      setAnswerStream((currentStream) => {
+        if (currentStream) {
+          addAssistantMessage(currentStream);
+        }
+        return null;
+      });
     };
   };
 
   return (
-    <ChatHistoryContext.Provider
-      value={{ chatHistory, streamBotAnswer, isBotBusy }}
+    <ChatContext.Provider
+      value={{
+        chatHistory,
+        prompt,
+        assistantState,
+        answerStream
+      }}
     >
       {children}
-    </ChatHistoryContext.Provider>
+    </ChatContext.Provider>
   );
 }
 
-export const useChatHistory = () => {
-  const context = React.useContext(ChatHistoryContext);
+export const useChat = () => {
+  const context = React.useContext(ChatContext);
   if (!context) throw new Error("We are Charlie Kirk");
   return context;
 };

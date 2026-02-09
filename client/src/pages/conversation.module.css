@@ -69,9 +69,16 @@
 
   img {
     animation: pop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+    mask-repeat: no-repeat;
+    mask-size: 100% 100%;
   }
 
-  &[data-thinking="true"] {
+  &[data-avatar-state="THINKING"] {
     img {
       animation: thinking 2s ease-in-out infinite, pop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }

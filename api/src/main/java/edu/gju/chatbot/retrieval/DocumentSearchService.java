@@ -35,6 +35,10 @@ public class DocumentSearchService {
             .topK(5)
             .build());
 
+    for (Document c : similarChunks) {
+      System.out.println(c.getFormattedContent());
+    }
+
     log.info("Vector Store returned {} raw chunks.", similarChunks.size());
 
     if (similarChunks.isEmpty()) {

@@ -1,8 +1,9 @@
 import { createTheme, MantineProvider, type CSSVariablesResolver } from "@mantine/core";
 import { Home } from "./pages/home";
 import '@mantine/core/styles.css';
-import { ChatHistoryProvider } from "./contexts/chat-history";
+import { ChatProvider } from "./contexts/chat-context";
 import { Suspense } from "react";
+import { preload } from "react-dom";
 
 function App() {
   const theme = createTheme({
@@ -51,13 +52,18 @@ function App() {
     dark: {}
   })
 
+  preload("/nibras.png", { as: 'image' });
+  preload("/nibras-idle.png", { as: 'image' });
+  preload("/nibras-thinking.png", { as: 'image' });
+  preload("/nibras-answering.png", { as: 'image' });
+
   return (
     <MantineProvider theme={theme} cssVariablesResolver={resolver}>
-      <ChatHistoryProvider>
+      <ChatProvider>
         <Suspense fallback={"Loading..."}>
           <Home />
         </Suspense>
-      </ChatHistoryProvider>
+      </ChatProvider>
     </MantineProvider>
   );
 }

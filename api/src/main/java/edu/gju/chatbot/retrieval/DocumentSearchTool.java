@@ -51,6 +51,8 @@ public class DocumentSearchTool implements ToolCallback {
             return e.getMessage();
         }
 
+        System.out.println(userQuery);
+
         SearchDecisionResult searchDecisionResult = this.searchDecisionChain.execute(userQuery);
 
         if (searchDecisionResult.getInterruptMessage().isPresent()) {
