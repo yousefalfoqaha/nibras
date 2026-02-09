@@ -13,6 +13,7 @@ type ChatContextValue = {
   prompt: (prompt: string) => void;
   assistantState: AssistantState;
   answerStream: string | null;
+  lastUserMessageId: string | undefined;
 };
 
 const CHAT_URL = "/chat";
@@ -55,6 +56,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
     answerStream === null ? "IDLE" :
       answerStream === "" ? "THINKING" :
         "ANSWERING";
+
+  const lastUserMessageId: string | undefined = chatHistory
+    .filter(m => m.role === 'USER')
+    .at(-1)?.id;
 
   React.useEffect(() => {
     getChatHistory()
@@ -133,7 +138,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
         chatHistory,
         prompt,
         assistantState,
-        answerStream
+        answerStream,
+        lastUserMessageId
       }}
     >
       {children}

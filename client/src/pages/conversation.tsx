@@ -4,11 +4,11 @@ import styles from './conversation.module.css';
 import { useChat, type ChatMessage } from '../contexts/chat-context';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import React from 'react';
 import { UserRound } from 'lucide-react';
 import nibrasIdle from '/nibras-idle.png';
 import nibrasThinking from '/nibras-thinking.png';
 import nibrasAnswering from '/nibras-answering.png';
+import React from 'react';
 
 const AVATAR_IMAGES = {
   IDLE: nibrasIdle,
@@ -17,38 +17,79 @@ const AVATAR_IMAGES = {
 };
 
 export function Conversation() {
-  const { chatHistory } = useChat();
+  const { chatHistory, lastUserMessageId } = useChat();
+  const lastUserMessageRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight
+    });
+  }, []);
 
   return (
     <main className={styles.conversation}>
-      <AutoScroll>
-        <div className={styles.messages}>
-          {chatHistory.map((m) =>
-            m.role === "USER" ? (
-              <UserMessageBubble key={m.id} message={m} />
-            ) : (
-              <AssistantMessageMarkdown key={m.id} message={m} />
-            )
-          )}
+      <section className={styles.messages}>
+        {chatHistory.map((m) => {
+          const isLastUserMessage = m.role === "USER" && m.id === lastUserMessageId;
 
-          <AssistantAnswerOutput />
-
-          <AssistantAvatar />
-        </div>
-      </AutoScroll>
-
+          return m.role === "USER" ? (
+            <UserMessageBubble key={m.id} ref={isLastUserMessage ? lastUserMessageRef : null} message={m} />
+          ) : (
+            <AssistantMessageMarkdown key={m.id} message={m} />
+          )
+        }
+        )}
+        <AssistantAnswerOutput />
+        <AssistantAvatar />
+        {lastUserMessageRef && <AnswerSpace userMessageRef={lastUserMessageRef} />}
+      </section>
       <ChatInterface />
     </main>
   );
 }
 
-type UserMessageBubbleProps = {
-  message: ChatMessage;
+type AnswerSpaceProps = {
+  userMessageRef: React.RefObject<HTMLDivElement | null>;
 };
 
-function UserMessageBubble({ message }: UserMessageBubbleProps) {
+export function AnswerSpace({ userMessageRef }: AnswerSpaceProps) {
+  const [height, setHeight] = React.useState(0);
+  const { assistantState } = useChat();
+
+  if (!userMessageRef.current) return;
+  if (assistantState === 'IDLE' || assistantState === 'ANSWERING') return;
+
+  React.useLayoutEffect(() => {
+    console.log('hey')
+
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    });
+
+    const updateHeight = () => {
+      const top = userMessageRef.current!.getBoundingClientRect().top;
+      setHeight(top);
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+
+    return () => window.removeEventListener("resize", updateHeight);
+  }, [userMessageRef]);
+
+  console.log(height)
+  return <div style={{ height }} />;
+}
+
+type UserMessageBubbleProps = {
+  message: ChatMessage;
+  ref: React.RefObject<HTMLDivElement | null> | null;
+};
+
+function UserMessageBubble({ message, ref }: UserMessageBubbleProps) {
   return (
-    <div className={styles.userMessage}>
+    <div ref={ref} className={styles.userMessage}>
       <Avatar color="var(--mantine-color-primary-filled)" variant="transparent">
         <UserRound />
       </Avatar>
@@ -104,39 +145,5 @@ function ChatInterface() {
         Nibras can make mistakes, check with an academic advisor.
       </p>
     </section>
-  );
-}
-
-function AutoScroll({ children }: { children: React.ReactNode }) {
-  const { chatHistory } = useChat();
-  const bottomRef = React.useRef<HTMLDivElement>(null);
-  const [autoScroll, setAutoScroll] = React.useState(true);
-  const isScrollingRef = React.useRef(false);
-
-  React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!isScrollingRef.current) setAutoScroll(entry.isIntersecting);
-      },
-      { threshold: 1.0, rootMargin: "0px 0px 50px 0px" }
-    );
-
-    if (bottomRef.current) observer.observe(bottomRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  React.useEffect(() => {
-    if (autoScroll && bottomRef.current) {
-      isScrollingRef.current = true;
-      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      setTimeout(() => (isScrollingRef.current = false), 100);
-    }
-  }, [chatHistory, autoScroll]);
-
-  return (
-    <>
-      {children}
-      <div ref={bottomRef} style={{ height: 10 }} />
-    </>
   );
 }

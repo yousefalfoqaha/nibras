@@ -5,6 +5,7 @@ import styles from './home.module.css';
 import topicButtonClasses from './topic-button.module.css';
 import { useChat } from '../contexts/chat-context';
 import { Conversation } from './conversation';
+import React from 'react';
 
 const suggestedTopics: Topic[] = [
   {
