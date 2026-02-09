@@ -1,5 +1,5 @@
-import { Button, Flex, Stack, Text, Image, type ButtonProps } from '@mantine/core';
-import { Banknote, BookOpen, Calendar, Clock, GraduationCap, Map, ScrollText } from 'lucide-react';
+import { Button, Flex, Stack, Text, Image, type ButtonProps, ActionIcon, Tooltip } from '@mantine/core';
+import { Banknote, BookOpen, Calendar, Clock, GraduationCap, Map, ScrollText, SquarePen } from 'lucide-react';
 import { UserInput } from '../components/user-input';
 import styles from './home.module.css';
 import topicButtonClasses from './topic-button.module.css';
@@ -47,19 +47,24 @@ const suggestedTopics: Topic[] = [
 
 export function Home() {
   return (
-    <main className={styles.main}>
-      <Stack>
-        <Image h={125} w={125} src="nibras.png" />
-        <Stack gap={0}>
-          <Text>Hi, I'm <span style={{ color: 'var(--mantine-color-primary-filled)', fontWeight: 700 }}>Nibras</span></Text>
-          <h1 className={styles.header}>GJU's AI assistant</h1>
+    <>
+      <nav className={styles.navbar}>
+        <NewChatButton />
+      </nav>
+      <section className={styles.app}>
+        <Stack>
+          <Image h={125} w={125} src="nibras.png" />
+          <Stack gap={0}>
+            <Text>Hi, I'm <span style={{ color: 'var(--mantine-color-primary-filled)', fontWeight: 700 }}>Nibras</span></Text>
+            <h1 className={styles.header}>GJU's AI assistant</h1>
+          </Stack>
         </Stack>
-      </Stack>
 
-      <Chat />
+        <Chat />
 
-      <Disclaimer />
-    </main>
+        <Disclaimer />
+      </section>
+    </>
   );
 }
 
@@ -78,6 +83,25 @@ function Chat() {
   }
 
   return <Conversation />;
+}
+
+function NewChatButton() {
+  const { newChat, chatHistory } = useChat();
+
+  return (
+    <Tooltip label="New chat" position="left">
+      <ActionIcon
+        variant="default"
+        radius="lg"
+        size="xl"
+        data-visible={chatHistory.length > 0}
+        className={styles.newChatButton}
+        onClick={newChat}
+      >
+        <SquarePen size={20} />
+      </ActionIcon>
+    </Tooltip>
+  );
 }
 
 function Disclaimer() {

@@ -10,6 +10,7 @@ export type AssistantState = "IDLE" | "THINKING" | "ANSWERING";
 
 type ChatContextValue = {
   chatHistory: ChatMessage[];
+  newChat: () => void;
   prompt: (prompt: string) => void;
   assistantState: AssistantState;
   answerStream: string | null;
@@ -132,10 +133,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
     };
   };
 
+  const newChat = () => {
+    setChatHistory([]);
+    window.history.replaceState(null, "", "/");
+  }
+
   return (
     <ChatContext.Provider
       value={{
         chatHistory,
+        newChat,
         prompt,
         assistantState,
         answerStream,
