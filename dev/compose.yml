@@ -58,9 +58,6 @@ services:
       POSTGRES_PASSWORD: gju
     # command: psql -U gju
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./dev_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-
-volumes:
-  pgdata:

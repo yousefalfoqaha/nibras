@@ -1,7 +1,6 @@
 services:
   app:
-    build: .
-    # image: ghcr.io/yousefalfoqaha/gju-chatbot
+    image: ghcr.io/yousefalfoqaha/nibras
     ports:
       - "8080:8080"
     depends_on:
