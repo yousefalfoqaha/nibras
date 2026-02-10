@@ -29,9 +29,6 @@ RUN ./mvnw clean package -DskipTests -B
 FROM eclipse-temurin:25-jre-noble AS runtime
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl caddy \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY --from=api-build /build/target/*.jar ./app.jar
 
 ENV SPRING_PROFILES_ACTIVE=prod
