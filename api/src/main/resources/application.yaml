@@ -2,9 +2,9 @@ spring:
   application:
     name: gju-chatbot
   datasource:
-    url: jdbc:postgresql://db:5432/gju
-    username: gju
-    password: gju
+    url: jdbc:postgresql://db:5432/${DB_NAME:chatbot}
+    username: ${DB_USER:chatbot}
+    password: ${DB_PASSWORD:chatbot}
   sql:
     init:
       mode: always
@@ -31,7 +31,6 @@ spring:
 
     vectorstore:
       pgvector:
-        remove-existing-vector-store-table: true
         schema-validation: true
   output:
     ansi:
@@ -42,6 +41,9 @@ logging:
     org:
       springframework:
         ai: DEBUG
+
+server:
+  forward-headers-strategy: native
 
 service:
   ocr-scanner:

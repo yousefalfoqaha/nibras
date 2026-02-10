@@ -1,4 +1,4 @@
-FROM node:20-alpine AS client-build
+FROM node:24-alpine AS client-build
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -8,8 +8,9 @@ RUN corepack enable
 
 COPY /client .
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
-RUN pnpm run build
+ENV CI=true
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm run -r build
 
 FROM eclipse-temurin:25-jdk AS api-build
 WORKDIR /build
@@ -21,21 +22,17 @@ COPY /api/pom.xml ./
 RUN ./mvnw dependency:go-offline -B
 
 COPY /api/src ./src
-COPY --from=client-build /build/client/dist/ ./src/main/resources/client
+COPY --from=client-build /build/dist/ ./src/main/resources/static
 
 RUN ./mvnw clean package -DskipTests -B
 
-FROM alpine AS runtime
+FROM eclipse-temurin:25-jre-noble AS runtime
 WORKDIR /app
 
-RUN apk add --no-cache openjdk25-jre nodejs caddy curl gosu
+RUN apt-get update && apt-get install -y curl caddy \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=api-build /build/api/target/*.jar ./app.jar
-
-COPY /scripts/docker/entrypoint.sh .
-RUN chmod +x ./entrypoint.sh
-
-COPY /reverse-proxy/ ./reverse-proxy/
+COPY --from=api-build /build/target/*.jar ./app.jar
 
 ENV SPRING_PROFILES_ACTIVE=prod
 
@@ -44,4 +41,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=60s \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-CMD ["/bin/sh", "-c", "/app/entrypoint.sh"]
+CMD ["sh", "-c", "java -jar ./app.jar"]
