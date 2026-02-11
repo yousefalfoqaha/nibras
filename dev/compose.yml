@@ -2,7 +2,6 @@ services:
   client:
     image: node:24-alpine
     command: sh -c "npm install -g pnpm && pnpm install && pnpm dev --host"
-    container_name: gju-chatbot-client
     working_dir: /app
     volumes:
       - ../client:/app
@@ -16,13 +15,11 @@ services:
     build:
       context: ../api
       dockerfile: Dockerfile
-    container_name: gju-chatbot-api
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      JINA_API_KEY: ${JINA_API_KEY}
       OCR_BASE_URL: http://ocr:8000
     volumes:
       - ../api:/app
@@ -35,7 +32,6 @@ services:
     build:
       context: ../ocr
       dockerfile: Dockerfile
-    container_name: gju-chatbot-ocr
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     working_dir: /app
     volumes:
@@ -51,12 +47,10 @@ services:
 
   db:
     image: pgvector/pgvector:pg16-trixie
-    container_name: gju-chatbot-db
     environment:
-      POSTGRES_DB: gju
-      POSTGRES_USER: gju
-      POSTGRES_PASSWORD: gju
-    # command: psql -U gju
+      POSTGRES_DB: chatbot
+      POSTGRES_USER: chatbot
+      POSTGRES_PASSWORD: chatbot
     volumes:
       - ./dev_data:/var/lib/postgresql/data
     ports:

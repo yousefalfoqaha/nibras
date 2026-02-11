@@ -9,6 +9,7 @@ import nibrasIdle from '/nibras-idle.png';
 import nibrasThinking from '/nibras-thinking.png';
 import nibrasAnswering from '/nibras-answering.png';
 import React from 'react';
+import { useScroll } from '../contexts/scroll-context';
 
 const AVATAR_IMAGES = {
   IDLE: nibrasIdle,
@@ -19,18 +20,14 @@ const AVATAR_IMAGES = {
 export function Conversation() {
   const { chatHistory, lastUserMessageId } = useChat();
   const lastUserMessageRef = React.useRef<HTMLDivElement | null>(null);
+  const { scrollToBottom } = useScroll();
 
   React.useEffect(() => {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight
-    });
+    scrollToBottom('auto');
   }, []);
 
   React.useEffect(() => {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth'
-    });
+    scrollToBottom();
   }, [lastUserMessageId]);
 
   return (
@@ -117,7 +114,7 @@ function ChatInterface() {
         <UserInput />
 
         <p className={styles.disclaimer}>
-          Nibras can make mistakes, check with an academic advisor.
+          Nibras can make mistakes, check with an advisor.
         </p>
       </div>
     </section>
@@ -126,24 +123,29 @@ function ChatInterface() {
 
 function ScrollDownButton() {
   const { answerStream, assistantState } = useChat();
+  const { scrollViewportRef, scrollToBottom } = useScroll();
   const [show, setShow] = React.useState(false);
   const SHOW_THRESHOLD = 50;
 
   React.useEffect(() => {
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return;
+
     setShow(false);
     if (assistantState === 'THINKING') return;
 
     const checkScroll = () => {
-      setShow(
-        window.innerHeight + window.scrollY < document.documentElement.scrollHeight - SHOW_THRESHOLD
-      );
+      const isNotAtBottom =
+        viewport.clientHeight + viewport.scrollTop < viewport.scrollHeight - SHOW_THRESHOLD;
+
+      setShow(isNotAtBottom);
     };
 
-    window.addEventListener('scroll', checkScroll);
+    viewport.addEventListener('scroll', checkScroll);
     checkScroll();
 
-    return () => window.removeEventListener('scroll', checkScroll);
-  }, [answerStream, assistantState]);
+    return () => viewport.removeEventListener('scroll', checkScroll);
+  }, [answerStream, assistantState, scrollViewportRef]);
 
   return (
     <ActionIcon
@@ -154,7 +156,7 @@ function ScrollDownButton() {
       variant="default"
       radius="xl"
       size="lg"
-      onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
+      onClick={() => scrollToBottom('smooth')}
     >
       <ArrowDown size={16} />
     </ActionIcon>

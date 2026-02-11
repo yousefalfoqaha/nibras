@@ -1,13 +1,14 @@
 .conversation {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex-grow: 1;
 }
 
 .messages {
   display: flex;
   flex-direction: column;
   width: 100%;
+  height: 100%;
   flex-grow: 1;
   gap: var(--mantine-spacing-lg);
 }
@@ -24,7 +25,7 @@
   background: var(--mantine-color-gray-0);
   border-top-right-radius: var(--mantine-radius-lg);
   border-top-left-radius: var(--mantine-radius-lg);
-  gap: var(--mantine-spacing-xl);
+  gap: var(--mantine-spacing-xs);
 }
 
 .scrollDownButton {
@@ -45,7 +46,7 @@
 }
 
 .disclaimer {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: var(--mantine-font-size-xs);
   color: var(--mantine-color-dimmed);
   text-align: center;

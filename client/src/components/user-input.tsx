@@ -1,4 +1,4 @@
-import { ActionIcon, TextInput } from "@mantine/core";
+import { ActionIcon, Textarea } from "@mantine/core";
 import { SendHorizonal } from "lucide-react";
 import styles from './user-input.module.css';
 import { useChat } from "../contexts/chat-context";
@@ -26,15 +26,18 @@ export function UserInput() {
   }
 
   return (
-    <form onSubmit={onSubmit}>
-      <div className={styles.userInput}>
-        <TextInput
+    <form onSubmit={onSubmit} autoComplete="off">
+      <div className={styles.userInputContainer}>
+        <Textarea
+          autosize
+          minRows={1}
+          maxRows={8}
           variant="unstyled"
+          className={styles.textArea}
           autoFocus
           autoComplete="off"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          style={{ width: '100%' }}
           placeholder={chatHistory.length > 0 ? 'Ask a follow-up...' : 'Ask Nibras...'}
         />
 
@@ -53,6 +56,7 @@ function SendButton({ isPromptValid }: SendButtonProps) {
 
   return (
     <ActionIcon
+      unstyled
       classNames={sendButtonClasses}
       data-disabled={assistantState === 'THINKING' || assistantState === 'ANSWERING' || !isPromptValid}
       type="submit"

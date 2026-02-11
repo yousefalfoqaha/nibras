@@ -16,5 +16,8 @@ html,
 body,
 #root {
   background: var(--mantine-color-gray-0);
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
 }
 

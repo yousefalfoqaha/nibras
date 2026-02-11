@@ -6,6 +6,7 @@ import topicButtonClasses from './topic-button.module.css';
 import { useChat } from '../contexts/chat-context';
 import { Conversation } from './conversation';
 import React from 'react';
+import { ScrollProvider, useScroll } from '../contexts/scroll-context';
 
 const suggestedTopics: Topic[] = [
   {
@@ -46,26 +47,29 @@ const suggestedTopics: Topic[] = [
 ];
 
 export function Home() {
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+
   return (
-    <>
-      <nav className={styles.navbar}>
-        <NewChatButton />
-      </nav>
-      <section className={styles.app}>
-        <Stack>
-          <Image h={125} w={125} src="nibras.png" />
+    <ScrollProvider scrollViewportRef={viewportRef}>
+      <div className={styles.viewport} ref={viewportRef}>
+        <nav className={styles.navbar}>
+          <NewChatButton />
+        </nav>
 
-          <header>
-            <Text>Hi, I'm <span style={{ color: 'var(--mantine-color-primary-filled)', fontWeight: 700 }}>Nibras</span></Text>
-            <h1 className={styles.header}>GJU's AI assistant</h1>
-          </header>
-        </Stack>
+        <section className={styles.app}>
+          <Stack>
+            <Image h={125} w={125} src="nibras.png" />
+            <header>
+              <Text>Hi, I'm <span style={{ color: 'var(--mantine-color-primary-filled)', fontWeight: 700 }}>Nibras</span></Text>
+              <h1 className={styles.header}>GJU's AI assistant</h1>
+            </header>
+          </Stack>
 
-        <Chat />
-
-        <Disclaimer />
-      </section>
-    </>
+          <Chat />
+          <Disclaimer />
+        </section>
+      </div>
+    </ScrollProvider>
   );
 }
 
@@ -111,7 +115,7 @@ function Disclaimer() {
   if (chatHistory.length === 0 && assistantState === 'IDLE') {
     return (
       <p className={styles.disclaimer}>
-        Nibras can make mistakes, check with an academic advisor.
+        Nibras can make mistakes, check with an advisor.
       </p>
     );
   }
@@ -129,6 +133,7 @@ interface TopicButtonProps extends ButtonProps {
 
 export function TopicButton({ topic }: TopicButtonProps) {
   const { prompt } = useChat();
+  const { scrollToBottom } = useScroll();
 
   const Icon = topic.icon;
 
@@ -143,11 +148,7 @@ export function TopicButton({ topic }: TopicButtonProps) {
       size="xs"
       onClick={() => {
         prompt(topic.name);
-
-        window.scrollTo({
-          top: document.documentElement.scrollHeight,
-          behavior: 'smooth'
-        });
+        scrollToBottom();
       }}
     >
       {topic.name}

@@ -1,9 +1,13 @@
+.viewport {
+  width: 100%;
+  overflow-y: scroll;
+}
+
 .app {
   margin: 0 auto;
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  min-width: 400px;
   max-width: 700px;
   padding-top: 4rem;
   padding-left: 1.5rem;
@@ -47,7 +51,7 @@
 }
 
 .disclaimer {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: var(--mantine-font-size-xs);
   color: var(--mantine-color-dimmed);
   text-align: center;
@@ -55,6 +59,6 @@
 
 @media (max-width: 500px) {
   .header {
-    font-size: 2.25rem;
+    font-size: 2rem;
   }
 }

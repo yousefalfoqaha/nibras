@@ -1,11 +1,30 @@
-.userInput {
-  display: flex;
+.textArea {
+  width: 100%;
+}
+
+.textArea::-webkit-scrollbar {
+  display: none;
+}
+
+.textArea {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}textArea::-webkit-scrollbar {
+display: none;
+}
+
+.example {
+-ms-overflow-style: none;
+scrollbar-width: none;
+}
+
+.userInputContainer {
   gap: 0.4rem;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--mantine-primary-color-contrast);
-  border-radius: 5rem;
-  border: 1px solid var(--mantine-color-gray-1);
-  padding-left: 0.8rem;
+  align-items: end;
+  padding-left: 0.7rem;
   padding-right: 0.3rem;
+  display: flex;
+  background: var(--mantine-primary-color-contrast);
+  border-radius: 1rem;
+  border: 1px solid var(--mantine-color-gray-1);
 }

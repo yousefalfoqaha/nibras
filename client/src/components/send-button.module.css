@@ -1,10 +1,11 @@
 .root {
-  --ai-bg: transparent;
+  background: transparent;
   --ai-hover: transparent;
+  border: none;
+  height: 1.8635rem;
 }
 
 .root[data-disabled="true"] {
-  background: transparent;
 
   .icon {
     color: var(--mantine-color-disabled);
