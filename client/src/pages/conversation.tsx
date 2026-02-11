@@ -23,6 +23,7 @@ export function Conversation() {
   const { scrollToBottom } = useScroll();
 
   React.useEffect(() => {
+    document.title = "Nibras · Chat"
     scrollToBottom('auto');
   }, []);
 

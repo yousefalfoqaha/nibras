@@ -163,6 +163,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     setChatHistory([]);
 
     window.history.replaceState(null, "", "/");
+    document.title = "Nibras";
   };
 
   return (
