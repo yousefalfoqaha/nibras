@@ -28,7 +28,7 @@ services:
       - "80:80"
       - "443:443"
     command: >
-      caddy reverse-proxy --from yourdomain.edu --to app:8080
+      caddy reverse-proxy --from nibrasgju.com --to app:8080
     volumes:
       - caddy_data:/data
       - caddy_config:/config
