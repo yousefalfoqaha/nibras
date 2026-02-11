@@ -26,8 +26,8 @@ attributes:
   program:
     values:
       - computer science
-      - mechanical engineering
-      - business intelligence and data analytics
+      - mechatronics engineering
+      - computer engineering
 
   academic_level:
     values:
@@ -37,5 +37,5 @@ attributes:
   department:
     values:
       - computer science
-      - mechanical engineering
-      - management sciences
+      - mechatronics engineering
+      - computer engineering
