@@ -1,157 +1,133 @@
-import { Button, Flex, Stack, Text, Image, type ButtonProps, ActionIcon, Tooltip } from '@mantine/core';
-import { Banknote, BookOpen, Calendar, Clock, GraduationCap, Map, ScrollText, SquarePen } from 'lucide-react';
+import { ActionIcon, Button, Flex, Tooltip, type ButtonProps } from '@mantine/core';
+import { Header } from '../components/Header';
 import { UserInput } from '../components/user-input';
 import styles from './home.module.css';
-import topicButtonClasses from './topic-button.module.css';
+import { Disclaimer } from '../components/Disclaimer';
 import { useChat } from '../contexts/chat-context';
-import { Conversation } from './conversation';
-import React from 'react';
-import { ScrollProvider, useScroll } from '../contexts/scroll-context';
-
-const suggestedTopics: Topic[] = [
-  {
-    name: 'Study plan framework',
-    prompt: 'What is the framework in the study plan?',
-    icon: ScrollText
-  },
-  {
-    name: 'Academic and registration fees',
-    prompt: 'What are the admission fees',
-    icon: Banknote
-  },
-  {
-    name: 'Program admission requirements',
-    prompt: 'What is the framework in the study plan?',
-    icon: GraduationCap
-  },
-  {
-    name: 'Academic calendar events',
-    prompt: 'Who is the lecturer ',
-    icon: Calendar
-  },
-  {
-    name: 'Registration deadlines',
-    prompt: 'Who is the lecturer ',
-    icon: Clock
-  },
-  {
-    name: 'Study plan semester guide',
-    prompt: 'Who is the lecturer ',
-    icon: Map
-  },
-  {
-    name: 'Course prerequisites',
-    prompt: 'Who is the lecturer ',
-    icon: BookOpen
-  },
-];
+import { Banknote, Map, BookOpen, Calendar, Clock, GraduationCap, ScrollText, SquarePen } from 'lucide-react';
+import { useScroll } from '../contexts/scroll-context';
+import topicButtonClasses from './topic-button.module.css'
 
 export function Home() {
-  const viewportRef = React.useRef<HTMLDivElement>(null);
+	return (
+		<div className={styles.home}>
+			<nav className={styles.navbar}>
+				<NewChatButton />
+			</nav>
 
-  return (
-    <ScrollProvider scrollViewportRef={viewportRef}>
-      <div className={styles.viewport} ref={viewportRef}>
-        <nav className={styles.navbar}>
-          <NewChatButton />
-        </nav>
+			<section className={styles.homeContent}>
+				<Header />
 
-        <section className={styles.app}>
-          <Stack>
-            <Image h={125} w={125} src="nibras.png" />
-            <header>
-              <Text>Hi, I'm <span style={{ color: 'var(--mantine-color-primary-filled)', fontWeight: 700 }}>Nibras</span></Text>
-              <h1 className={styles.header}>GJU's AI assistant</h1>
-            </header>
-          </Stack>
+				<section className={styles.startChatInterface}>
+					<UserInput />
 
-          <Chat />
-          <Disclaimer />
-        </section>
-      </div>
-    </ScrollProvider>
-  );
+					<Flex wrap="wrap" gap={5}>
+						<TopicButton />
+					</Flex>
+				</section>
+
+				<Disclaimer />
+			</section>
+		</div>
+	);
 }
 
-function Chat() {
-  const { chatHistory, assistantState } = useChat();
+export function NewChatButton() {
+	const { newChat, chatHistory } = useChat();
 
-  if (chatHistory.length === 0 && assistantState === 'IDLE') {
-    return (
-      <section className={styles.chatInterface}>
-        <UserInput />
-        <Flex wrap="wrap" gap={5}>
-          {suggestedTopics.map(t => <TopicButton key={t.name} topic={t} />)}
-        </Flex>
-      </section>
-    );
-  }
-
-  return <Conversation />;
+	return (
+		<Tooltip label="New chat" position="left">
+			<ActionIcon
+				variant="default"
+				radius="lg"
+				size="xl"
+				data-visible={chatHistory.length > 0}
+				className={styles.newChatButton}
+				onClick={newChat}
+			>
+				<SquarePen size={20} />
+			</ActionIcon>
+		</Tooltip>
+	);
 }
 
-function NewChatButton() {
-  const { newChat, chatHistory } = useChat();
+const suggestedTopics: Topic[] = [
+	{
+		name: 'Study plan framework',
+		prompt: 'What is the framework in the study plan?',
+		icon: ScrollText
+	},
+	{
+		name: 'Academic and registration fees',
+		prompt: 'What are the admission fees',
+		icon: Banknote
+	},
+	{
+		name: 'Program admission requirements',
+		prompt: 'What is the framework in the study plan?',
+		icon: GraduationCap
+	},
+	{
+		name: 'Academic calendar events',
+		prompt: 'Who is the lecturer ',
+		icon: Calendar
+	},
+	{
+		name: 'Registration deadlines',
+		prompt: 'Who is the lecturer ',
+		icon: Clock
+	},
+	{
+		name: 'Study plan semester guide',
+		prompt: 'Who is the lecturer ',
+		icon: Map
+	},
+	{
+		name: 'Course prerequisites',
+		prompt: 'Who is the lecturer ',
+		icon: BookOpen
+	},
+];
 
-  return (
-    <Tooltip label="New chat" position="left">
-      <ActionIcon
-        variant="default"
-        radius="lg"
-        size="xl"
-        data-visible={chatHistory.length > 0}
-        className={styles.newChatButton}
-        onClick={newChat}
-      >
-        <SquarePen size={20} />
-      </ActionIcon>
-    </Tooltip>
-  );
-}
-
-function Disclaimer() {
-  const { chatHistory, assistantState } = useChat();
-
-  if (chatHistory.length === 0 && assistantState === 'IDLE') {
-    return (
-      <p className={styles.disclaimer}>
-        Nibras can make mistakes, check with an advisor.
-      </p>
-    );
-  }
+export function TopicButton() {
+	return (
+		<Flex wrap="wrap" gap={5}>
+			{suggestedTopics.map(t => <TopicButtonItem key={t.name} topic={t} />)}
+		</Flex>
+	);
 }
 
 type Topic = {
-  name: string;
-  prompt: string;
-  icon: React.ElementType;
+	name: string;
+	prompt: string;
+	icon: React.ElementType;
 };
 
 interface TopicButtonProps extends ButtonProps {
-  topic: Topic;
+	topic: Topic;
 }
 
-export function TopicButton({ topic }: TopicButtonProps) {
-  const { prompt } = useChat();
-  const { scrollToBottom } = useScroll();
+function TopicButtonItem({ topic }: TopicButtonProps) {
+	const { prompt } = useChat();
+	const { scrollToBottom } = useScroll();
 
-  const Icon = topic.icon;
+	const Icon = topic.icon;
 
-  return (
-    <Button classNames={{
-      root: topicButtonClasses.root,
-      section: topicButtonClasses.section,
-      label: topicButtonClasses.label,
-      inner: topicButtonClasses.inner
-    }}
-      leftSection={<Icon size={14} />}
-      size="xs"
-      onClick={() => {
-        prompt(topic.name);
-        scrollToBottom();
-      }}
-    >
-      {topic.name}
-    </Button>
-  );
+	return (
+		<Button classNames={{
+			root: topicButtonClasses.root,
+			section: topicButtonClasses.section,
+			label: topicButtonClasses.label,
+			inner: topicButtonClasses.inner
+		}}
+			leftSection={<Icon size={14} />}
+			size="xs"
+			onClick={() => {
+				prompt(topic.name);
+				scrollToBottom();
+			}}
+		>
+			{topic.name}
+		</Button>
+	);
 }

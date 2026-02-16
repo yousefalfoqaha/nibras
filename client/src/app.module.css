@@ -1,0 +1,16 @@
+.viewport {
+  width: 100%;
+  overflow-y: auto;
+}
+
+.nibras {
+	margin: 0 auto;
+	height: 100dvh;
+	display: flex;
+	flex-direction: column;
+	max-width: 700px;
+	padding-top: 4rem;
+	padding-left: 1.5rem;
+	padding-right: 1.5rem;
+	gap: var(--mantine-spacing-lg);
+}

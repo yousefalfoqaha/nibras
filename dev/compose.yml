@@ -52,6 +52,9 @@ services:
       POSTGRES_USER: chatbot
       POSTGRES_PASSWORD: chatbot
     volumes:
-      - ./dev_data:/var/lib/postgresql/data
+      - dev_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
+volumes:
+  dev_data:

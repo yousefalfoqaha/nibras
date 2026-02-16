@@ -18,7 +18,7 @@ display: none;
 scrollbar-width: none;
 }
 
-.userInputContainer {
+.userInput {
   gap: 0.4rem;
   align-items: end;
   padding-left: 0.7rem;

@@ -6,62 +6,62 @@ import React from "react";
 import sendButtonClasses from "./send-button.module.css";
 
 export function UserInput() {
-  const { chatHistory, prompt } = useChat();
-  const [text, setText] = React.useState<string>('');
+	const { chatHistory, prompt } = useChat();
+	const [text, setText] = React.useState<string>('');
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+	const onSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
 
-    const trimmedText = text.trim();
-    if (trimmedText === '') return;
+		const trimmedText = text.trim();
+		if (trimmedText === '') return;
 
-    setText('');
+		setText('');
 
-    prompt(trimmedText);
+		prompt(trimmedText);
 
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth'
-    });
-  }
+		window.scrollTo({
+			top: document.documentElement.scrollHeight,
+			behavior: 'smooth'
+		});
+	}
 
-  return (
-    <form onSubmit={onSubmit} autoComplete="off">
-      <div className={styles.userInputContainer}>
-        <Textarea
-          autosize
-          minRows={1}
-          maxRows={8}
-          variant="unstyled"
-          className={styles.textArea}
-          autoFocus
-          autoComplete="off"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={chatHistory.length > 0 ? 'Ask a follow-up...' : 'Ask Nibras...'}
-        />
+	return (
+		<form onSubmit={onSubmit} autoComplete="off">
+			<div className={styles.userInput}>
+				<Textarea
+					autosize
+					minRows={1}
+					maxRows={8}
+					variant="unstyled"
+					className={styles.textArea}
+					autoFocus
+					autoComplete="off"
+					value={text}
+					onChange={(e) => setText(e.target.value)}
+					placeholder={chatHistory.length > 0 ? 'Ask a follow-up...' : 'Ask Nibras...'}
+				/>
 
-        <SendButton isPromptValid={text.trim() !== ''} />
-      </div>
-    </form>
-  );
+				<SendButton isPromptValid={text.trim() !== ''} />
+			</div>
+		</form>
+	);
 }
 
 type SendButtonProps = {
-  isPromptValid: boolean;
+	isPromptValid: boolean;
 }
 
 function SendButton({ isPromptValid }: SendButtonProps) {
-  const { assistantState } = useChat();
+	const { assistantState } = useChat();
 
-  return (
-    <ActionIcon
-      unstyled
-      classNames={sendButtonClasses}
-      data-disabled={assistantState === 'THINKING' || assistantState === 'ANSWERING' || !isPromptValid}
-      type="submit"
-    >
-      <SendHorizonal size={20} />
-    </ActionIcon>
-  )
+	return (
+		<ActionIcon
+			unstyled
+			classNames={sendButtonClasses}
+			data-disabled={assistantState === 'THINKING' || assistantState === 'ANSWERING' || !isPromptValid}
+			type="submit"
+		>
+			<SendHorizonal size={20} />
+		</ActionIcon>
+	)
 }
