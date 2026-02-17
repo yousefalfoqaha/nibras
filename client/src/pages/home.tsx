@@ -22,7 +22,7 @@ export function Home() {
 					<UserInput />
 
 					<Flex wrap="wrap" gap={5}>
-						<TopicButton />
+						{suggestedTopics.map(t => <TopicButton key={t.name} topic={t} />)}
 					</Flex>
 				</section>
 
@@ -89,14 +89,6 @@ const suggestedTopics: Topic[] = [
 	},
 ];
 
-export function TopicButton() {
-	return (
-		<Flex wrap="wrap" gap={5}>
-			{suggestedTopics.map(t => <TopicButtonItem key={t.name} topic={t} />)}
-		</Flex>
-	);
-}
-
 type Topic = {
 	name: string;
 	prompt: string;
@@ -107,7 +99,7 @@ interface TopicButtonProps extends ButtonProps {
 	topic: Topic;
 }
 
-function TopicButtonItem({ topic }: TopicButtonProps) {
+function TopicButton({ topic }: TopicButtonProps) {
 	const { prompt } = useChat();
 	const { scrollToBottom } = useScroll();
 
