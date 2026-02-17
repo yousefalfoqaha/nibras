@@ -22,9 +22,13 @@
 
 .home {
 	position: relative;
+	height: 100%;
 }
 
 .homeContent {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .startChatInterface {

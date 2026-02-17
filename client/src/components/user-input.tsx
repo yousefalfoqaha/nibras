@@ -34,6 +34,7 @@ export function UserInput() {
 					maxRows={8}
 					variant="unstyled"
 					className={styles.textArea}
+					size="md"
 					autoFocus
 					autoComplete="off"
 					value={text}

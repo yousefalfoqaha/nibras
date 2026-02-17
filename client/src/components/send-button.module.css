@@ -2,7 +2,7 @@
   background: transparent;
   --ai-hover: transparent;
   border: none;
-  height: 1.8635rem;
+  height: 2.25rem;
 }
 
 .root[data-disabled="true"] {

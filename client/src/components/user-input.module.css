@@ -9,8 +9,10 @@
 .textArea {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}textArea::-webkit-scrollbar {
-display: none;
+}
+
+textArea::-webkit-scrollbar {
+  display: none;
 }
 
 .example {
