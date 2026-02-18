@@ -68,7 +68,7 @@ function App() {
 			<ChatProvider>
 				<ScrollProvider scrollViewportRef={viewportRef}>
 					<Suspense fallback={"Loading..."}>
-						<div className={styles.viewport} ref={viewportRef}>
+						<div data-scroll-root className={styles.viewport} ref={viewportRef}>
 							<Nibras />
 						</div>
 					</Suspense>

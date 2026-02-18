@@ -13,13 +13,11 @@
 }
 
 html, body {
-  overflow: hidden;
-  height: 100svh;
   background: var(--mantine-color-gray-0);
+  background-size: cover;
 }
 
 #root {
-  height: 100svh;
   overflow: hidden;
   background: var(--mantine-color-gray-0);
 }

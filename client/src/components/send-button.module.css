@@ -2,7 +2,9 @@
   background: transparent;
   --ai-hover: transparent;
   border: none;
-  height: 2.25rem;
+  padding-top: 0.275rem;
+  padding-bottom: 0.3rem;
+  border-radius: var(--mantine-radius-xl);
 }
 
 .root[data-disabled="true"] {
