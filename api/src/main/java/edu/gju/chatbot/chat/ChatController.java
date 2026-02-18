@@ -24,14 +24,23 @@ public class ChatController {
   public Flux<ServerSentEvent<Completion>> chat(
       @RequestParam(value = "message") String message,
       @RequestParam(value = "c", required = false) String conversationId) {
+
     String validConversationId = chatService.getValidConversationId(conversationId);
 
-    return chatClient
-        .prompt(message)
-        .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, validConversationId))
-        .stream()
-        .content()
-        .map(token -> ServerSentEvent.builder(new Completion(token, validConversationId)).build());
+    Flux<ServerSentEvent<Completion>> contentStream =
+        chatClient
+            .prompt(message)
+            .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, validConversationId))
+            .stream()
+            .content()
+            .map(
+                token ->
+                    ServerSentEvent.builder(new Completion(token, validConversationId)).build());
+
+    ServerSentEvent<Completion> stopSignal =
+        ServerSentEvent.builder(new Completion("", validConversationId)).event("stop").build();
+
+    return contentStream.concatWith(Flux.just(stopSignal));
   }
 
   @GetMapping("/chat/messages")

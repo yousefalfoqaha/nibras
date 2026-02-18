@@ -8,6 +8,50 @@ import { Banknote, Map, BookOpen, Calendar, Clock, GraduationCap, ScrollText, Sq
 import { useScroll } from '../contexts/scroll-context';
 import topicButtonClasses from './topic-button.module.css'
 
+type Topic = {
+	name: string;
+	prompt: string;
+	icon: React.ElementType;
+};
+
+const suggestedTopics: Topic[] = [
+	{
+		name: 'Study plan framework',
+		prompt: 'What is the framework in the study plan?',
+		icon: ScrollText
+	},
+	{
+		name: 'Academic and registration fees',
+		prompt: 'What are the admission fees',
+		icon: Banknote
+	},
+	{
+		name: 'Program admission requirements',
+		prompt: 'What is the framework in the study plan?',
+		icon: GraduationCap
+	},
+	{
+		name: 'Academic calendar events',
+		prompt: 'Who is the lecturer ',
+		icon: Calendar
+	},
+	{
+		name: 'Registration deadlines',
+		prompt: 'Who is the lecturer ',
+		icon: Clock
+	},
+	{
+		name: 'Study plan semester guide',
+		prompt: 'Who is the lecturer ',
+		icon: Map
+	},
+	{
+		name: 'Course prerequisites',
+		prompt: 'Who is the lecturer ',
+		icon: BookOpen
+	},
+];
+
 export function Home() {
 	return (
 		<div className={styles.home}>
@@ -50,50 +94,6 @@ export function NewChatButton() {
 		</Tooltip>
 	);
 }
-
-const suggestedTopics: Topic[] = [
-	{
-		name: 'Study plan framework',
-		prompt: 'What is the framework in the study plan?',
-		icon: ScrollText
-	},
-	{
-		name: 'Academic and registration fees',
-		prompt: 'What are the admission fees',
-		icon: Banknote
-	},
-	{
-		name: 'Program admission requirements',
-		prompt: 'What is the framework in the study plan?',
-		icon: GraduationCap
-	},
-	{
-		name: 'Academic calendar events',
-		prompt: 'Who is the lecturer ',
-		icon: Calendar
-	},
-	{
-		name: 'Registration deadlines',
-		prompt: 'Who is the lecturer ',
-		icon: Clock
-	},
-	{
-		name: 'Study plan semester guide',
-		prompt: 'Who is the lecturer ',
-		icon: Map
-	},
-	{
-		name: 'Course prerequisites',
-		prompt: 'Who is the lecturer ',
-		icon: BookOpen
-	},
-];
-
-type Topic = {
-	name: string;
-	prompt: string;
-	icon: React.ElementType;
-};
 
 interface TopicButtonProps extends ButtonProps {
 	topic: Topic;

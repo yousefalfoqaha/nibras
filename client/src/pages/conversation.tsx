@@ -1,4 +1,4 @@
-import { ActionIcon, Avatar, Image, Typography } from '@mantine/core';
+import { ActionIcon, Avatar, Button, Image, Typography } from '@mantine/core';
 import { UserInput } from '../components/user-input';
 import { useChat, type ChatMessage } from '../contexts/chat-context';
 import Markdown from 'react-markdown';
@@ -20,7 +20,7 @@ const AVATAR_IMAGES = {
 };
 
 export function Conversation() {
-	const { chatHistory, lastUserMessageId } = useChat();
+	const { chatHistory, lastUserMessageId, isError, retry } = useChat();
 	const lastUserMessageRef = React.useRef<HTMLDivElement | null>(null);
 	const { scrollToBottom } = useScroll();
 
@@ -51,7 +51,16 @@ export function Conversation() {
 
 				<AssistantAnswerOutput />
 
-				<AssistantAvatar />
+				{isError && (
+					<div className={styles.errorContainer}>
+						<p className={styles.errorMessage}>Failed to get response. Please try again.</p>
+						<Button onClick={retry} variant="outline" size="sm">
+							Retry
+						</Button>
+					</div>
+				)}
+
+				{!isError && <AssistantAvatar />}
 			</section>
 
 			<ChatInterface />

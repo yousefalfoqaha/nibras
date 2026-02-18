@@ -9,21 +9,32 @@ export function UserInput() {
 	const { chatHistory, prompt } = useChat();
 	const [text, setText] = React.useState<string>('');
 
-	const onSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-
+	const sendMessage = () => {
 		const trimmedText = text.trim();
 		if (trimmedText === '') return;
 
 		setText('');
-
 		prompt(trimmedText);
 
 		window.scrollTo({
 			top: document.documentElement.scrollHeight,
 			behavior: 'smooth'
 		});
-	}
+	};
+
+	const onSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		sendMessage();
+	};
+
+	const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		if (event.key === 'Enter' && !event.shiftKey) {
+			event.preventDefault();
+			if (event.nativeEvent.isComposing) return;
+
+			sendMessage();
+		}
+	};
 
 	return (
 		<form onSubmit={onSubmit} autoComplete="off">
@@ -39,6 +50,7 @@ export function UserInput() {
 					autoComplete="off"
 					value={text}
 					onChange={(e) => setText(e.target.value)}
+					onKeyDown={onKeyDown}
 					placeholder={chatHistory.length > 0 ? 'Ask a follow-up...' : 'Ask Nibras...'}
 				/>
 
