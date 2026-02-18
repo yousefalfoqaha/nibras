@@ -1,4 +1,4 @@
-import { createTheme, MantineProvider, type CSSVariablesResolver } from "@mantine/core";
+import { ActionIcon, createTheme, MantineProvider, Tooltip, type CSSVariablesResolver } from "@mantine/core";
 import '@mantine/core/styles.css';
 import { ChatProvider, useChat } from "./contexts/chat-context";
 import { Suspense } from "react";
@@ -8,6 +8,7 @@ import { ScrollProvider } from "./contexts/scroll-context";
 import styles from './app.module.css'
 import { Home } from "./pages/home";
 import { Conversation } from "./pages/conversation";
+import { SquarePen } from "lucide-react";
 
 function App() {
 	const viewportRef = React.useRef(null);
@@ -65,13 +66,15 @@ function App() {
 
 	return (
 		<MantineProvider theme={theme} cssVariablesResolver={resolver}>
+			<div className={styles.safariSensor} />
 			<ChatProvider>
 				<ScrollProvider scrollViewportRef={viewportRef}>
-					<Suspense fallback={"Loading..."}>
-						<div data-scroll-root className={styles.viewport} ref={viewportRef}>
-							<Nibras />
-						</div>
-					</Suspense>
+					<div data-scroll-root className={styles.viewport} ref={viewportRef}>
+						<nav className={styles.navbar}>
+							<NewChatButton />
+						</nav>
+						<Nibras />
+					</div>
 				</ScrollProvider>
 			</ChatProvider>
 		</MantineProvider>
@@ -86,6 +89,25 @@ function Nibras() {
 			{chatHistory.length === 0 && assistantState === 'IDLE' ? <Home /> : <Conversation />}
 		</div>
 	)
+}
+
+export function NewChatButton() {
+	const { newChat, chatHistory } = useChat();
+
+	return (
+		<Tooltip label="New chat" position="left">
+			<ActionIcon
+				variant="default"
+				radius="lg"
+				size="xl"
+				data-visible={chatHistory.length > 0}
+				className={styles.newChatButton}
+				onClick={newChat}
+			>
+				<SquarePen size={20} />
+			</ActionIcon>
+		</Tooltip>
+	);
 }
 
 export default App;

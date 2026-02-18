@@ -3,7 +3,7 @@ import { UserInput } from '../components/user-input';
 import { useChat, type ChatMessage } from '../contexts/chat-context';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowDown, SquarePen, UserRound } from 'lucide-react';
+import { ArrowDown, CircleAlert, SquarePen, UserRound } from 'lucide-react';
 import nibrasIdle from '/nibras-idle.png';
 import nibrasThinking from '/nibras-thinking.png';
 import nibrasAnswering from '/nibras-answering.png';
@@ -35,9 +35,6 @@ export function Conversation() {
 
 	return (
 		<main className={styles.conversation}>
-			<nav className={styles.navbar}>
-				<NewChatButton />
-			</nav>
 
 			<Header />
 
@@ -57,8 +54,15 @@ export function Conversation() {
 
 				{isError && (
 					<div className={styles.errorContainer}>
+						<CircleAlert color="var(--mantine-color-red-6)" size={20} />
+
 						<p className={styles.errorMessage}>Failed to get response. Please try again.</p>
-						<Button onClick={retry} variant="outline" size="sm">
+
+						<Button
+							onClick={retry}
+							variant="outline"
+							size="sm"
+						>
 							Retry
 						</Button>
 					</div>
@@ -69,25 +73,6 @@ export function Conversation() {
 
 			<ChatInterface />
 		</main>
-	);
-}
-
-export function NewChatButton() {
-	const { newChat, chatHistory } = useChat();
-
-	return (
-		<Tooltip label="New chat" position="left">
-			<ActionIcon
-				variant="default"
-				radius="lg"
-				size="xl"
-				data-visible={chatHistory.length > 0}
-				className={styles.newChatButton}
-				onClick={newChat}
-			>
-				<SquarePen size={20} />
-			</ActionIcon>
-		</Tooltip>
 	);
 }
 
