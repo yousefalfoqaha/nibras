@@ -1,7 +1,6 @@
 import { ActionIcon, createTheme, MantineProvider, Tooltip, type CSSVariablesResolver } from "@mantine/core";
 import '@mantine/core/styles.css';
 import { ChatProvider, useChat } from "./contexts/chat-context";
-import { Suspense } from "react";
 import { preload } from "react-dom";
 import React from "react";
 import { ScrollProvider } from "./contexts/scroll-context";
