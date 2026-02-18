@@ -1,9 +1,9 @@
-import { ActionIcon, Avatar, Button, Image, Tooltip, Typography } from '@mantine/core';
+import { ActionIcon, Avatar, Button, Image, Typography } from '@mantine/core';
 import { UserInput } from '../components/user-input';
 import { useChat, type ChatMessage } from '../contexts/chat-context';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowDown, CircleAlert, SquarePen, UserRound } from 'lucide-react';
+import { ArrowDown, CircleAlert, UserRound } from 'lucide-react';
 import nibrasIdle from '/nibras-idle.png';
 import nibrasThinking from '/nibras-thinking.png';
 import nibrasAnswering from '/nibras-answering.png';

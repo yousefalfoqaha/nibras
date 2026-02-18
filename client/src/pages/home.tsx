@@ -1,10 +1,10 @@
-import { ActionIcon, Button, Flex, Tooltip, type ButtonProps } from '@mantine/core';
+import { Button, Flex, type ButtonProps } from '@mantine/core';
 import { Header } from '../components/Header';
 import { UserInput } from '../components/user-input';
 import styles from './home.module.css';
 import { Disclaimer } from '../components/Disclaimer';
 import { useChat } from '../contexts/chat-context';
-import { Banknote, Map, BookOpen, Calendar, Clock, GraduationCap, ScrollText, SquarePen } from 'lucide-react';
+import { Banknote, Map, BookOpen, Calendar, Clock, GraduationCap, ScrollText } from 'lucide-react';
 import { useScroll } from '../contexts/scroll-context';
 import topicButtonClasses from './topic-button.module.css'
 
