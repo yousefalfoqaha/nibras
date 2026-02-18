@@ -2,12 +2,13 @@ import { ActionIcon, Textarea } from "@mantine/core";
 import { SendHorizonal } from "lucide-react";
 import styles from './user-input.module.css';
 import { useChat } from "../contexts/chat-context";
-import React from "react";
+import React, { useRef } from "react";
 import sendButtonClasses from "./send-button.module.css";
 
 export function UserInput() {
 	const { chatHistory, prompt } = useChat();
 	const [text, setText] = React.useState<string>('');
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	const sendMessage = () => {
 		const trimmedText = text.trim();
@@ -40,13 +41,13 @@ export function UserInput() {
 		<form onSubmit={onSubmit} autoComplete="off">
 			<div className={styles.userInput}>
 				<Textarea
+					ref={textareaRef}
 					autosize
 					minRows={1}
 					maxRows={8}
 					variant="unstyled"
 					className={styles.textArea}
 					size="md"
-					autoFocus
 					autoComplete="off"
 					value={text}
 					onChange={(e) => setText(e.target.value)}

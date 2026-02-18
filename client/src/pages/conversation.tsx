@@ -1,9 +1,9 @@
-import { ActionIcon, Avatar, Button, Image, Typography } from '@mantine/core';
+import { ActionIcon, Avatar, Button, Image, Tooltip, Typography } from '@mantine/core';
 import { UserInput } from '../components/user-input';
 import { useChat, type ChatMessage } from '../contexts/chat-context';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowDown, UserRound } from 'lucide-react';
+import { ArrowDown, SquarePen, UserRound } from 'lucide-react';
 import nibrasIdle from '/nibras-idle.png';
 import nibrasThinking from '/nibras-thinking.png';
 import nibrasAnswering from '/nibras-answering.png';
@@ -35,6 +35,10 @@ export function Conversation() {
 
 	return (
 		<main className={styles.conversation}>
+			<nav className={styles.navbar}>
+				<NewChatButton />
+			</nav>
+
 			<Header />
 
 			<section className={styles.messages}>
@@ -65,6 +69,25 @@ export function Conversation() {
 
 			<ChatInterface />
 		</main>
+	);
+}
+
+export function NewChatButton() {
+	const { newChat, chatHistory } = useChat();
+
+	return (
+		<Tooltip label="New chat" position="left">
+			<ActionIcon
+				variant="default"
+				radius="lg"
+				size="xl"
+				data-visible={chatHistory.length > 0}
+				className={styles.newChatButton}
+				onClick={newChat}
+			>
+				<SquarePen size={20} />
+			</ActionIcon>
+		</Tooltip>
 	);
 }
 

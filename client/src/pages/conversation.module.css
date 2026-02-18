@@ -4,6 +4,17 @@
   flex-grow: 1;
 }
 
+
+.navbar {
+  position: fixed;
+  display: flex;
+  justify-content: end;
+  top: 0;
+  z-index: 20;
+  width: 100%;
+  padding: 1.5rem 3rem;
+}
+
 .messages {
   display: flex;
   flex-direction: column;

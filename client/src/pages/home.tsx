@@ -55,43 +55,18 @@ const suggestedTopics: Topic[] = [
 export function Home() {
 	return (
 		<div className={styles.home}>
-			<nav className={styles.navbar}>
-				<NewChatButton />
-			</nav>
+			<Header />
 
-			<section className={styles.homeContent}>
-				<Header />
+			<section className={styles.startChatInterface}>
+				<UserInput />
 
-				<section className={styles.startChatInterface}>
-					<UserInput />
-
-					<Flex wrap="wrap" gap={5}>
-						{suggestedTopics.map(t => <TopicButton key={t.name} topic={t} />)}
-					</Flex>
-				</section>
-
-				<Disclaimer />
+				<Flex wrap="wrap" gap={5}>
+					{suggestedTopics.map(t => <TopicButton key={t.name} topic={t} />)}
+				</Flex>
 			</section>
+
+			<Disclaimer />
 		</div>
-	);
-}
-
-export function NewChatButton() {
-	const { newChat, chatHistory } = useChat();
-
-	return (
-		<Tooltip label="New chat" position="left">
-			<ActionIcon
-				variant="default"
-				radius="lg"
-				size="xl"
-				data-visible={chatHistory.length > 0}
-				className={styles.newChatButton}
-				onClick={newChat}
-			>
-				<SquarePen size={20} />
-			</ActionIcon>
-		</Tooltip>
 	);
 }
 
