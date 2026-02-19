@@ -23,7 +23,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             request ->
                 request
-                    .requestMatchers("/error", "/actuator/health", "/", "/chat/**")
+                    .requestMatchers("/error", "/actuator/health", "/**", "/chat/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
