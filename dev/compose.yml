@@ -23,6 +23,7 @@ services:
       OCR_BASE_URL: http://ocr:8000
     volumes:
       - ../api:/app
+      - ./document-types.yml:/app/document-types.yml
     working_dir: /app
     command: mvn spring-boot:run
     depends_on:

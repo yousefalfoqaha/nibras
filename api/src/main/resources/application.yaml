@@ -1,16 +1,25 @@
 spring:
   application:
     name: gju-chatbot
+
   datasource:
     url: jdbc:postgresql://db:5432/${DB_NAME:chatbot}
     username: ${DB_USER:chatbot}
     password: ${DB_PASSWORD:chatbot}
+
+  security:
+    user:
+      name: ${APP_USER:chatbot}
+      password: ${APP_PASSWORD:chatbot}
+
   sql:
     init:
       mode: always
+
   servlet:
     multipart:
       max-file-size: -1
+
   ai:
     model:
       chat: openai
@@ -49,6 +58,3 @@ service:
   ocr-scanner:
     base-url: ${OCR_BASE_URL:http://localhost:8000}
     scanner-path: /scan
-
-document-metadata:
-  file-path: document-metadata.yaml

@@ -12,171 +12,131 @@ import org.springframework.core.io.ResourceLoader;
 
 public class DocumentTypeRegistry {
 
-    private final List<DocumentType> documentTypes;
+  private final List<DocumentType> documentTypes;
 
-    private final List<DocumentAttribute> documentAttributes;
+  private final List<DocumentAttribute> documentAttributes;
 
-    private final ResourceLoader resourceLoader;
+  private final ResourceLoader resourceLoader;
 
-    private final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
 
-    private final String yamlPath;
+  public DocumentTypeRegistry(ResourceLoader resourceLoader, ObjectMapper objectMapper) {
+    this.resourceLoader = resourceLoader;
+    this.objectMapper = objectMapper;
 
-    public DocumentTypeRegistry(
-        ResourceLoader resourceLoader,
-        ObjectMapper objectMapper,
-        String yamlPath
-    ) {
-        this.resourceLoader = resourceLoader;
-        this.objectMapper = objectMapper;
-        this.yamlPath = yamlPath;
+    MetadataConfig config = loadConfig();
+    RegistryData data = buildRegistry(config);
 
-        MetadataConfig config = loadConfig();
-        RegistryData data = buildRegistry(config);
+    this.documentTypes = data.documentTypes();
+    this.documentAttributes = data.documentAttributes();
+  }
 
-        this.documentTypes = data.documentTypes();
-        this.documentAttributes = data.documentAttributes();
+  public List<DocumentType> getDocumentTypes() {
+    return documentTypes;
+  }
+
+  public List<DocumentAttribute> getDocumentAttributes() {
+    return documentAttributes;
+  }
+
+  public Optional<DocumentType> getDocumentType(String name) {
+    return documentTypes.stream().filter(t -> t.getName().equalsIgnoreCase(name)).findFirst();
+  }
+
+  private MetadataConfig loadConfig() {
+    try (var is = resourceLoader.getResource("file:/app/document-types.yml").getInputStream()) {
+      return objectMapper.readValue(is, MetadataConfig.class);
+    } catch (IOException e) {
+      throw new RagException("Failed to load document types.");
     }
+  }
 
-    public List<DocumentType> getDocumentTypes() {
-        return documentTypes;
-    }
+  private RegistryData buildRegistry(MetadataConfig config) {
+    Map<String, DocumentAttribute> attributes = new HashMap<>();
 
-    public List<DocumentAttribute> getDocumentAttributes() {
-        return documentAttributes;
-    }
+    if (config.attributes != null) {
+      for (var entry : config.attributes.entrySet()) {
+        String name = entry.getKey();
+        AttributeConfig attributeConfig = entry.getValue();
 
-    public Optional<DocumentType> getDocumentType(String name) {
-        return documentTypes
-            .stream()
-            .filter(t -> t.getName().equalsIgnoreCase(name))
-            .findFirst();
-    }
-
-    private MetadataConfig loadConfig() {
-        try (
-            var is = resourceLoader
-                .getResource("classpath:" + yamlPath)
-                .getInputStream()
-        ) {
-            return objectMapper.readValue(is, MetadataConfig.class);
-        } catch (IOException e) {
-            throw new RagException(
-                "Failed to load document metadata from " + yamlPath
-            );
-        }
-    }
-
-    private RegistryData buildRegistry(MetadataConfig config) {
-        Map<String, DocumentAttribute> attributes = new HashMap<>();
-
-        if (config.attributes != null) {
-            for (var entry : config.attributes.entrySet()) {
-                String name = entry.getKey();
-                AttributeConfig attributeConfig = entry.getValue();
-
-                List<String> values = new ArrayList<>();
-                if (attributeConfig.values != null) {
-                    for (var v : attributeConfig.values) {
-                        values.add(v.toString());
-                    }
-                }
-
-                DocumentAttribute attribute = new DocumentAttribute(
-                    name,
-                    attributeConfig.description,
-                    values
-                );
-                attributes.put(name, attribute);
-            }
+        List<String> values = new ArrayList<>();
+        if (attributeConfig.values != null) {
+          for (var v : attributeConfig.values) {
+            values.add(v.toString());
+          }
         }
 
-        List<DocumentType> documentTypes = new ArrayList<>();
-        if (config.document_types != null) {
-            for (var entry : config.document_types.entrySet()) {
-                String name = entry.getKey();
-                DocumentTypeConfig documentTypeConfig = entry.getValue();
-
-                List<DocumentAttribute> requiredAttributes =
-                    Optional.ofNullable(documentTypeConfig.attributes())
-                        .map(a -> a.required())
-                        .orElse(List.of())
-                        .stream()
-                        .map(a -> {
-                            DocumentAttribute resolved = attributes.get(a);
-                            if (resolved == null) throw new RagException(
-                                String.format(
-                                    "Document type {} with unknown required attribute {}",
-                                    name,
-                                    a
-                                )
-                            );
-                            return resolved;
-                        })
-                        .toList();
-
-                List<DocumentAttribute> optionalAttributes =
-                    Optional.ofNullable(documentTypeConfig.attributes())
-                        .map(a -> a.optional())
-                        .orElse(List.of())
-                        .stream()
-                        .map(a -> {
-                            DocumentAttribute resolved = attributes.get(a);
-                            if (resolved == null) throw new RagException(
-                                String.format(
-                                    "Document type {} with unknown optional attribute {}",
-                                    name,
-                                    a
-                                )
-                            );
-                            return resolved;
-                        })
-                        .toList();
-
-                documentTypes.add(
-                    new DocumentType(
-                        name,
-                        documentTypeConfig.description,
-                        Optional.ofNullable(
-                            documentTypeConfig.requires_year()
-                        ).orElse(false),
-                        Optional.ofNullable(
-                            documentTypeConfig.prefer_latest_year()
-                        ).orElse(false),
-                        requiredAttributes,
-                        optionalAttributes
-                    )
-                );
-            }
-        }
-
-        return new RegistryData(
-            List.copyOf(documentTypes),
-            List.copyOf(attributes.values())
-        );
+        DocumentAttribute attribute =
+            new DocumentAttribute(name, attributeConfig.description, values);
+        attributes.put(name, attribute);
+      }
     }
 
-    private record RegistryData(
-        List<DocumentType> documentTypes,
-        List<DocumentAttribute> documentAttributes
-    ) {}
+    List<DocumentType> documentTypes = new ArrayList<>();
+    if (config.document_types != null) {
+      for (var entry : config.document_types.entrySet()) {
+        String name = entry.getKey();
+        DocumentTypeConfig documentTypeConfig = entry.getValue();
 
-    private record MetadataConfig(
-        Map<String, DocumentTypeConfig> document_types,
-        Map<String, AttributeConfig> attributes
-    ) {}
+        List<DocumentAttribute> requiredAttributes =
+            Optional.ofNullable(documentTypeConfig.attributes())
+                .map(a -> a.required())
+                .orElse(List.of())
+                .stream()
+                .map(
+                    a -> {
+                      DocumentAttribute resolved = attributes.get(a);
+                      if (resolved == null)
+                        throw new RagException(
+                            String.format(
+                                "Document type {} with unknown required attribute {}", name, a));
+                      return resolved;
+                    })
+                .toList();
 
-    private record AttributeConfig(String description, List<Object> values) {}
+        List<DocumentAttribute> optionalAttributes =
+            Optional.ofNullable(documentTypeConfig.attributes())
+                .map(a -> a.optional())
+                .orElse(List.of())
+                .stream()
+                .map(
+                    a -> {
+                      DocumentAttribute resolved = attributes.get(a);
+                      if (resolved == null)
+                        throw new RagException(
+                            String.format(
+                                "Document type {} with unknown optional attribute {}", name, a));
+                      return resolved;
+                    })
+                .toList();
 
-    private record DocumentTypeConfig(
-        String description,
-        Boolean requires_year,
-        Boolean prefer_latest_year,
-        AttributesConfig attributes
-    ) {}
+        documentTypes.add(
+            new DocumentType(
+                name,
+                documentTypeConfig.description,
+                Optional.ofNullable(documentTypeConfig.requires_year()).orElse(false),
+                Optional.ofNullable(documentTypeConfig.prefer_latest_year()).orElse(false),
+                requiredAttributes,
+                optionalAttributes));
+      }
+    }
 
-    private record AttributesConfig(
-        List<String> required,
-        List<String> optional
-    ) {}
+    return new RegistryData(List.copyOf(documentTypes), List.copyOf(attributes.values()));
+  }
+
+  private record RegistryData(
+      List<DocumentType> documentTypes, List<DocumentAttribute> documentAttributes) {}
+
+  private record MetadataConfig(
+      Map<String, DocumentTypeConfig> document_types, Map<String, AttributeConfig> attributes) {}
+
+  private record AttributeConfig(String description, List<Object> values) {}
+
+  private record DocumentTypeConfig(
+      String description,
+      Boolean requires_year,
+      Boolean prefer_latest_year,
+      AttributesConfig attributes) {}
+
+  private record AttributesConfig(List<String> required, List<String> optional) {}
 }

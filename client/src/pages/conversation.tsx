@@ -99,11 +99,21 @@ type AssistantMessageMarkdownProps = {
 function AssistantMessageMarkdown({ message }: AssistantMessageMarkdownProps) {
 	return (
 		<Typography className={styles.assistantMessage}>
-			<Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
+			<Markdown
+				remarkPlugins={[remarkGfm]}
+				components={{
+					table: ({ children, ...props }) => (
+						<div className={styles.tableWrapper}>
+							<table {...props}>{children}</table>
+						</div>
+					),
+				}}
+			>
+				{message.content}
+			</Markdown>
 		</Typography>
 	);
 }
-
 function AssistantAnswerOutput() {
 	const { answerStream } = useChat();
 

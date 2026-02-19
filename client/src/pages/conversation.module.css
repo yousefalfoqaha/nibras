@@ -4,8 +4,6 @@
   flex-grow: 1;
 }
 
-
-
 .messages {
   display: flex;
   flex-direction: column;
@@ -56,6 +54,7 @@
 .assistantMessage {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 
   h1 {
     font-size: 1.5rem;
@@ -79,8 +78,22 @@
   table {
     display: block;
     overflow-x: auto;
-    max-width: 100%;
+    width: 100%;
+    width: max-content;
   }
+
+  th,
+  td {
+    max-width: 200px;
+  }
+}
+.tableWrapper {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.tableWrapper table {
+  width: max-content;
 }
 
 .assistantAvatar {

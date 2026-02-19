@@ -2,12 +2,10 @@ package edu.gju.chatbot.chat;
 
 import java.util.List;
 import java.util.UUID;
-
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.stereotype.Service;
-
-import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
@@ -28,9 +26,11 @@ public class ChatService {
   }
 
   public List<ChatMessage> getConversation(String conversationId) {
-    return chatMemoryRepository.findByConversationId(conversationId)
-        .stream()
-        .filter(m -> m.getMessageType() == MessageType.ASSISTANT || m.getMessageType() == MessageType.USER)
+    return chatMemoryRepository.findByConversationId(conversationId).stream()
+        .filter(
+            m ->
+                m.getMessageType() == MessageType.ASSISTANT
+                    || m.getMessageType() == MessageType.USER)
         .map(m -> new ChatMessage(m.getText(), m.getMessageType().toString()))
         .toList();
   }

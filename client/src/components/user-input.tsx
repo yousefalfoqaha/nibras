@@ -2,13 +2,13 @@ import { ActionIcon, Textarea } from "@mantine/core";
 import { SendHorizonal } from "lucide-react";
 import styles from './user-input.module.css';
 import { useChat } from "../contexts/chat-context";
-import React, { useRef } from "react";
+import React from "react";
 import sendButtonClasses from "./send-button.module.css";
 
 export function UserInput() {
 	const { chatHistory, prompt } = useChat();
 	const [text, setText] = React.useState<string>('');
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const isDesktop = window.innerWidth >= 1024;
 
 	const sendMessage = () => {
 		const trimmedText = text.trim();
@@ -29,7 +29,7 @@ export function UserInput() {
 	};
 
 	const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		if (event.key === 'Enter' && !event.shiftKey) {
+		if (event.key === 'Enter' && !event.shiftKey && isDesktop) {
 			event.preventDefault();
 			if (event.nativeEvent.isComposing) return;
 
@@ -41,7 +41,6 @@ export function UserInput() {
 		<form onSubmit={onSubmit} autoComplete="off">
 			<div className={styles.userInput}>
 				<Textarea
-					ref={textareaRef}
 					autosize
 					minRows={1}
 					maxRows={8}
@@ -49,6 +48,7 @@ export function UserInput() {
 					className={styles.textArea}
 					size="md"
 					autoComplete="off"
+					autoFocus={isDesktop}
 					value={text}
 					onChange={(e) => setText(e.target.value)}
 					onKeyDown={onKeyDown}

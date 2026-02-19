@@ -8,7 +8,11 @@ services:
       - DB_USER
       - DB_PASSWORD
       - OPENAI_API_KEY
+      - APP_USER
+      - APP_PASSWORD
     restart: always
+    volumes:
+      - ./document-types.yml:/app/document-types.yml
     depends_on:
       - db
 
