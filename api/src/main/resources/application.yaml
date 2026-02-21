@@ -12,6 +12,15 @@ spring:
       name: ${APP_USER:chatbot}
       password: ${APP_PASSWORD:chatbot}
 
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          max-age: 31536000s
+          public: true
+          must-revalidate: true
+          no-transform: true
+
   sql:
     init:
       mode: always

@@ -65,7 +65,6 @@ function App() {
 
 	return (
 		<MantineProvider theme={theme} cssVariablesResolver={resolver}>
-			<div className={styles.safariSensor} />
 			<ChatProvider>
 				<ScrollProvider scrollViewportRef={viewportRef}>
 					<div data-scroll-root className={styles.viewport} ref={viewportRef}>
