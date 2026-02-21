@@ -126,6 +126,7 @@ function AssistantAnswerOutput() {
 
 function AssistantAvatar() {
 	const { assistantState } = useChat();
+	console.log(AVATAR_IMAGES[assistantState])
 
 	return (
 		<div

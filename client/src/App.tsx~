@@ -3,10 +3,10 @@ import '@mantine/core/styles.css';
 import { ChatProvider, useChat } from "./contexts/chat-context";
 import { preload } from "react-dom";
 import React from "react";
-import nibrasLogo from './assets/nibras.png';
-import nibrasIdle from './assets/nibras-idle.png';
-import nibrasThinking from './assets/nibras-thinking.png';
-import nibrasAnswering from './assets/nibras-answering.png';
+import nibrasLogo from 'assets/nibras.png';
+import nibrasIdle from 'assets/nibras-idle.png';
+import nibrasThinking from 'assets/nibras-thinking.png';
+import nibrasAnswering from 'assets/nibras-answering.png';
 import { ScrollProvider } from "./contexts/scroll-context";
 import styles from './app.module.css'
 import { Home } from "./pages/home";
@@ -62,10 +62,10 @@ function App() {
 		dark: {}
 	})
 
-	preload(nibrasLogo, { as: 'image' });
-	preload(nibrasIdle, { as: 'image' });
-	preload(nibrasThinking, { as: 'image' });
-	preload(nibrasAnswering, { as: 'image' });
+	preload("/nibras.png", { as: 'image' });
+	preload("/nibras-idle.png", { as: 'image' });
+	preload("/nibras-thinking.png", { as: 'image' });
+	preload("/nibras-answering.png", { as: 'image' });
 
 	return (
 		<MantineProvider theme={theme} cssVariablesResolver={resolver}>
