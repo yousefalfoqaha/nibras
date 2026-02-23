@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    path:
+      - "api/**"
+      - "client/**"
+      - ".github/workflows/ci.yml"
+      - "Dockerfile"
+      - "ocr/**"
 
 jobs:
   build:

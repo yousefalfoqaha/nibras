@@ -1,4 +1,4 @@
-# <div align="center"><img src="/assets/nibras.png" width="100"><br/><h1>Nibras</h1></div>
+# <div align="center"><img src="/assets/nibras.png" width="100"><br/>Nibras</div>
 
 Nibras is an AI agent for the German Jordanian University (GJU), focused on accurately retrieving relevant university documents to answer student questions regarding study plans, fees, and academic calendars (for now).
 
