@@ -50,9 +50,7 @@ caddy:
 
 That's it, have fun with Nibras!
 
-## Configuration
-
-### Document types
+## Document types
 
 Include a special `document-types.yml` file besides the `compose.yml` file that can be used to declare document types that both the **document processing pipeline** and the **search tool** can use.
 
@@ -118,7 +116,7 @@ attributes:
       - computer engineering
 ```
 
-### Environment variables
+## Configuration
 
 Nibras can be configured using the following environment variables:
 
@@ -127,5 +125,4 @@ Nibras can be configured using the following environment variables:
 | `DB_NAME`, `DB_USER` and `DB_PASSWORD` | `chatbot`        | Name, user, and password to the PGVector store.                        |
 | `APP_USER`, `APP_PASSWORD`             | `chatbot`        | User and password to restricted endpoints (e.g. `POST /files/process`) |
 | `OPENAI_API_KEY`                       |                  | Required. Your API key to OpenAI for chat completions.                 |
-
 
