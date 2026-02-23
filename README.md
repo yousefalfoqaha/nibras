@@ -2,7 +2,7 @@
 
 Nibras is an AI agent for the German Jordanian University (GJU), focused on accurately retrieving relevant university documents to answer student questions regarding study plans, fees, and academic calendars (for now).
 
-→ Try out [Nibras](nibrasgju.com)
+→ Try out [Nibras](https://nibrasgju.com)
 
 ## Overview
 The main point of Nibras is to develop a document-based search tool that specializes in searching GJU documents for later retrieval based on a user's query, and intelligently stops searching if the student's question is too ambiguous to perform a confident search, prompting Nibras to ask the student clarifying questions. Nibras uses this search tool to answer student questions (or ask appropriate questions himself) in a conversational manner.
