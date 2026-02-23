@@ -55,6 +55,7 @@ That's it, have fun with Nibras!
 Include a special `document-types.yml` file besides the `compose.yml` file that can be used to declare document types that both the **document processing pipeline** and the **search tool** can use.
 
 **Document processing pipeline**: when a document is being processed to be persisted in a vector store, the pipeline identifies the `document_type`, and then checks to see if all `required_attributes` are present. If a required attribute is missing, the user is informed to provide that detail.
+<br/><br/>
 **Search tool**: when asked a question, the search tool identifies the relevant `document_types` to search for, and tries to identify `required_attributes`, if a `required_attribute` is missing, it will try to auto-complete the attribute if only one exists in the vector store, otherwise it will pause the search.
 
 Here is an example `document-types.yml`:
