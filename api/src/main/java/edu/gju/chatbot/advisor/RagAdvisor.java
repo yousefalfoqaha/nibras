@@ -19,7 +19,7 @@ public class RagAdvisor implements BaseAdvisor {
 
           CONTEXT RULES:
           - Always fetch documents instead of relying on the conversation history for facts.
-          - When answering with document context, include the year if mentioned.
+          - When answering with document context, include the year of the document if available.
           - Only respond based on the context, if the context does not contain the answer, say you do not know.
           - Do not mention phrases like "the context" or "the documents" in your answer.
 
