@@ -2,7 +2,6 @@ FROM pytorch/pytorch:2.10.0-cuda13.0-cudnn9-runtime
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
-  python3.12-venv \
   build-essential \
   libxml2-dev \
   libxslt1-dev \

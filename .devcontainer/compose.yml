@@ -1,0 +1,22 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/nibras:cached
+
+  db:
+    image: pgvector/pgvector:pg16-trixie
+    environment:
+      POSTGRES_DB: chatbot
+      POSTGRES_USER: chatbot
+      POSTGRES_PASSWORD: chatbot
+    volumes:
+      - nibras_dev_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+volumes:
+  nibras_dev_data:

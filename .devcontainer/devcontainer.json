@@ -1,0 +1,29 @@
+{
+  "name": "nibras",
+  "dockerComposeFile": "compose.yml",
+  "service": "dev",
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {},
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/python:1": {},
+    "ghcr.io/devcontainers/features/nvidia-cuda:3.0": {
+      "cudaVersion": "13.0"
+    },
+    "ghcr.io/duduribeiro/devcontainer-features/neovim:1": {
+	"version": "nightly"
+    }
+  },
+  "runArgs": [
+    "--gpus",
+    "all",
+    "--shm-size",
+    "16gb"
+  ],
+  "containerEnv": {
+    "SPRING_PROFILES_ACTIVE": "dev",
+    "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+  },
+  "forwardPorts": [5173, 8080, 8000]
+}
+
